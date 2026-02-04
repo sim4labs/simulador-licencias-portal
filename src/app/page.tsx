@@ -19,10 +19,16 @@ export default function Home() {
           </Link>
           <nav className="flex items-center gap-4">
             <Link
+              href="/examen"
+              className="text-primary-600 hover:text-primary-700 font-medium"
+            >
+              Examen Teórico
+            </Link>
+            <Link
               href="/resultados"
               className="text-primary-600 hover:text-primary-700 font-medium"
             >
-              Consultar Resultados
+              Resultados
             </Link>
             <Link
               href="/agendar"
@@ -58,7 +64,13 @@ export default function Home() {
                 El Gobierno del Estado de Tlaxcala pone a tu disposici&oacute;n simuladores de manejo
                 de &uacute;ltima generaci&oacute;n para evaluar tus habilidades de conducci&oacute;n de forma segura.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
+                <Link
+                  href="/examen"
+                  className="bg-white text-primary px-8 py-3 rounded-lg text-lg font-semibold hover:bg-primary-light transition-colors inline-block shadow-lg"
+                >
+                  Examen Teórico
+                </Link>
                 <Link
                   href="/agendar"
                   className="bg-white text-primary px-8 py-3 rounded-lg text-lg font-semibold hover:bg-primary-light transition-colors inline-block shadow-lg"
@@ -170,42 +182,51 @@ export default function Home() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">&iquest;C&oacute;mo funciona?</h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Proceso sencillo en 4 pasos para obtener tu licencia
+                Proceso sencillo en 5 pasos para obtener tu licencia
               </p>
             </div>
-            <div className="grid md:grid-cols-4 gap-8">
+            <div className="grid md:grid-cols-5 gap-6">
               <div className="text-center">
-                <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+                <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                   1
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Agenda tu cita</h3>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">Examen Te&oacute;rico</h3>
+                <p className="text-gray-600 text-sm">
+                  Aprueba el examen de conocimientos sobre leyes de tr&aacute;nsito
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                  2
+                </div>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">Agenda tu cita</h3>
                 <p className="text-gray-600 text-sm">
                   Selecciona el tipo de licencia, fecha y hora disponible
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
-                  2
+                <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                  3
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Recibe tu c&oacute;digo QR</h3>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">Recibe tu c&oacute;digo QR</h3>
                 <p className="text-gray-600 text-sm">
-                  Obt&eacute;n tu c&oacute;digo QR de confirmaci&oacute;n para presentar el d&iacute;a de tu cita
+                  Obt&eacute;n tu c&oacute;digo QR de confirmaci&oacute;n para tu cita
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
-                  3
+                <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                  4
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Realiza la prueba</h3>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">Prueba Pr&aacute;ctica</h3>
                 <p className="text-gray-600 text-sm">
                   Pres&eacute;ntate con tu QR y realiza la prueba en el simulador
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
-                  4
+                <div className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                  5
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Consulta resultados</h3>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">Consulta resultados</h3>
                 <p className="text-gray-600 text-sm">
                   Revisa tus resultados en l&iacute;nea una vez completada la prueba
                 </p>
@@ -283,6 +304,11 @@ export default function Home() {
               <div>
                 <h3 className="text-white font-semibold mb-4">Enlaces</h3>
                 <ul className="space-y-2">
+                  <li>
+                    <Link href="/examen" className="text-white/80 hover:text-white text-sm transition-colors">
+                      Examen Teórico
+                    </Link>
+                  </li>
                   <li>
                     <Link href="/agendar" className="text-white/80 hover:text-white text-sm transition-colors">
                       Agendar Cita
