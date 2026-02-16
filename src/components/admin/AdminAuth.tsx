@@ -2,67 +2,150 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Button } from '@/components/ui/Button'
-import { Eye, EyeOff } from 'lucide-react'
-
-const ADMIN_PIN = '1234'
+import { Eye, EyeOff, User, Lock, ArrowRight, Shield } from 'lucide-react'
+import { loginAdmin } from '@/lib/admin-auth'
 
 interface AdminAuthProps {
   onAuthenticated: () => void
 }
 
 export function AdminAuth({ onAuthenticated }: AdminAuthProps) {
-  const [pin, setPin] = useState('')
   const [error, setError] = useState('')
-  const [showPin, setShowPin] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (pin === ADMIN_PIN) {
-      localStorage.setItem('adminPin', pin)
+    setError('')
+    setLoading(true)
+    await new Promise((r) => setTimeout(r, 300))
+    const result = loginAdmin(username, password)
+    setLoading(false)
+    if (result.ok) {
       onAuthenticated()
     } else {
-      setError('PIN incorrecto')
-      setPin('')
+      setError(result.error)
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#EDE7F1]">
-      <Image src="/Tlaxcala-logo.svg" alt="Gobierno de Tlaxcala" width={200} height={60} className="mb-8" />
-      <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-sm">
-        <div className="flex flex-col items-center mb-6">
-          <h1 className="text-xl font-bold text-gray-900">Acceso Administrativo</h1>
-          <p className="text-sm text-gray-500 mt-1 text-center">Portal de Administración — Gobierno de Tlaxcala</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="w-full">
-            <div className="relative">
-              <input
-                type={showPin ? 'text' : 'password'}
-                placeholder="PIN de acceso"
-                value={pin}
-                onChange={e => { setPin(e.target.value); setError('') }}
-                maxLength={10}
-                autoFocus
-                className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 pr-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${error ? 'border-destructive focus-visible:ring-destructive' : 'border-input'}`}
-                aria-invalid={!!error}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPin(!showPin)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                tabIndex={-1}
-              >
-                {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
+    <div className="min-h-screen flex">
+      {/* Left panel - branding */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <div
+          className="absolute inset-0 bg-repeat bg-center"
+          style={{ backgroundImage: 'url(/Flower-pattern.png)', backgroundSize: '200px auto' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-accent opacity-95" />
+        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
+          <Image src="/Tlaxcala-logo.svg" alt="Gobierno de Tlaxcala" width={220} height={66} className="mb-12 brightness-0 invert" />
+          <h1 className="text-4xl font-bold leading-tight mb-4">
+            Portal<br />Administrativo
+          </h1>
+          <p className="text-white/70 text-lg max-w-md">
+            Gestiona trámites, citas, exámenes y resultados del simulador de licencias de conducir.
+          </p>
+          <div className="mt-12 space-y-4">
+            {[
+              'Gestión de citas y calendario',
+              'Banco de preguntas y exámenes',
+              'Resultados del simulador',
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-white" />
+                </div>
+                <span className="text-white/80 text-sm">{item}</span>
+              </div>
+            ))}
           </div>
-          <Button type="submit" className="w-full" disabled={!pin}>
-            Ingresar
-          </Button>
-        </form>
+        </div>
+      </div>
+
+      {/* Right panel - form */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-gray-50">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex justify-center mb-8">
+            <Image src="/Tlaxcala-logo.svg" alt="Gobierno de Tlaxcala" width={180} height={54} />
+          </div>
+
+          {/* Admin badge */}
+          <div className="flex items-center gap-2 mb-6 justify-center lg:justify-start">
+            <Shield className="w-4 h-4 text-primary-600" />
+            <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">Acceso Administrativo</span>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900">Bienvenido de vuelta</h2>
+            <p className="text-gray-500 mt-2">Ingresa tus credenciales para acceder al panel</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Usuario</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Tu usuario"
+                  value={username}
+                  onChange={(e) => { setUsername(e.target.value); setError('') }}
+                  autoFocus
+                  className={`w-full h-11 pl-10 pr-4 rounded-xl border bg-white text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600 ${error ? 'border-red-300' : 'border-gray-200'}`}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Contraseña</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Tu contraseña"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError('') }}
+                  className={`w-full h-11 pl-10 pr-11 rounded-xl border bg-white text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600 ${error ? 'border-red-300' : 'border-gray-200'}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={!username || !password || loading}
+              className="w-full h-11 bg-primary-600 text-white rounded-xl font-medium text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 group"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  Ingresar
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="text-center text-xs text-gray-400 mt-8">
+            Gobierno del Estado de Tlaxcala &middot; Portal Administrativo
+          </p>
+        </div>
       </div>
     </div>
   )
