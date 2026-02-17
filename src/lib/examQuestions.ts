@@ -1165,41 +1165,55 @@ export const particularQuestions: Question[] = [
   },
 ]
 
+// Todas las preguntas hardcoded sin mezclar
+export function getAllQuestionsRaw(): Question[] {
+  return [
+    ...generalQuestions,
+    ...motocicletaQuestions,
+    ...publicoQuestions,
+    ...cargaQuestions,
+    ...particularQuestions,
+  ]
+}
+
+// Mezclar arrays (Fisher-Yates)
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
 // Función para obtener preguntas según tipo de licencia
 export function getQuestionsByLicenseType(licenseType: string, count: number = 20): Question[] {
-  let questions: Question[] = []
+  // Try to use admin overlay questions if available
+  let allQuestions: Question[] | null = null
+  if (typeof window !== 'undefined') {
+    try {
+      const overlay = localStorage.getItem('adminQuestions')
+      if (overlay) {
+        const parsed = JSON.parse(overlay) as { added: Question[]; edited: Record<string, Question>; deleted: string[] }
+        if (parsed.added?.length || Object.keys(parsed.edited || {}).length || parsed.deleted?.length) {
+          const raw = getAllQuestionsRaw()
+          allQuestions = raw
+            .filter(q => !parsed.deleted?.includes(q.id))
+            .map(q => parsed.edited?.[q.id] ?? q)
+            .concat(parsed.added || [])
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  const pool = allQuestions ?? getAllQuestionsRaw()
 
   // Siempre incluir preguntas generales
-  const generalPool = [...generalQuestions]
+  const generalPool = pool.filter(q => q.category === 'general')
 
   // Agregar preguntas específicas según el tipo
-  let specificPool: Question[] = []
-  switch (licenseType) {
-    case 'motocicleta':
-      specificPool = [...motocicletaQuestions]
-      break
-    case 'particular':
-      specificPool = [...particularQuestions]
-      break
-    case 'publico':
-      specificPool = [...publicoQuestions]
-      break
-    case 'carga':
-      specificPool = [...cargaQuestions]
-      break
-    default:
-      specificPool = [...particularQuestions]
-  }
-
-  // Mezclar arrays
-  const shuffleArray = <T>(array: T[]): T[] => {
-    const shuffled = [...array]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-    }
-    return shuffled
-  }
+  const category = ['motocicleta', 'particular', 'publico', 'carga'].includes(licenseType) ? licenseType : 'particular'
+  const specificPool = pool.filter(q => q.category === category)
 
   // Tomar preguntas: 60% generales, 40% específicas
   const generalCount = Math.ceil(count * 0.6)
@@ -1208,9 +1222,7 @@ export function getQuestionsByLicenseType(licenseType: string, count: number = 2
   const selectedGeneral = shuffleArray(generalPool).slice(0, generalCount)
   const selectedSpecific = shuffleArray(specificPool).slice(0, specificCount)
 
-  questions = shuffleArray([...selectedGeneral, ...selectedSpecific])
-
-  return questions.slice(0, count)
+  return shuffleArray([...selectedGeneral, ...selectedSpecific]).slice(0, count)
 }
 
 // Función para calcular el resultado

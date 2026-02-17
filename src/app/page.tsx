@@ -3,8 +3,36 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { MapPin, Clock, Phone, DollarSign, ChevronDown } from 'lucide-react'
 import { getCurrentTramite, type Tramite } from '@/lib/tramite'
 import { useInView } from '@/hooks/useInView'
+
+const FAQ_ITEMS = [
+  {
+    question: '\u00bfQu\u00e9 pasa si repruebo el examen te\u00f3rico?',
+    answer: 'Puedes volver a presentar el examen te\u00f3rico despu\u00e9s de 24 horas. No hay l\u00edmite de intentos, pero deber\u00e1s iniciar una nueva solicitud cada vez.',
+  },
+  {
+    question: '\u00bfPuedo reagendar mi cita?',
+    answer: 'S\u00ed, puedes cancelar tu cita actual e iniciar un nuevo proceso de agendamiento. Te recomendamos hacerlo con al menos 24 horas de anticipaci\u00f3n.',
+  },
+  {
+    question: '\u00bfCu\u00e1nto dura la prueba en el simulador?',
+    answer: 'La prueba pr\u00e1ctica en el simulador tiene una duraci\u00f3n aproximada de 15 a 20 minutos, dependiendo del tipo de licencia.',
+  },
+  {
+    question: '\u00bfQu\u00e9 documentos necesito llevar el d\u00eda de mi cita?',
+    answer: 'Debes presentar tu identificaci\u00f3n oficial vigente (INE/IFE o pasaporte), el c\u00f3digo QR de tu cita y tu comprobante de pago.',
+  },
+  {
+    question: '\u00bfEl examen te\u00f3rico tiene l\u00edmite de intentos?',
+    answer: 'No, puedes presentar el examen te\u00f3rico las veces que sea necesario. Sin embargo, cada intento requiere iniciar una nueva solicitud.',
+  },
+  {
+    question: '\u00bfQu\u00e9 tipo de veh\u00edculo usa el simulador?',
+    answer: 'El simulador es de \u00faltima generaci\u00f3n con 2 grados de libertad (2DOF) que reproduce condiciones reales de manejo, incluyendo aceleraci\u00f3n, frenado y fuerzas laterales en curvas.',
+  },
+]
 
 const STEP_LABELS: Record<number, string> = {
   1: 'Solicitud',
@@ -26,9 +54,14 @@ const STEP_ROUTES: Record<number, string> = {
 
 export default function Home() {
   const [activeTramite, setActiveTramite] = useState<Tramite | null>(null)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
   const stepsSection = useInView(0.15)
   const licenseSection = useInView(0.1)
+  const costsSection = useInView(0.15)
   const requirementsSection = useInView(0.15)
+  const locationSection = useInView(0.15)
+  const faqSection = useInView(0.15)
+  const ctaSection = useInView(0.15)
 
   useEffect(() => {
     const t = getCurrentTramite()
@@ -66,7 +99,7 @@ export default function Home() {
               Resultados
             </Link>
             <Link
-              href="/solicitud"
+              href="/portal"
               className="inline-flex items-center px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
             >
               Iniciar Trámite
@@ -101,7 +134,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap opacity-0 animate-fade-up" style={{ animationDelay: '0.45s' }}>
                 <Link
-                  href="/solicitud"
+                  href="/portal"
                   className="bg-white text-primary px-8 py-3 rounded-lg text-lg font-semibold hover:bg-primary-light transition-colors inline-block shadow-lg"
                 >
                   Iniciar Solicitud
@@ -187,7 +220,7 @@ export default function Home() {
                 Licencia para conducir motocicletas y veh&iacute;culos de dos ruedas.
               </p>
               <Link
-                href="/solicitud"
+                href="/portal"
                 className="text-primary-600 font-medium hover:text-primary-700"
               >
                 Iniciar trámite &rarr;
@@ -206,7 +239,7 @@ export default function Home() {
                 Licencia para autom&oacute;viles, camionetas y veh&iacute;culos particulares.
               </p>
               <Link
-                href="/solicitud"
+                href="/portal"
                 className="text-primary-600 font-medium hover:text-primary-700"
               >
                 Iniciar trámite &rarr;
@@ -224,7 +257,7 @@ export default function Home() {
                 Licencia para taxis, colectivos y transporte de pasajeros.
               </p>
               <Link
-                href="/solicitud"
+                href="/portal"
                 className="text-primary-600 font-medium hover:text-primary-700"
               >
                 Iniciar trámite &rarr;
@@ -242,7 +275,7 @@ export default function Home() {
                 Licencia para camiones, tractocamiones y veh&iacute;culos de carga.
               </p>
               <Link
-                href="/solicitud"
+                href="/portal"
                 className="text-primary-600 font-medium hover:text-primary-700"
               >
                 Iniciar trámite &rarr;
@@ -252,8 +285,42 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Costs */}
+        <section ref={costsSection.ref} className="py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className={`text-center mb-12 animate-on-scroll ${costsSection.isVisible ? 'is-visible' : ''}`}>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Costos y Vigencia</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Tarifas oficiales por tipo de licencia
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+              {[
+                { type: 'Motocicleta', price: '$850', duration: '3 a\u00f1os' },
+                { type: 'Particular', price: '$1,200', duration: '3 a\u00f1os' },
+                { type: 'Transporte P\u00fablico', price: '$1,800', duration: '2 a\u00f1os' },
+                { type: 'Carga Pesada', price: '$2,500', duration: '2 a\u00f1os' },
+              ].map((item, i) => (
+                <div
+                  key={item.type}
+                  className={`bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm hover:shadow-md transition-shadow animate-on-scroll stagger-${i + 1} ${costsSection.isVisible ? 'is-visible' : ''}`}
+                >
+                  <DollarSign className="w-8 h-8 text-primary-600 mx-auto mb-3" />
+                  <h3 className="font-semibold text-gray-900 mb-2">{item.type}</h3>
+                  <p className="text-3xl font-bold text-primary-600 mb-1">{item.price}</p>
+                  <p className="text-sm text-gray-500">Vigencia: {item.duration}</p>
+                </div>
+              ))}
+            </div>
+            <p className={`text-center text-sm text-gray-500 mt-8 animate-on-scroll stagger-5 ${costsSection.isVisible ? 'is-visible' : ''}`}>
+              M&eacute;todos de pago aceptados: efectivo en ventanilla, transferencia bancaria y pago en l&iacute;nea.
+              Los precios incluyen el uso del simulador y la emisi&oacute;n de la licencia.
+            </p>
+          </div>
+        </section>
+
         {/* Requirements */}
-        <section ref={requirementsSection.ref} className="py-20">
+        <section ref={requirementsSection.ref} className="bg-gray-100 py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className={`text-center mb-12 animate-on-scroll ${requirementsSection.isVisible ? 'is-visible' : ''}`}>
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Requisitos</h2>
@@ -286,6 +353,112 @@ export default function Home() {
                 </div>
                 <span className="font-medium text-gray-800">Comprobante de pago</span>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Location & Hours */}
+        <section ref={locationSection.ref} className="py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className={`text-center mb-12 animate-on-scroll ${locationSection.isVisible ? 'is-visible' : ''}`}>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Ubicaci&oacute;n y Horarios</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Vis&iacute;tanos en nuestras instalaciones
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              <div className={`text-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm animate-on-scroll stagger-1 ${locationSection.isVisible ? 'is-visible' : ''}`}>
+                <MapPin className="w-10 h-10 text-primary-600 mx-auto mb-4" />
+                <h3 className="font-semibold text-gray-900 mb-2">Direcci&oacute;n</h3>
+                <p className="text-gray-600 text-sm">
+                  Centro de Evaluaci&oacute;n de Conductores<br />
+                  Blvd. Guillermo Valle #100<br />
+                  Col. Centro, Tlaxcala de Xicoht&eacute;ncatl, Tlax.
+                </p>
+              </div>
+              <div className={`text-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm animate-on-scroll stagger-2 ${locationSection.isVisible ? 'is-visible' : ''}`}>
+                <Clock className="w-10 h-10 text-primary-600 mx-auto mb-4" />
+                <h3 className="font-semibold text-gray-900 mb-2">Horarios</h3>
+                <p className="text-gray-600 text-sm">
+                  Lunes a Viernes<br />
+                  <span className="font-medium text-gray-800">9:00 AM &ndash; 5:00 PM</span><br />
+                  S&aacute;bados, domingos y d&iacute;as festivos: Cerrado
+                </p>
+              </div>
+              <div className={`text-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm animate-on-scroll stagger-3 ${locationSection.isVisible ? 'is-visible' : ''}`}>
+                <Phone className="w-10 h-10 text-primary-600 mx-auto mb-4" />
+                <h3 className="font-semibold text-gray-900 mb-2">Contacto</h3>
+                <p className="text-gray-600 text-sm">
+                  Tel: (246) 462-0000<br />
+                  Ext. 1234<br />
+                  licencias@tlaxcala.gob.mx
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section ref={faqSection.ref} className="bg-gray-100 py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className={`text-center mb-12 animate-on-scroll ${faqSection.isVisible ? 'is-visible' : ''}`}>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Preguntas Frecuentes</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Resuelve tus dudas antes de iniciar tu tr&aacute;mite
+              </p>
+            </div>
+            <div className="max-w-3xl mx-auto space-y-3">
+              {FAQ_ITEMS.map((item, i) => (
+                <div
+                  key={i}
+                  className={`bg-white rounded-xl border border-gray-200 overflow-hidden animate-on-scroll stagger-${i + 1} ${faqSection.isVisible ? 'is-visible' : ''}`}
+                >
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="font-medium text-gray-900 pr-4">{item.question}</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  <div
+                    className={`grid transition-all duration-200 ease-in-out ${openFaq === i ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+                  >
+                    <div className="overflow-hidden">
+                      <p className="px-5 pb-5 text-gray-600 text-sm">{item.answer}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Final */}
+        <section ref={ctaSection.ref} className="relative overflow-hidden">
+          <div
+            className="absolute inset-0 bg-repeat bg-center"
+            style={{
+              backgroundImage: 'url(/Flower-pattern.png)',
+              backgroundSize: '200px auto'
+            }}
+          />
+          <div className="absolute inset-0 bg-primary-accent/90" />
+          <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8 relative">
+            <div className={`text-center animate-on-scroll ${ctaSection.isVisible ? 'is-visible' : ''}`}>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+                &iquest;Listo para obtener tu licencia?
+              </h2>
+              <p className="text-lg text-white/80 mb-8 max-w-xl mx-auto">
+                Inicia tu tr&aacute;mite hoy y agenda tu cita en el simulador de manejo
+              </p>
+              <Link
+                href="/portal"
+                className="bg-white text-primary px-8 py-3 rounded-lg text-lg font-semibold hover:bg-primary-light transition-colors inline-block shadow-lg"
+              >
+                Iniciar Tr&aacute;mite
+              </Link>
             </div>
           </div>
         </section>
@@ -322,7 +495,7 @@ export default function Home() {
                 <h3 className="text-white font-semibold mb-4">Enlaces</h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="/solicitud" className="text-white/80 hover:text-white text-sm transition-colors">
+                    <Link href="/portal" className="text-white/80 hover:text-white text-sm transition-colors">
                       Iniciar Trámite
                     </Link>
                   </li>
@@ -342,6 +515,11 @@ export default function Home() {
               <div>
                 <h3 className="text-white font-semibold mb-4">Contacto</h3>
                 <ul className="space-y-2">
+                  <li>
+                    <a href="tel:+522464620000" className="text-white/80 hover:text-white text-sm transition-colors">
+                      (246) 462-0000 ext. 1234
+                    </a>
+                  </li>
                   <li>
                     <a href="mailto:licencias@tlaxcala.gob.mx" className="text-white/80 hover:text-white text-sm transition-colors">
                       licencias@tlaxcala.gob.mx
