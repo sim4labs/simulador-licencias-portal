@@ -87,18 +87,6 @@ export default function Home() {
           </Link>
           <nav className="flex items-center gap-4">
             <Link
-              href="/examen"
-              className="text-primary-600 hover:text-primary-700 font-medium hidden sm:inline"
-            >
-              Examen Teórico
-            </Link>
-            <Link
-              href="/resultados"
-              className="text-primary-600 hover:text-primary-700 font-medium hidden sm:inline"
-            >
-              Resultados
-            </Link>
-            <Link
               href="/portal"
               className="inline-flex items-center px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
             >
