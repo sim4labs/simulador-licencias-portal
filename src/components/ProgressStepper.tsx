@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
 
 const DEFAULT_STEPS = [
-  'Solicitud',
   'Tipo de Licencia',
+  'Solicitud',
   'Examen Teórico',
   'Agendar Cita',
   'Simulador',

@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, Clock, Phone, DollarSign, ChevronDown } from 'lucide-react'
-import { getCurrentTramite, type Tramite } from '@/lib/tramite'
+import type { Tramite } from '@/lib/tramite'
+import { citizenApi } from '@/lib/citizen-api'
+import { adaptTramite } from '@/lib/adapters'
 import { useInView } from '@/hooks/useInView'
 
 const FAQ_ITEMS = [
@@ -35,8 +37,8 @@ const FAQ_ITEMS = [
 ]
 
 const STEP_LABELS: Record<number, string> = {
-  1: 'Solicitud',
-  2: 'Tipo de Licencia',
+  1: 'Tipo de Licencia',
+  2: 'Solicitud',
   3: 'Examen Teórico',
   4: 'Agendar Cita',
   5: 'Simulador',
@@ -44,8 +46,8 @@ const STEP_LABELS: Record<number, string> = {
 }
 
 const STEP_ROUTES: Record<number, string> = {
-  1: '/solicitud',
-  2: '/tipo-licencia',
+  1: '/tipo-licencia',
+  2: '/solicitud',
   3: '/examen',
   4: '/agendar',
   5: '/confirmacion',
@@ -64,10 +66,18 @@ export default function Home() {
   const ctaSection = useInView(0.15)
 
   useEffect(() => {
-    const t = getCurrentTramite()
-    if (t && t.currentStep < 6) {
-      setActiveTramite(t)
+    async function load() {
+      try {
+        const { data } = await citizenApi.getTramiteActivo()
+        if (data) {
+          const t = adaptTramite(data)
+          if (t.currentStep < 6) setActiveTramite(t)
+        }
+      } catch {
+        // Not logged in — no active tramite banner
+      }
     }
+    load()
   }, [])
 
   return (
@@ -122,7 +132,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap opacity-0 animate-fade-up" style={{ animationDelay: '0.45s' }}>
                 <Link
-                  href="/portal"
+                  href="/portal/tipo-licencia"
                   className="bg-white text-primary px-8 py-3 rounded-lg text-lg font-semibold hover:bg-primary-light transition-colors inline-block shadow-lg"
                 >
                   Iniciar Solicitud
@@ -166,7 +176,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
               {[
-                { num: 1, title: 'Solicitud', desc: 'Completa tu solicitud con tus datos personales y tipo de licencia' },
+                { num: 1, title: 'Tipo de Licencia', desc: 'Selecciona el tipo de licencia que deseas obtener' },
                 { num: 2, title: 'Examen Te\u00f3rico', desc: 'Aprueba el examen de conocimientos sobre leyes de tr\u00e1nsito' },
                 { num: 3, title: 'Agenda tu cita', desc: 'Selecciona fecha y hora para tu prueba en el simulador' },
                 { num: 4, title: 'Prueba Pr\u00e1ctica', desc: 'Pres\u00e9ntate con tu QR y realiza la prueba en el simulador' },
@@ -488,7 +498,7 @@ export default function Home() {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/examen" className="text-white/80 hover:text-white text-sm transition-colors">
+                    <Link href="/portal/examen" className="text-white/80 hover:text-white text-sm transition-colors">
                       Examen Teórico
                     </Link>
                   </li>
