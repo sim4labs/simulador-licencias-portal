@@ -26,8 +26,8 @@ const navSections = [
     title: 'Servicios',
     items: [
       { href: '/portal/examen', label: 'Examen Teórico', icon: BookOpen },
-      { href: '/portal/agendar', label: 'Agendar Cita', icon: CalendarDays },
-      { href: '/portal/resultados', label: 'Resultados', icon: ClipboardList },
+      { href: '/portal/agendar', label: 'Administrar Citas', icon: CalendarDays },
+      { href: '/portal/resultados', label: 'Mis Resultados', icon: ClipboardList },
     ],
   },
   {

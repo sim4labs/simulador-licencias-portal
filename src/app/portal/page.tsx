@@ -56,7 +56,7 @@ const STEP_ROUTES: Record<number, string> = {
 const QUICK_ACTIONS = [
   { label: 'Examen Teórico', desc: 'Practica antes de tu examen', href: '/portal/examen', icon: BookOpen, color: 'bg-blue-50 text-blue-600 border-blue-200' },
   { label: 'Consultar Resultados', desc: 'Revisa el estado de tu prueba', href: '/portal/resultados', icon: ClipboardList, color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
-  { label: 'Agendar Cita', desc: 'Selecciona fecha y hora', href: '/portal/agendar', icon: CalendarDays, color: 'bg-amber-50 text-amber-600 border-amber-200' },
+  { label: 'Administrar Citas', desc: 'Gestiona tus citas en el simulador', href: '/portal/agendar', icon: CalendarDays, color: 'bg-amber-50 text-amber-600 border-amber-200' },
 ]
 
 const REQUISITOS = [

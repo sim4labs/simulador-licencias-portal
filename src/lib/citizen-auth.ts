@@ -1,33 +1,58 @@
-export interface CitizenAccount {
-  email: string
-  password: string // btoa encoded
-  name: string
-  createdAt: string
-}
+import {
+  signUp,
+  signIn,
+  signOut,
+  confirmSignUp,
+  getCurrentUser,
+  fetchAuthSession,
+  autoSignIn,
+} from 'aws-amplify/auth'
+import { configureAmplifyForPool } from './amplify-config'
 
 export interface CitizenSession {
   email: string
   name: string
+  sub: string
 }
 
-const CITIZENS_KEY = 'citizens'
-const SESSION_KEY = 'citizenSession'
+type AuthResult = { ok: true } | { ok: false; error: string }
+type AuthResultWithConfirm =
+  | { ok: true }
+  | { ok: true; requiresConfirmation: true; email: string }
+  | { ok: false; error: string }
 
-function getCitizens(): CitizenAccount[] {
-  if (typeof window === 'undefined') return []
-  const raw = localStorage.getItem(CITIZENS_KEY)
-  return raw ? JSON.parse(raw) : []
+function ensureCitizenPool() {
+  configureAmplifyForPool('citizen')
 }
 
-function saveCitizens(citizens: CitizenAccount[]): void {
-  localStorage.setItem(CITIZENS_KEY, JSON.stringify(citizens))
+function mapError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err)
+  if (msg.includes('User already exists')) return 'Ya existe una cuenta con este correo'
+  if (msg.includes('Password did not conform'))
+    return 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número'
+  if (msg.includes('Invalid email')) return 'Ingresa un correo electrónico válido'
+  if (msg.includes('Incorrect username or password') || msg.includes('NotAuthorizedException'))
+    return 'Correo o contraseña incorrectos'
+  if (msg.includes('User is not confirmed'))
+    return 'Tu cuenta no ha sido confirmada. Revisa tu correo electrónico'
+  if (msg.includes('CodeMismatchException') || msg.includes('Invalid verification code'))
+    return 'Código de verificación incorrecto'
+  if (msg.includes('ExpiredCodeException'))
+    return 'El código ha expirado. Solicita uno nuevo'
+  if (msg.includes('LimitExceededException'))
+    return 'Demasiados intentos. Intenta más tarde'
+  if (msg.includes('NetworkError') || msg.includes('network'))
+    return 'Error de conexión. Verifica tu internet'
+  console.error('[CitizenAuth]', err)
+  return 'Ocurrió un error inesperado. Intenta de nuevo'
 }
 
-export function registerCitizen(
+export async function registerCitizen(
   email: string,
   password: string,
   name: string
-): { ok: true } | { ok: false; error: string } {
+): Promise<AuthResultWithConfirm> {
+  ensureCitizenPool()
   const trimmedEmail = email.trim().toLowerCase()
   const trimmedName = name.trim()
 
@@ -37,53 +62,123 @@ export function registerCitizen(
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
     return { ok: false, error: 'Ingresa un correo electrónico válido' }
   }
-  if (password.length < 6) {
-    return { ok: false, error: 'La contraseña debe tener al menos 6 caracteres' }
+  if (password.length < 8) {
+    return { ok: false, error: 'La contraseña debe tener al menos 8 caracteres' }
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { ok: false, error: 'La contraseña debe incluir al menos una mayúscula' }
+  }
+  if (!/[a-z]/.test(password)) {
+    return { ok: false, error: 'La contraseña debe incluir al menos una minúscula' }
+  }
+  if (!/[0-9]/.test(password)) {
+    return { ok: false, error: 'La contraseña debe incluir al menos un número' }
   }
 
-  const citizens = getCitizens()
-  if (citizens.some((c) => c.email === trimmedEmail)) {
-    return { ok: false, error: 'Ya existe una cuenta con este correo' }
+  try {
+    const { isSignUpComplete, nextStep } = await signUp({
+      username: trimmedEmail,
+      password,
+      options: {
+        userAttributes: {
+          email: trimmedEmail,
+          name: trimmedName,
+        },
+        autoSignIn: true,
+      },
+    })
+
+    if (isSignUpComplete) {
+      return { ok: true }
+    }
+
+    if (nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
+      return { ok: true, requiresConfirmation: true, email: trimmedEmail }
+    }
+
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: mapError(err) }
   }
-
-  citizens.push({
-    email: trimmedEmail,
-    password: btoa(password),
-    name: trimmedName,
-    createdAt: new Date().toISOString(),
-  })
-  saveCitizens(citizens)
-
-  // Auto-login after register
-  const session: CitizenSession = { email: trimmedEmail, name: trimmedName }
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-
-  return { ok: true }
 }
 
-export function loginCitizen(
+export async function confirmCitizenSignUp(
+  email: string,
+  code: string
+): Promise<AuthResult> {
+  ensureCitizenPool()
+  try {
+    await confirmSignUp({ username: email, confirmationCode: code })
+    try {
+      await autoSignIn()
+    } catch {
+      // autoSignIn may fail if not configured, user will need to login manually
+    }
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: mapError(err) }
+  }
+}
+
+export async function loginCitizen(
   email: string,
   password: string
-): { ok: true } | { ok: false; error: string } {
+): Promise<AuthResult> {
+  ensureCitizenPool()
   const trimmedEmail = email.trim().toLowerCase()
-  const citizens = getCitizens()
-  const citizen = citizens.find((c) => c.email === trimmedEmail)
 
-  if (!citizen || citizen.password !== btoa(password)) {
-    return { ok: false, error: 'Correo o contraseña incorrectos' }
+  try {
+    // Clear any stale session
+    try { await signOut() } catch { /* ignore */ }
+
+    const result = await signIn({ username: trimmedEmail, password })
+
+    if (result.isSignedIn) {
+      return { ok: true }
+    }
+
+    if (result.nextStep?.signInStep === 'CONFIRM_SIGN_UP') {
+      return { ok: false, error: 'Tu cuenta no ha sido confirmada. Revisa tu correo electrónico' }
+    }
+
+    return { ok: false, error: 'No se pudo iniciar sesión' }
+  } catch (err) {
+    return { ok: false, error: mapError(err) }
   }
-
-  const session: CitizenSession = { email: citizen.email, name: citizen.name }
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-  return { ok: true }
 }
 
-export function logoutCitizen(): void {
-  localStorage.removeItem(SESSION_KEY)
+export async function logoutCitizen(): Promise<void> {
+  ensureCitizenPool()
+  try {
+    await signOut()
+  } catch {
+    // ignore
+  }
 }
 
-export function getCurrentCitizen(): CitizenSession | null {
-  if (typeof window === 'undefined') return null
-  const raw = localStorage.getItem(SESSION_KEY)
-  return raw ? JSON.parse(raw) : null
+export async function getCurrentCitizen(): Promise<CitizenSession | null> {
+  ensureCitizenPool()
+  try {
+    const user = await getCurrentUser()
+    const session = await fetchAuthSession()
+    const idToken = session.tokens?.idToken
+    const claims = idToken?.payload
+    return {
+      email: (claims?.email as string) || user.signInDetails?.loginId || '',
+      name: (claims?.name as string) || '',
+      sub: user.userId,
+    }
+  } catch {
+    return null
+  }
+}
+
+export async function getCitizenIdToken(): Promise<string | null> {
+  ensureCitizenPool()
+  try {
+    const session = await fetchAuthSession()
+    return session.tokens?.idToken?.toString() || null
+  } catch {
+    return null
+  }
 }

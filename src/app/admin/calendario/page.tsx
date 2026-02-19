@@ -1,14 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getAllTramites, type Tramite } from '@/lib/tramite'
+import type { Tramite } from '@/lib/tramite'
+import { adminApi } from '@/lib/admin-api'
+import { adaptTramite } from '@/lib/adapters'
 import { CalendarView } from '@/components/admin/CalendarView'
 
 export default function CalendarioPage() {
   const [tramites, setTramites] = useState<Tramite[]>([])
 
   useEffect(() => {
-    setTramites(getAllTramites().filter(t => !!t.appointment))
+    async function load() {
+      const { data } = await adminApi.getCitas({})
+      if (data) setTramites(data.map(adaptTramite))
+    }
+    load()
   }, [])
 
   return (

@@ -10,17 +10,18 @@ export default function AdminRootLayout({ children }: { children: React.ReactNod
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    const session = getCurrentAdmin()
-    setAuthenticated(!!session)
-    setChecked(true)
+    getCurrentAdmin().then((session) => {
+      setAuthenticated(!!session)
+      setChecked(true)
+    })
   }, [])
 
   const handleAuthenticated = () => {
     setAuthenticated(true)
   }
 
-  const handleLogout = () => {
-    logoutAdmin()
+  const handleLogout = async () => {
+    await logoutAdmin()
     setAuthenticated(false)
   }
 

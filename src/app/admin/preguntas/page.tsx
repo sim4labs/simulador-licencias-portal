@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { type Question } from '@/lib/examQuestions'
-import { getAdminQuestions, saveAdminQuestion, deleteAdminQuestion, resetQuestions, getQuestionStats } from '@/lib/admin'
+import { adminApi } from '@/lib/admin-api'
+import type { QuestionResponse } from '@/lib/adapters'
 import { DataTable } from '@/components/admin/DataTable'
 import { Badge, categoryVariant, difficultyVariant } from '@/components/admin/Badge'
 import { Tabs } from '@/components/admin/Tabs'
@@ -11,7 +11,7 @@ import { StatCard } from '@/components/admin/StatCard'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/admin/Textarea'
-import { Plus, Pencil, Trash2, HelpCircle, RotateCcw } from 'lucide-react'
+import { Plus, Pencil, Trash2, HelpCircle } from 'lucide-react'
 
 const CATEGORIES = [
   { id: 'todas', label: 'Todas' },
@@ -28,8 +28,8 @@ const DIFFICULTY_OPTIONS = [
   { id: 'avanzado', label: 'Avanzado' },
 ]
 
-const emptyQuestion: Question = {
-  id: '',
+const emptyQuestion: QuestionResponse = {
+  questionId: '',
   question: '',
   options: ['', '', '', ''],
   correctAnswer: 0,
@@ -39,18 +39,27 @@ const emptyQuestion: Question = {
 }
 
 export default function PreguntasPage() {
-  const [questions, setQuestions] = useState<Question[]>([])
+  const [questions, setQuestions] = useState<QuestionResponse[]>([])
   const [categoryTab, setCategoryTab] = useState('todas')
   const [difficultyFilter, setDifficultyFilter] = useState('all')
   const [editModal, setEditModal] = useState(false)
-  const [editQuestion, setEditQuestion] = useState<Question>(emptyQuestion)
+  const [editQuestion, setEditQuestion] = useState<QuestionResponse>(emptyQuestion)
   const [isNew, setIsNew] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState<Question | null>(null)
-  const [stats, setStats] = useState<ReturnType<typeof getQuestionStats>>({ total: 0, byCategory: {}, byDifficulty: {} })
+  const [deleteConfirm, setDeleteConfirm] = useState<QuestionResponse | null>(null)
+  const [stats, setStats] = useState<{ total: number; byCategory: Record<string, number>; byDifficulty: Record<string, number> }>({ total: 0, byCategory: {}, byDifficulty: {} })
 
-  const reload = () => {
-    setQuestions(getAdminQuestions())
-    setStats(getQuestionStats())
+  const reload = async () => {
+    const { data } = await adminApi.listarPreguntas()
+    if (data) {
+      setQuestions(data)
+      const byCategory: Record<string, number> = {}
+      const byDifficulty: Record<string, number> = {}
+      for (const q of data) {
+        byCategory[q.category] = (byCategory[q.category] || 0) + 1
+        byDifficulty[q.difficulty] = (byDifficulty[q.difficulty] || 0) + 1
+      }
+      setStats({ total: data.length, byCategory, byDifficulty })
+    }
   }
 
   useEffect(() => { reload() }, [])
@@ -64,60 +73,63 @@ export default function PreguntasPage() {
   }, [questions, categoryTab, difficultyFilter])
 
   const openNew = () => {
-    const nextId = `custom-${Date.now()}`
-    setEditQuestion({ ...emptyQuestion, id: nextId })
+    setEditQuestion({ ...emptyQuestion })
     setIsNew(true)
     setEditModal(true)
   }
 
-  const openEdit = (q: Question) => {
+  const openEdit = (q: QuestionResponse) => {
     setEditQuestion({ ...q, options: [...q.options] })
     setIsNew(false)
     setEditModal(true)
   }
 
-  const handleSave = () => {
-    if (!editQuestion.question.trim() || editQuestion.options.some(o => !o.trim())) return
-    saveAdminQuestion(editQuestion)
+  const handleSave = async () => {
+    if (!editQuestion.question.trim() || editQuestion.options.some((o: string) => !o.trim())) return
+    if (isNew) {
+      await adminApi.crearPregunta({
+        question: editQuestion.question,
+        options: editQuestion.options,
+        correctAnswer: editQuestion.correctAnswer,
+        explanation: editQuestion.explanation,
+        category: editQuestion.category,
+        difficulty: editQuestion.difficulty,
+      })
+    } else {
+      await adminApi.actualizarPregunta(editQuestion.questionId, editQuestion)
+    }
     setEditModal(false)
     reload()
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteConfirm) return
-    deleteAdminQuestion(deleteConfirm.id)
+    await adminApi.eliminarPregunta(deleteConfirm.questionId)
     setDeleteConfirm(null)
     reload()
   }
 
-  const handleReset = () => {
-    if (confirm('¿Restaurar todas las preguntas al estado original?')) {
-      resetQuestions()
-      reload()
-    }
-  }
-
   const columns = [
-    { key: 'id', header: 'ID', render: (q: Question) => <span className="font-mono text-xs">{q.id}</span>, className: 'w-28' },
+    { key: 'id', header: 'ID', render: (q: QuestionResponse) => <span className="font-mono text-xs">{q.questionId}</span>, className: 'w-28' },
     {
-      key: 'question', header: 'Pregunta', render: (q: Question) => (
+      key: 'question', header: 'Pregunta', render: (q: QuestionResponse) => (
         <span className="text-sm line-clamp-2">{q.question}</span>
       ),
     },
     {
-      key: 'category', header: 'Categoría', render: (q: Question) => (
+      key: 'category', header: 'Categoría', render: (q: QuestionResponse) => (
         <Badge variant={categoryVariant[q.category]}>{q.category}</Badge>
       ),
       className: 'w-28',
     },
     {
-      key: 'difficulty', header: 'Dificultad', render: (q: Question) => (
+      key: 'difficulty', header: 'Dificultad', render: (q: QuestionResponse) => (
         <Badge variant={difficultyVariant[q.difficulty]}>{q.difficulty}</Badge>
       ),
       className: 'w-24',
     },
     {
-      key: 'actions', header: 'Acciones', render: (q: Question) => (
+      key: 'actions', header: 'Acciones', render: (q: QuestionResponse) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" onClick={() => openEdit(q)}>
             <Pencil className="h-3.5 w-3.5" />
@@ -136,9 +148,6 @@ export default function PreguntasPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Banco de Preguntas</h1>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleReset}>
-            <RotateCcw className="h-4 w-4 mr-1" /> Restaurar
-          </Button>
           <Button size="sm" onClick={openNew}>
             <Plus className="h-4 w-4 mr-1" /> Nueva Pregunta
           </Button>
@@ -171,7 +180,7 @@ export default function PreguntasPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow">
-        <DataTable columns={columns} data={filtered} keyExtractor={q => q.id} emptyMessage="No hay preguntas en esta categoría" />
+        <DataTable columns={columns} data={filtered} keyExtractor={q => q.questionId} emptyMessage="No hay preguntas en esta categoría" />
       </div>
 
       {/* Edit/Add Modal */}
@@ -215,7 +224,7 @@ export default function PreguntasPage() {
               <select
                 className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 bg-white"
                 value={editQuestion.category}
-                onChange={e => setEditQuestion({ ...editQuestion, category: e.target.value as Question['category'] })}
+                onChange={e => setEditQuestion({ ...editQuestion, category: e.target.value })}
               >
                 <option value="general">General</option>
                 <option value="motocicleta">Motocicleta</option>
@@ -229,7 +238,7 @@ export default function PreguntasPage() {
               <select
                 className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 bg-white"
                 value={editQuestion.difficulty}
-                onChange={e => setEditQuestion({ ...editQuestion, difficulty: e.target.value as Question['difficulty'] })}
+                onChange={e => setEditQuestion({ ...editQuestion, difficulty: e.target.value })}
               >
                 <option value="medio">Medio</option>
                 <option value="avanzado">Avanzado</option>

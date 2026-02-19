@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { getAllTramites, type Tramite } from '@/lib/tramite'
-import { enterSimulatorResult, getLicenseTypes } from '@/lib/admin'
+import type { Tramite } from '@/lib/tramite'
+import { adminApi } from '@/lib/admin-api'
+import { adaptTramite, type LicenciaResponse } from '@/lib/adapters'
 import { DataTable } from '@/components/admin/DataTable'
 import { Badge, statusVariant, statusLabel } from '@/components/admin/Badge'
 import { Modal } from '@/components/admin/Modal'
@@ -22,10 +23,18 @@ export default function TramitesPage() {
   const [simPassed, setSimPassed] = useState(true)
   const [simFeedback, setSimFeedback] = useState('')
 
-  const licenseTypes = useMemo(() => getLicenseTypes(), [])
+  const [licenseTypes, setLicenseTypes] = useState<LicenciaResponse[]>([])
 
   useEffect(() => {
-    setTramites(getAllTramites())
+    async function load() {
+      const [tramitesRes, licenciasRes] = await Promise.all([
+        adminApi.listarTramites(),
+        adminApi.listarLicencias(),
+      ])
+      if (tramitesRes.data) setTramites(tramitesRes.data.map(adaptTramite))
+      if (licenciasRes.data) setLicenseTypes(licenciasRes.data)
+    }
+    load()
   }, [])
 
   const filtered = useMemo(() => {
@@ -41,15 +50,18 @@ export default function TramitesPage() {
     })
   }, [tramites, statusFilter, typeFilter, search])
 
-  const handleSimSubmit = () => {
+  const handleSimSubmit = async () => {
     if (!simModal) return
-    const result = enterSimulatorResult(simModal.id, {
+    const body = {
       passed: simPassed,
       score: parseInt(simScore) || 0,
       feedback: simFeedback.split('\n').filter(Boolean),
-    })
-    if (result) {
-      setTramites(prev => prev.map(t => t.id === result.id ? result : t))
+    }
+    const { error } = await adminApi.registrarSimulador(simModal.id, body)
+    if (!error) {
+      // Reload tramites to get updated data
+      const { data } = await adminApi.listarTramites()
+      if (data) setTramites(data.map(adaptTramite))
     }
     setSimModal(null)
     setSimScore('80')
@@ -136,7 +148,7 @@ export default function TramitesPage() {
         >
           <option value="all">Todos los tipos</option>
           {licenseTypes.map(lt => (
-            <option key={lt.id} value={lt.id}>{lt.name}</option>
+            <option key={lt.licenseId} value={lt.licenseId}>{lt.name}</option>
           ))}
         </select>
       </div>

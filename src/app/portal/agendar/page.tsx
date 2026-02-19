@@ -1,16 +1,25 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
-import { ProgressStepper } from '@/components/ProgressStepper'
-import { canProceedToStep, type Tramite } from '@/lib/tramite'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import {
+  CalendarDays,
+  ArrowRight,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Bike,
+  Car,
+  Bus,
+  Truck,
+  MapPin,
+  Plus,
+  BookOpen,
+} from 'lucide-react'
 import { citizenApi } from '@/lib/citizen-api'
-import { publicApi } from '@/lib/admin-api'
 import { adaptTramite } from '@/lib/adapters'
-import { formatDate } from '@/lib/utils'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { canProceedToStep, type Tramite } from '@/lib/tramite'
 
 const LICENSE_NAMES: Record<string, string> = {
   motocicleta: 'Motocicleta',
@@ -19,291 +28,176 @@ const LICENSE_NAMES: Record<string, string> = {
   carga: 'Carga Pesada',
 }
 
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate()
+const LICENSE_ICONS: Record<string, typeof Car> = {
+  motocicleta: Bike,
+  particular: Car,
+  publico: Bus,
+  carga: Truck,
 }
 
-function getFirstDayOfMonth(year: number, month: number) {
-  return new Date(year, month, 1).getDay()
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
+  'iniciado': { label: 'Iniciado', color: 'bg-gray-100 text-gray-700', icon: Clock },
+  'tipo-seleccionado': { label: 'Tipo seleccionado', color: 'bg-blue-50 text-blue-700', icon: Clock },
+  'examen-aprobado': { label: 'Examen aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
+  'examen-reprobado': { label: 'Examen reprobado', color: 'bg-red-50 text-red-700', icon: XCircle },
+  'cita-agendada': { label: 'Cita agendada', color: 'bg-amber-50 text-amber-700', icon: CalendarDays },
+  'simulador-completado': { label: 'Simulador completado', color: 'bg-purple-50 text-purple-700', icon: CheckCircle2 },
+  'finalizado': { label: 'Finalizado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
 }
 
-export default function AgendarPage() {
-  const router = useRouter()
-  const [tramite, setTramite] = useState<Tramite | null>(null)
+export default function AdministrarCitasPage() {
+  const [tramites, setTramites] = useState<Tramite[]>([])
   const [loading, setLoading] = useState(true)
-
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [selectedTime, setSelectedTime] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [availableSlots, setAvailableSlots] = useState<string[]>([])
-  const [loadingSlots, setLoadingSlots] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
-
-  const today = new Date()
-  const [currentMonth, setCurrentMonth] = useState(today.getMonth())
-  const [currentYear, setCurrentYear] = useState(today.getFullYear())
 
   useEffect(() => {
     async function load() {
-      const { data } = await citizenApi.getTramiteActivo()
-      if (!data) {
-        router.replace('/portal/solicitud')
-        return
+      const { data } = await citizenApi.listarTramites()
+      if (data) {
+        const all = data.map(adaptTramite)
+        // Mostrar todos los trámites que no están finalizados
+        const activos = all.filter((t) => t.status !== 'finalizado')
+        setTramites(activos.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))
       }
-      const t = adaptTramite(data)
-      if (!canProceedToStep(t, 4)) {
-        router.replace('/portal/solicitud')
-        return
-      }
-      setTramite(t)
       setLoading(false)
     }
     load()
-  }, [router])
-
-  const daysInMonth = getDaysInMonth(currentYear, currentMonth)
-  const firstDayOfMonth = getFirstDayOfMonth(currentYear, currentMonth)
-  const monthName = new Date(currentYear, currentMonth).toLocaleDateString('es-MX', {
-    month: 'long',
-    year: 'numeric',
-  })
-
-  const calendarDays = useMemo(() => {
-    const days: (number | null)[] = []
-    for (let i = 0; i < firstDayOfMonth; i++) days.push(null)
-    for (let i = 1; i <= daysInMonth; i++) days.push(i)
-    return days
-  }, [firstDayOfMonth, daysInMonth])
-
-  const isDateAvailable = (day: number) => {
-    const date = new Date(currentYear, currentMonth, day)
-    const dayOfWeek = date.getDay()
-    if (dayOfWeek === 0 || dayOfWeek === 6) return false
-    if (date < new Date(today.getFullYear(), today.getMonth(), today.getDate())) return false
-    return true
-  }
-
-  const handleSelectDate = async (day: number) => {
-    if (!isDateAvailable(day)) return
-    const date = new Date(currentYear, currentMonth, day)
-    setSelectedDate(date)
-    setSelectedTime(null)
-    setAvailableSlots([])
-    setSubmitError(null)
-    setLoadingSlots(true)
-    const fechaStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-    const { data } = await publicApi.getDisponibilidad(fechaStr)
-    setLoadingSlots(false)
-    if (data) {
-      setAvailableSlots(data.availableSlots)
-    }
-  }
-
-  const handlePrevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11)
-      setCurrentYear(currentYear - 1)
-    } else {
-      setCurrentMonth(currentMonth - 1)
-    }
-  }
-
-  const handleNextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0)
-      setCurrentYear(currentYear + 1)
-    } else {
-      setCurrentMonth(currentMonth + 1)
-    }
-  }
-
-  const handleSubmit = async () => {
-    if (!tramite || !selectedDate || !selectedTime) return
-
-    setIsSubmitting(true)
-    setSubmitError(null)
-
-    const fechaStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
-    const { data, error, status } = await citizenApi.agendarCita(tramite.id, fechaStr, selectedTime)
-
-    if (error || !data) {
-      setIsSubmitting(false)
-      if (status === 409) {
-        setSubmitError('Este horario ya fue tomado. Selecciona otro.')
-        const { data: slotData } = await publicApi.getDisponibilidad(fechaStr)
-        if (slotData) setAvailableSlots(slotData.availableSlots)
-        setSelectedTime(null)
-      } else {
-        setSubmitError(error || 'Error al agendar la cita')
-      }
-      return
-    }
-
-    router.push(`/portal/confirmacion?id=${tramite.id}`)
-  }
+  }, [])
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-pulse text-gray-500">Cargando...</div>
+      <div className="space-y-6">
+        <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
+        <div className="grid sm:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="h-56 bg-white rounded-2xl border border-gray-200 animate-pulse" />
+          ))}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <ProgressStepper currentStep={4} className="mb-8" />
-
-        {/* Tramite summary */}
-        {tramite && (
-          <div className="bg-primary-50 rounded-lg p-4 mb-6">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm text-primary-700">
-                Trámite <span className="font-semibold">{tramite.id}</span> — {tramite.personalData.nombre}{' '}
-                {tramite.personalData.apellidoPaterno}
-              </p>
-              <p className="text-sm text-primary-700">
-                Licencia: <span className="font-semibold">{LICENSE_NAMES[tramite.licenseType || '']}</span>
-              </p>
-            </div>
-          </div>
-        )}
-
-        <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">
-          Selecciona fecha y hora
-        </h1>
-        <p className="text-gray-600 text-center mb-8">
-          Elige una fecha y hora disponible para tu cita en el simulador
-        </p>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Calendar */}
-          <Card padding="lg">
-            <div className="flex items-center justify-between mb-4">
-              <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 rounded-lg">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <h2 className="text-lg font-semibold capitalize">{monthName}</h2>
-              <button onClick={handleNextMonth} className="p-2 hover:bg-gray-100 rounded-lg">
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-                <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 gap-1">
-              {calendarDays.map((day, index) => {
-                if (day === null) return <div key={`empty-${index}`} />
-
-                const isAvailable = isDateAvailable(day)
-                const isSelected =
-                  selectedDate &&
-                  selectedDate.getDate() === day &&
-                  selectedDate.getMonth() === currentMonth &&
-                  selectedDate.getFullYear() === currentYear
-                const isToday =
-                  today.getDate() === day && today.getMonth() === currentMonth && today.getFullYear() === currentYear
-
-                return (
-                  <button
-                    key={day}
-                    onClick={() => handleSelectDate(day)}
-                    disabled={!isAvailable}
-                    className={`
-                      p-2 text-center rounded-lg transition-colors
-                      ${isSelected ? 'bg-primary-600 text-white' : ''}
-                      ${isToday && !isSelected ? 'ring-2 ring-primary-300' : ''}
-                      ${isAvailable && !isSelected ? 'hover:bg-primary-100' : ''}
-                      ${!isAvailable ? 'text-gray-300 cursor-not-allowed' : ''}
-                    `}
-                  >
-                    {day}
-                  </button>
-                )
-              })}
-            </div>
-          </Card>
-
-          {/* Time Slots */}
-          <Card padding="lg">
-            <h2 className="text-lg font-semibold mb-4">
-              {selectedDate ? `Horarios para ${formatDate(selectedDate)}` : 'Selecciona una fecha'}
-            </h2>
-
-            {selectedDate ? (
-              loadingSlots ? (
-                <div className="text-center text-gray-500 py-12">
-                  <div className="animate-pulse">Cargando horarios...</div>
-                </div>
-              ) : availableSlots.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
-                  {availableSlots.map((time) => (
-                    <button
-                      key={time}
-                      onClick={() => { setSelectedTime(time); setSubmitError(null) }}
-                      className={`
-                        py-3 px-4 rounded-lg border text-center transition-colors
-                        ${
-                          selectedTime === time
-                            ? 'bg-primary-600 text-white border-primary-600'
-                            : 'border-gray-200 hover:border-primary-300 hover:bg-primary-50'
-                        }
-                      `}
-                    >
-                      {time}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 py-12">
-                  <p>No hay horarios disponibles para esta fecha</p>
-                </div>
-              )
-            ) : (
-              <div className="text-center text-gray-500 py-12">
-                <p>Selecciona una fecha en el calendario para ver los horarios disponibles</p>
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {/* Confirm button */}
-        {selectedDate && selectedTime && (
-          <div className="mt-8 max-w-md mx-auto">
-            <Card padding="lg">
-              <div className="bg-primary-50 rounded-lg p-4 mb-4">
-                <h3 className="font-semibold text-primary-900 mb-2">Resumen de tu cita</h3>
-                <div className="text-sm text-primary-700 space-y-1">
-                  <p>
-                    <span className="font-medium">Licencia:</span> {LICENSE_NAMES[tramite?.licenseType || '']}
-                  </p>
-                  <p>
-                    <span className="font-medium">Fecha:</span> {formatDate(selectedDate)}
-                  </p>
-                  <p>
-                    <span className="font-medium">Hora:</span> {selectedTime}
-                  </p>
-                </div>
-              </div>
-              {submitError && (
-                <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">
-                  {submitError}
-                </div>
-              )}
-              <Button onClick={handleSubmit} className="w-full" size="lg" isLoading={isSubmitting}>
-                Confirmar Cita
-              </Button>
-            </Card>
-          </div>
-        )}
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Administrar Citas</h1>
+        <p className="text-gray-500 mt-1">Selecciona un trámite para agendar o ver tu cita en el simulador</p>
       </div>
+
+      {tramites.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <CalendarDays className="w-7 h-7 text-gray-400" />
+          </div>
+          <h3 className="text-sm font-semibold text-gray-900 mb-1">Sin trámites elegibles</h3>
+          <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+            Para agendar una cita en el simulador, primero debes iniciar un trámite y aprobar el examen teórico.
+          </p>
+          <Link
+            href="/portal/tipo-licencia"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Iniciar Trámite
+          </Link>
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-6">
+          {tramites.map((t) => {
+            const LicenseIcon = LICENSE_ICONS[t.licenseType || ''] || Car
+            const statusCfg = STATUS_CONFIG[t.status] || { label: t.status, color: 'bg-gray-100 text-gray-700', icon: Clock }
+            const StatusIcon = statusCfg.icon
+            const hasCita = !!t.appointment
+            const isElegible = canProceedToStep(t, 4) || hasCita
+            const nombre = `${t.personalData.nombre} ${t.personalData.apellidoPaterno}`
+
+            // Determinar qué prerequisito falta
+            const getMissingPrerequisite = () => {
+              if (!t.licenseType) return { message: 'Selecciona el tipo de licencia para continuar.', href: '/portal/tipo-licencia', cta: 'Seleccionar Tipo' }
+              if (!t.examResult) return { message: 'Debes aprobar el examen teórico antes de agendar tu cita.', href: '/portal/examen', cta: 'Ir al Examen' }
+              if (!t.examResult.passed) return { message: 'No aprobaste el examen teórico. Vuelve a presentarlo para poder agendar.', href: '/portal/examen', cta: 'Reintentar Examen' }
+              return null
+            }
+
+            const missing = !isElegible ? getMissingPrerequisite() : null
+
+            return (
+              <div
+                key={t.id}
+                className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow ${
+                  isElegible ? 'border-gray-200 hover:shadow-md' : 'border-gray-200 opacity-90'
+                }`}
+              >
+                <div className="p-6">
+                  {/* Header: ícono + badge */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`w-12 h-12 rounded-xl border flex items-center justify-center flex-shrink-0 ${
+                      isElegible ? 'bg-primary-50 border-primary-100' : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <LicenseIcon className={`w-6 h-6 ${isElegible ? 'text-primary-600' : 'text-gray-400'}`} />
+                    </div>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${statusCfg.color}`}>
+                      <StatusIcon className="w-3.5 h-3.5" />
+                      {statusCfg.label}
+                    </span>
+                  </div>
+
+                  {/* Info */}
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">{nombre}</h3>
+                  <p className="text-xs text-gray-500 mb-1">
+                    {LICENSE_NAMES[t.licenseType || ''] || 'Sin tipo de licencia'}
+                  </p>
+                  <p className="text-xs font-mono text-gray-400 mb-4">{t.id}</p>
+
+                  {/* Cita info (si ya tiene) */}
+                  {hasCita && t.appointment && (
+                    <div className="bg-gray-50 rounded-xl p-3 mb-4 space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-gray-700">
+                        <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="font-medium">{t.appointment.date}</span>
+                        <Clock className="w-3.5 h-3.5 text-gray-400 ml-2" />
+                        <span className="font-medium">{t.appointment.time}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-700">
+                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                        <span>Código: <span className="font-mono font-medium">{t.appointment.code}</span></span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Prerequisito faltante */}
+                  {missing && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex items-start gap-2.5">
+                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-amber-800">{missing.message}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action */}
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                  {isElegible ? (
+                    <Link
+                      href={`/portal/agendar/${t.id}`}
+                      className="inline-flex items-center gap-2 w-full justify-center px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all text-sm font-medium group"
+                    >
+                      {hasCita ? 'Ver Cita' : 'Agendar Cita'}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  ) : missing ? (
+                    <Link
+                      href={missing.href}
+                      className="inline-flex items-center gap-2 w-full justify-center px-5 py-2.5 bg-white text-primary-700 border border-primary-200 rounded-xl hover:bg-primary-50 transition-all text-sm font-medium group"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      {missing.cta}
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

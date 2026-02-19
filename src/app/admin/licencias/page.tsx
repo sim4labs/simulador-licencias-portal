@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getLicenseTypes, saveLicenseType, type LicenseType, getQuestionStats } from '@/lib/admin'
+import { adminApi } from '@/lib/admin-api'
+import type { LicenciaResponse } from '@/lib/adapters'
 import { Modal } from '@/components/admin/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -18,20 +19,22 @@ function LicenseIcon({ name, size = 24 }: { name: string; size?: number }) {
 }
 
 export default function LicenciasPage() {
-  const [licenseTypes, setLicenseTypes] = useState<LicenseType[]>([])
-  const [stats, setStats] = useState<ReturnType<typeof getQuestionStats>>({ total: 0, byCategory: {}, byDifficulty: {} })
+  const [licenseTypes, setLicenseTypes] = useState<LicenciaResponse[]>([])
   const [editModal, setEditModal] = useState(false)
-  const [editing, setEditing] = useState<LicenseType | null>(null)
+  const [editing, setEditing] = useState<LicenciaResponse | null>(null)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editRequirements, setEditRequirements] = useState('')
 
   useEffect(() => {
-    setLicenseTypes(getLicenseTypes())
-    setStats(getQuestionStats())
+    async function load() {
+      const { data } = await adminApi.listarLicencias()
+      if (data) setLicenseTypes(data)
+    }
+    load()
   }, [])
 
-  const openEdit = (lt: LicenseType) => {
+  const openEdit = (lt: LicenciaResponse) => {
     setEditing(lt)
     setEditName(lt.name)
     setEditDescription(lt.description)
@@ -39,16 +42,15 @@ export default function LicenciasPage() {
     setEditModal(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editing) return
-    const updated: LicenseType = {
-      ...editing,
+    await adminApi.actualizarLicencia(editing.licenseId, {
       name: editName,
       description: editDescription,
       requirements: editRequirements.split('\n').filter(Boolean),
-    }
-    saveLicenseType(updated)
-    setLicenseTypes(getLicenseTypes())
+    })
+    const { data } = await adminApi.listarLicencias()
+    if (data) setLicenseTypes(data)
     setEditModal(false)
   }
 
@@ -58,10 +60,10 @@ export default function LicenciasPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {licenseTypes.map(lt => {
-          const questionCount = stats.byCategory[lt.id] || 0
+          const questionCount = lt.questionCount || 0
           return (
             <div
-              key={lt.id}
+              key={lt.licenseId}
               className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl overflow-hidden hover:bg-white/80 hover:shadow-xl transition-all"
             >
               <div className="p-6">
@@ -110,7 +112,7 @@ export default function LicenciasPage() {
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                 <LicenseIcon name={editing.icon} size={20} />
               </div>
-              <span className="font-mono">{editing.id}</span>
+              <span className="font-mono">{editing.licenseId}</span>
             </div>
             <Input label="Nombre" value={editName} onChange={e => setEditName(e.target.value)} />
             <Textarea

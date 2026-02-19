@@ -11,22 +11,23 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    const session = getCurrentCitizen()
-    if (session) {
-      setAuthenticated(true)
-      setCitizenName(session.name)
-    }
-    setChecked(true)
+    getCurrentCitizen().then((session) => {
+      if (session) {
+        setAuthenticated(true)
+        setCitizenName(session.name)
+      }
+      setChecked(true)
+    })
   }, [])
 
-  const handleLogout = () => {
-    logoutCitizen()
+  const handleLogout = async () => {
+    await logoutCitizen()
     setAuthenticated(false)
     setCitizenName('')
   }
 
-  const handleAuthenticated = () => {
-    const session = getCurrentCitizen()
+  const handleAuthenticated = async () => {
+    const session = await getCurrentCitizen()
     if (session) {
       setCitizenName(session.name)
       setAuthenticated(true)

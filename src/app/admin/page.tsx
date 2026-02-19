@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { FileText, CalendarDays, Award, Gauge } from 'lucide-react'
-import { getAllTramites, type Tramite } from '@/lib/tramite'
-import { getDashboardStats } from '@/lib/admin'
+import type { Tramite } from '@/lib/tramite'
+import { adminApi } from '@/lib/admin-api'
+import { adaptTramite, type DashboardStatsResponse } from '@/lib/adapters'
 import { StatCard } from '@/components/admin/StatCard'
 import { Badge, statusVariant, statusLabel } from '@/components/admin/Badge'
 
@@ -25,12 +26,22 @@ const LICENSE_COLORS: Record<string, string> = {
 
 export default function AdminDashboard() {
   const [tramites, setTramites] = useState<Tramite[]>([])
+  const [stats, setStats] = useState<DashboardStatsResponse>({
+    total: 0, byStatus: {}, byLicenseType: {}, citasHoy: 0,
+    examenesAprobados: 0, examenesTotales: 0, simuladorPendientes: 0,
+  })
 
   useEffect(() => {
-    setTramites(getAllTramites())
+    async function load() {
+      const [statsRes, tramitesRes] = await Promise.all([
+        adminApi.getStats(),
+        adminApi.listarTramites(),
+      ])
+      if (statsRes.data) setStats(statsRes.data)
+      if (tramitesRes.data) setTramites(tramitesRes.data.map(adaptTramite))
+    }
+    load()
   }, [])
-
-  const stats = useMemo(() => getDashboardStats(tramites), [tramites])
 
   const examPassRate = stats.examenesTotales > 0
     ? Math.round((stats.examenesAprobados / stats.examenesTotales) * 100)
