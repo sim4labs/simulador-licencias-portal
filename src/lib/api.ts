@@ -54,7 +54,13 @@ export async function apiRequest<T>(
       return { data: {} as T, error: null, status: 204 }
     }
 
-    const data = await response.json()
+    const text = await response.text()
+    let data: any
+    try {
+      data = JSON.parse(text)
+    } catch {
+      data = { message: text }
+    }
 
     if (!response.ok) {
       return {

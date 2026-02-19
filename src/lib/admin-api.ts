@@ -97,6 +97,44 @@ export const adminApi = {
       pool: 'admin',
     })
   },
+
+  // ─── Admin Users ───
+
+  listarAdmins() {
+    return apiRequest<AdminUser[]>('/admin/users', { pool: 'admin' })
+  },
+
+  crearAdmin(data: { username: string; email: string; name: string }) {
+    return apiRequest<AdminUser & { temporaryPassword: string }>('/admin/users', {
+      method: 'POST',
+      body: data,
+      pool: 'admin',
+    })
+  },
+
+  toggleAdminStatus(userId: string) {
+    return apiRequest<AdminUser>(`/admin/users/${userId}/status`, {
+      method: 'PATCH',
+      pool: 'admin',
+    })
+  },
+
+  resetAdminPassword(userId: string) {
+    return apiRequest<{ message: string; temporaryPassword: string }>(
+      `/admin/users/${userId}/reset-password`,
+      { method: 'POST', pool: 'admin' }
+    )
+  },
+}
+
+export interface AdminUser {
+  userId: string
+  username: string
+  email: string
+  name: string
+  userType: string
+  isActive: boolean
+  createdAt: string
 }
 
 // ─── Public endpoints (no auth) ───
