@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, Clock, Phone, DollarSign, ChevronDown } from 'lucide-react'
 import type { Tramite } from '@/lib/tramite'
 import { citizenApi } from '@/lib/citizen-api'
 import { adaptTramite } from '@/lib/adapters'
+import { getCurrentCitizen } from '@/lib/citizen-auth'
 import { useInView } from '@/hooks/useInView'
 
 const FAQ_ITEMS = [
@@ -55,6 +57,8 @@ const STEP_ROUTES: Record<number, string> = {
 }
 
 export default function Home() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
   const [activeTramite, setActiveTramite] = useState<Tramite | null>(null)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const stepsSection = useInView(0.15)
@@ -68,6 +72,15 @@ export default function Home() {
   useEffect(() => {
     async function load() {
       try {
+        const citizen = await getCurrentCitizen()
+        if (citizen) {
+          router.replace('/portal')
+          return
+        }
+      } catch {
+        // No session — show landing page
+      }
+      try {
         const { data } = await citizenApi.getTramiteActivo()
         if (data) {
           const t = adaptTramite(data)
@@ -76,9 +89,12 @@ export default function Home() {
       } catch {
         // Not logged in — no active tramite banner
       }
+      setLoading(false)
     }
     load()
   }, [])
+
+  if (loading) return null
 
   return (
     <main className="min-h-screen flex flex-col bg-white">
