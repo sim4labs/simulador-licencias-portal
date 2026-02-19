@@ -1,0 +1,170 @@
+import { apiRequest } from './api'
+
+// ─── Interfaces para dispositivos IoT ───
+
+export interface Device {
+  thingName: string
+  nickname: string
+  connected: boolean
+  firmwareVersion: string
+  rssi?: number
+  lastSeen?: string
+}
+
+export interface ShadowReported {
+  uptime?: number
+  freeHeap?: number
+  rssi?: number
+  motorState?: string
+  firmwareVersion?: string
+  ip?: string
+  [key: string]: unknown
+}
+
+export interface JobExecution {
+  jobId: string
+  status: string
+  queuedAt: string
+  startedAt?: string
+  completedAt?: string
+  firmwareVersion?: string
+}
+
+export interface DeviceDetail extends Device {
+  location?: string
+  installedDate?: string
+  shadow: {
+    reported: ShadowReported
+  }
+  jobExecutions: JobExecution[]
+}
+
+export interface FirmwareFile {
+  key: string
+  filename: string
+  size: number
+  lastModified: string
+  version?: string
+}
+
+export interface Job {
+  jobId: string
+  status: string
+  description?: string
+  firmwareVersion?: string
+  targetCount: number
+  completedCount: number
+  failedCount: number
+  createdAt: string
+}
+
+export interface JobTargetDetail {
+  thingName: string
+  status: string
+  startedAt?: string
+  completedAt?: string
+}
+
+export interface JobDetail extends Job {
+  targets: JobTargetDetail[]
+  firmwareKey?: string
+}
+
+export interface CreateJobRequest {
+  firmwareKey: string
+  firmwareVersion: string
+  description?: string
+  targets: string[]
+}
+
+// ─── Estadísticas del dashboard IoT ───
+
+export interface IoTStats {
+  totalDevices: number
+  online: number
+  offline: number
+  activeJobs: number
+}
+
+// ─── Endpoints IoT (requieren auth admin) ───
+
+export const iotApi = {
+  // Dispositivos
+  listDevices() {
+    return apiRequest<Device[]>('/admin/iot/devices', { pool: 'admin' })
+  },
+
+  getDevice(thingName: string) {
+    return apiRequest<DeviceDetail>(`/admin/iot/devices/${thingName}`, { pool: 'admin' })
+  },
+
+  sendCommand(thingName: string, command: string, payload?: object) {
+    return apiRequest<void>(`/admin/iot/devices/${thingName}/command`, {
+      method: 'POST',
+      body: { command, payload },
+      pool: 'admin',
+    })
+  },
+
+  // Firmware
+  listFirmware() {
+    return apiRequest<FirmwareFile[]>('/admin/iot/firmware', { pool: 'admin' })
+  },
+
+  getUploadUrl(filename: string) {
+    return apiRequest<{ uploadUrl: string; key: string }>('/admin/iot/firmware/upload-url', {
+      method: 'POST',
+      body: { filename },
+      pool: 'admin',
+    })
+  },
+
+  // Jobs OTA
+  createJob(data: CreateJobRequest) {
+    return apiRequest<{ jobId: string }>('/admin/iot/jobs', {
+      method: 'POST',
+      body: data,
+      pool: 'admin',
+    })
+  },
+
+  listJobs(status?: string) {
+    return apiRequest<Job[]>(`/admin/iot/jobs${status ? `?status=${status}` : ''}`, {
+      pool: 'admin',
+    })
+  },
+
+  getJob(jobId: string) {
+    return apiRequest<JobDetail>(`/admin/iot/jobs/${jobId}`, { pool: 'admin' })
+  },
+
+  // Estadísticas (derivadas de devices y jobs)
+  async getStats(): Promise<{
+    data: IoTStats | null
+    error: string | null
+    status: number
+  }> {
+    const [devicesRes, jobsRes] = await Promise.all([
+      this.listDevices(),
+      this.listJobs('IN_PROGRESS'),
+    ])
+
+    if (devicesRes.error) {
+      return { data: null, error: devicesRes.error, status: devicesRes.status }
+    }
+
+    const devices = devicesRes.data || []
+    const jobs = jobsRes.data || []
+
+    return {
+      data: {
+        totalDevices: devices.length,
+        online: devices.filter(d => d.connected).length,
+        offline: devices.filter(d => !d.connected).length,
+        activeJobs: jobs.length,
+      },
+      error: null,
+      status: 200,
+    }
+  },
+}
