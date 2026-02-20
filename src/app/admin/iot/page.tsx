@@ -1,13 +1,27 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
 import { Cpu, Wifi, WifiOff, Radio, RefreshCw, Loader2 } from 'lucide-react'
 import { iotApi, type Device, type IoTStats } from '@/lib/iot-api'
 import { StatCard } from '@/components/admin/StatCard'
-import { DataTable } from '@/components/admin/DataTable'
-import { Badge } from '@/components/admin/Badge'
+import { SimulatorCard } from '@/components/admin/SimulatorCard'
+import { EditDeviceModal } from '@/components/admin/EditDeviceModal'
 import { Button } from '@/components/ui/Button'
+
+function sortDevices(devices: Device[]): Device[] {
+  return [...devices].sort((a, b) => {
+    // Asignados primero, respaldos al final
+    const aAssigned = a.vehicleType ? 1 : 0
+    const bAssigned = b.vehicleType ? 1 : 0
+    if (aAssigned !== bAssigned) return bAssigned - aAssigned
+
+    // Dentro de cada grupo: online primero
+    if (a.online !== b.online) return a.online ? -1 : 1
+
+    // Empate: por nombre
+    return (a.nickname || a.thingName).localeCompare(b.nickname || b.thingName)
+  })
+}
 
 export default function IoTDashboardPage() {
   const [devices, setDevices] = useState<Device[]>([])
@@ -19,6 +33,7 @@ export default function IoTDashboardPage() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [editingDevice, setEditingDevice] = useState<Device | null>(null)
 
   const loadData = useCallback(async () => {
     const [devicesRes, statsRes] = await Promise.all([
@@ -46,86 +61,13 @@ export default function IoTDashboardPage() {
     return () => clearInterval(interval)
   }, [loadData])
 
-  const columns = [
-    {
-      key: 'thingName',
-      header: 'Dispositivo',
-      render: (d: Device) => (
-        <div>
-          <Link
-            href={`/admin/iot/${d.thingName}`}
-            className="font-medium text-primary hover:underline"
-          >
-            {d.nickname || d.thingName}
-          </Link>
-          <p className="text-xs text-gray-400 font-mono">{d.thingName}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'estado',
-      header: 'Estado',
-      render: (d: Device) => (
-        <Badge variant={d.online ? 'success' : 'destructive'}>
-          {d.online ? 'En línea' : 'Fuera de línea'}
-        </Badge>
-      ),
-    },
-    {
-      key: 'firmware',
-      header: 'Firmware',
-      render: (d: Device) => (
-        <span className="text-xs font-mono">{d.firmwareVersion || '—'}</span>
-      ),
-    },
-    {
-      key: 'rssi',
-      header: 'RSSI',
-      render: (d: Device) => {
-        if (d.rssi == null) return <span className="text-xs text-gray-400">—</span>
-        const strength =
-          d.rssi >= -50 ? 'success' :
-          d.rssi >= -70 ? 'warning' :
-          'destructive'
-        return (
-          <Badge variant={strength}>{d.rssi} dBm</Badge>
-        )
-      },
-    },
-    {
-      key: 'lastSeen',
-      header: 'Última conexión',
-      render: (d: Device) => (
-        <span className="text-xs text-gray-500">
-          {d.lastUpdate
-            ? new Date(d.lastUpdate * 1000).toLocaleString('es-MX', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-            : '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'acciones',
-      header: 'Acciones',
-      render: (d: Device) => (
-        <Link href={`/admin/iot/${d.thingName}`}>
-          <Button variant="ghost" size="sm">
-            Ver detalle
-          </Button>
-        </Link>
-      ),
-    },
-  ]
+  const sorted = sortDevices(devices)
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-3 text-gray-500">Cargando dispositivos...</span>
+        <span className="ml-3 text-gray-500">Cargando simuladores...</span>
       </div>
     )
   }
@@ -133,14 +75,17 @@ export default function IoTDashboardPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dispositivos IoT</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Simuladores</h1>
+          <p className="text-sm text-gray-500 mt-1">Flota de simuladores de manejo</p>
+        </div>
         <Button variant="outline" size="sm" onClick={loadData}>
           <RefreshCw className="h-4 w-4 mr-2" />
           Actualizar
         </Button>
       </div>
 
-      {/* Tarjetas de estadísticas */}
+      {/* Tarjetas de estadisticas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           label="Total Dispositivos"
@@ -149,13 +94,13 @@ export default function IoTDashboardPage() {
           variant="primary"
         />
         <StatCard
-          label="En Línea"
+          label="En Linea"
           value={stats.online}
           icon={Wifi}
           variant="success"
         />
         <StatCard
-          label="Fuera de Línea"
+          label="Fuera de Linea"
           value={stats.offline}
           icon={WifiOff}
           variant="error"
@@ -175,12 +120,28 @@ export default function IoTDashboardPage() {
         </div>
       )}
 
-      {/* Tabla de dispositivos */}
-      <DataTable
-        columns={columns}
-        data={devices}
-        keyExtractor={(d) => d.thingName}
-        emptyMessage="No se encontraron dispositivos IoT"
+      {/* Grid de tarjetas de simuladores */}
+      {sorted.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          No se encontraron dispositivos IoT
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sorted.map((device) => (
+            <SimulatorCard
+              key={device.thingName}
+              device={device}
+              onEdit={setEditingDevice}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Modal de edicion */}
+      <EditDeviceModal
+        device={editingDevice}
+        onClose={() => setEditingDevice(null)}
+        onSaved={loadData}
       />
     </div>
   )

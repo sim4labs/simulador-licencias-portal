@@ -2,6 +2,8 @@ import { apiRequest } from './api'
 
 // ─── Interfaces para dispositivos IoT ───
 
+export type VehicleType = 'passenger_bus' | 'cargo_truck' | 'car' | 'motorcycle'
+
 export interface Device {
   thingName: string
   nickname: string
@@ -10,6 +12,16 @@ export interface Device {
   rssi?: number
   ip?: string
   lastUpdate?: number
+  vehicleType?: VehicleType | null
+  serialNumber?: string | null
+}
+
+export interface UpdateDeviceRequest {
+  nickname?: string
+  vehicleType?: VehicleType | null
+  serialNumber?: string | null
+  location?: string | null
+  notes?: string | null
 }
 
 export interface ShadowReported {
@@ -99,6 +111,14 @@ export const iotApi = {
 
   getDevice(thingName: string) {
     return apiRequest<DeviceDetail>(`/admin/iot/devices/${thingName}`, { pool: 'admin' })
+  },
+
+  updateDevice(thingName: string, data: UpdateDeviceRequest) {
+    return apiRequest<{ message: string }>(`/admin/iot/devices/${thingName}`, {
+      method: 'PATCH',
+      body: data,
+      pool: 'admin',
+    })
   },
 
   sendCommand(thingName: string, command: string, payload?: object) {
