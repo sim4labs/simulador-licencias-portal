@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users, BarChart3, Download } from 'lucide-react'
 
 const navSections = [
   {
@@ -20,6 +20,7 @@ const navSections = [
     title: 'Simuladores',
     items: [
       { href: '/admin/iot', label: 'Dispositivos IoT', icon: Cpu },
+      { href: '/admin/iot/firmware', label: 'Firmware', icon: Download },
     ],
   },
   {

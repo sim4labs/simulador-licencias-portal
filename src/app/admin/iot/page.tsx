@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Cpu, Wifi, WifiOff, Radio, RefreshCw, Loader2 } from 'lucide-react'
-import { iotApi, type Device, type IoTStats } from '@/lib/iot-api'
-import { StatCard } from '@/components/admin/StatCard'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { RefreshCw, Loader2 } from 'lucide-react'
+import { iotApi, type Device } from '@/lib/iot-api'
 import { SimulatorCard } from '@/components/admin/SimulatorCard'
 import { EditDeviceModal } from '@/components/admin/EditDeviceModal'
 import { Button } from '@/components/ui/Button'
@@ -23,23 +22,23 @@ function sortDevices(devices: Device[]): Device[] {
   })
 }
 
+const vehicleTypeLabels: Record<string, string> = {
+  passenger_bus: 'Camión Pasajeros',
+  cargo_truck: 'Camión Carga',
+  car: 'Automóvil',
+  motorcycle: 'Motocicleta',
+}
+
 export default function IoTDashboardPage() {
   const [devices, setDevices] = useState<Device[]>([])
-  const [stats, setStats] = useState<IoTStats>({
-    totalDevices: 0,
-    online: 0,
-    offline: 0,
-    activeJobs: 0,
-  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editingDevice, setEditingDevice] = useState<Device | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
 
   const loadData = useCallback(async () => {
-    const [devicesRes, statsRes] = await Promise.all([
-      iotApi.listDevices(),
-      iotApi.getStats(),
-    ])
+    const devicesRes = await iotApi.listDevices()
 
     if (devicesRes.error) {
       setError(devicesRes.error)
@@ -47,8 +46,6 @@ export default function IoTDashboardPage() {
       setDevices(devicesRes.data || [])
       setError(null)
     }
-
-    if (statsRes.data) setStats(statsRes.data)
 
     setLoading(false)
   }, [])
@@ -61,7 +58,21 @@ export default function IoTDashboardPage() {
     return () => clearInterval(interval)
   }, [loadData])
 
-  const sorted = sortDevices(devices)
+  const totalDevices = devices.length
+  const onlineCount = devices.filter(d => d.online).length
+  const offlineCount = totalDevices - onlineCount
+
+  const filtered = useMemo(() => {
+    return devices.filter(d => {
+      if (statusFilter === 'online' && !d.online) return false
+      if (statusFilter === 'offline' && d.online) return false
+      if (typeFilter === 'unassigned' && d.vehicleType) return false
+      if (typeFilter !== 'all' && typeFilter !== 'unassigned' && d.vehicleType !== typeFilter) return false
+      return true
+    })
+  }, [devices, statusFilter, typeFilter])
+
+  const sorted = sortDevices(filtered)
 
   if (loading) {
     return (
@@ -79,38 +90,43 @@ export default function IoTDashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900">Simuladores</h1>
           <p className="text-sm text-gray-500 mt-1">Flota de simuladores de manejo</p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadData}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Actualizar
-        </Button>
       </div>
 
-      {/* Tarjetas de estadisticas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          label="Total Dispositivos"
-          value={stats.totalDevices}
-          icon={Cpu}
-          variant="primary"
-        />
-        <StatCard
-          label="En Linea"
-          value={stats.online}
-          icon={Wifi}
-          variant="success"
-        />
-        <StatCard
-          label="Fuera de Linea"
-          value={stats.offline}
-          icon={WifiOff}
-          variant="error"
-        />
-        <StatCard
-          label="Jobs OTA Activos"
-          value={stats.activeJobs}
-          icon={Radio}
-          variant="info"
-        />
+      {/* Barra de resumen + filtros */}
+      <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-gray-600 mr-auto">
+            <span className="font-semibold text-gray-900">{totalDevices}</span> dispositivos
+            {' · '}
+            <span className="font-semibold text-emerald-600">{onlineCount}</span> en línea
+            {' · '}
+            <span className="font-semibold text-gray-400">{offlineCount}</span> fuera de línea
+          </p>
+          <select
+            className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+          >
+            <option value="all">Todos los estados</option>
+            <option value="online">En línea</option>
+            <option value="offline">Fuera de línea</option>
+          </select>
+          <select
+            className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+            value={typeFilter}
+            onChange={e => setTypeFilter(e.target.value)}
+          >
+            <option value="all">Todos los tipos</option>
+            {Object.entries(vehicleTypeLabels).map(([k, v]) => (
+              <option key={k} value={k}>{v}</option>
+            ))}
+            <option value="unassigned">Sin asignar</option>
+          </select>
+          <Button variant="outline" size="sm" onClick={loadData}>
+            <RefreshCw className="h-4 w-4 mr-1.5" />
+            Actualizar
+          </Button>
+        </div>
       </div>
 
       {/* Mensaje de error */}
@@ -123,7 +139,9 @@ export default function IoTDashboardPage() {
       {/* Grid de tarjetas de simuladores */}
       {sorted.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
-          No se encontraron dispositivos IoT
+          {devices.length === 0
+            ? 'No se encontraron dispositivos IoT'
+            : 'Ningún dispositivo coincide con los filtros seleccionados'}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -137,7 +155,7 @@ export default function IoTDashboardPage() {
         </div>
       )}
 
-      {/* Modal de edicion */}
+      {/* Modal de edición */}
       <EditDeviceModal
         device={editingDevice}
         onClose={() => setEditingDevice(null)}
