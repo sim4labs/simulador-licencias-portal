@@ -27,6 +27,8 @@ const COLORS = {
   success: '#22c55e',
   danger: '#ef4444',
   info: '#3b82f6',
+  warning: '#f59e0b',
+  slate: '#64748b',
 }
 
 function formatTimestamp(iso: string, period: Period): string {
@@ -35,11 +37,13 @@ function formatTimestamp(iso: string, period: Period): string {
   return format(d, 'dd MMM', { locale: es })
 }
 
-function StatCard({ title, value, color }: { title: string; value: number; color: string }) {
+function StatCard({ title, value, color, unit }: { title: string; value: number; color: string; unit?: string }) {
   return (
     <div className="bg-white rounded-lg shadow p-5">
       <p className="text-sm text-gray-500">{title}</p>
-      <p className="text-3xl font-bold mt-1" style={{ color }}>{value}</p>
+      <p className="text-3xl font-bold mt-1" style={{ color }}>
+        {value}{unit && <span className="text-base font-normal text-gray-400 ml-1">{unit}</span>}
+      </p>
     </div>
   )
 }
@@ -115,6 +119,22 @@ export default function MetricsPage() {
     ? mergeDatapoints({
         'Auth Failures': m.authFailures?.datapoints || [],
         'Cold Starts': m.coldStarts?.datapoints || [],
+      }, period)
+    : []
+
+  const latencyData = m
+    ? mergeDatapoints({
+        'Latencia Avg': m.apiLatencyAvg?.datapoints || [],
+        'Latencia P99': m.apiLatencyP99?.datapoints || [],
+        'Integración Avg': m.apiIntegrationLatency?.datapoints || [],
+      }, period)
+    : []
+
+  const apiErrorsData = m
+    ? mergeDatapoints({
+        'Requests': m.apiRequests?.datapoints || [],
+        '4xx': m.api4xx?.datapoints || [],
+        '5xx': m.api5xx?.datapoints || [],
       }, period)
     : []
 
@@ -225,6 +245,50 @@ export default function MetricsPage() {
               <Legend />
               <Bar dataKey="Auth Failures" fill={COLORS.danger} />
               <Bar dataKey="Cold Starts" fill={COLORS.info} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* API Performance */}
+      <h2 className="text-xl font-bold text-gray-900 pt-2">Performance API</h2>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Requests totales" value={m?.apiRequests?.total ?? 0} color={COLORS.primary} />
+        <StatCard title="Latencia promedio" value={m?.apiLatencyAvg?.total ?? 0} color={COLORS.info} unit="ms" />
+        <StatCard title="Errores 4xx" value={m?.api4xx?.total ?? 0} color={COLORS.warning} />
+        <StatCard title="Errores 5xx" value={m?.api5xx?.total ?? 0} color={COLORS.danger} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow p-5">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Latencia (ms)</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={latencyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="time" fontSize={12} />
+              <YAxis fontSize={12} unit=" ms" />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="Latencia Avg" stroke={COLORS.info} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Latencia P99" stroke={COLORS.danger} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Integración Avg" stroke={COLORS.slate} strokeWidth={2} strokeDasharray="5 5" dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-5">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Requests y Errores</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={apiErrorsData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="time" fontSize={12} />
+              <YAxis fontSize={12} allowDecimals={false} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="Requests" fill={COLORS.primary} />
+              <Bar dataKey="4xx" fill={COLORS.warning} />
+              <Bar dataKey="5xx" fill={COLORS.danger} />
             </BarChart>
           </ResponsiveContainer>
         </div>
