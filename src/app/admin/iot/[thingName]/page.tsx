@@ -18,9 +18,19 @@ import {
   MapPin,
   Calendar,
 } from 'lucide-react'
-import { iotApi, type DeviceDetail, type JobExecution } from '@/lib/iot-api'
+import {
+  iotApi,
+  getDeviceStats,
+  type DeviceDetail,
+  type JobExecution,
+  type DeviceStats,
+} from '@/lib/iot-api'
 import { Badge } from '@/components/admin/Badge'
 import { Button } from '@/components/ui/Button'
+import { Tabs } from '@/components/admin/Tabs'
+import { DeviceHeader } from '@/components/admin/DeviceHeader'
+import { DeviceSessionsTable } from '@/components/admin/DeviceSessionsTable'
+import { DeviceCalendar } from '@/components/admin/DeviceCalendar'
 
 /** Formatea segundos de uptime a texto legible */
 function formatUptime(seconds: number): string {
@@ -67,14 +77,22 @@ function jobStatusLabel(status: string): string {
   }
 }
 
+const DEVICE_TABS = [
+  { id: 'estado', label: 'Estado' },
+  { id: 'pruebas', label: 'Pruebas' },
+  { id: 'calendario', label: 'Calendario' },
+]
+
 export default function DeviceDetailPage() {
   const params = useParams()
   const thingName = params.thingName as string
 
   const [device, setDevice] = useState<DeviceDetail | null>(null)
+  const [stats, setStats] = useState<DeviceStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [commandLoading, setCommandLoading] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('estado')
 
   const loadDevice = useCallback(async () => {
     const { data, error: err } = await iotApi.getDevice(thingName)
@@ -87,13 +105,19 @@ export default function DeviceDetailPage() {
     setLoading(false)
   }, [thingName])
 
+  const loadStats = useCallback(async () => {
+    const data = await getDeviceStats(thingName)
+    setStats(data)
+  }, [thingName])
+
   useEffect(() => {
     loadDevice()
+    loadStats()
 
     // Polling cada 5 segundos
     const interval = setInterval(loadDevice, 5_000)
     return () => clearInterval(interval)
-  }, [loadDevice])
+  }, [loadDevice, loadStats])
 
   const handleCommand = async (command: string) => {
     setCommandLoading(command)
@@ -136,28 +160,15 @@ export default function DeviceDetailPage() {
   return (
     <div>
       {/* Navegación */}
-      <Link href="/admin/iot" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6">
-        <ArrowLeft className="h-4 w-4" />
-        Volver a dispositivos
-      </Link>
-
-      {/* Encabezado */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {device.nickname || device.thingName}
-          </h1>
-          <p className="text-sm text-gray-500 font-mono">{device.thingName}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge variant={device.online ? 'success' : 'destructive'} className="text-sm px-3 py-1">
-            {device.online ? 'En línea' : 'Fuera de línea'}
-          </Badge>
-          <Button variant="outline" size="sm" onClick={loadDevice}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Actualizar
-          </Button>
-        </div>
+        <Link href="/admin/iot" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+          <ArrowLeft className="h-4 w-4" />
+          Volver a dispositivos
+        </Link>
+        <Button variant="outline" size="sm" onClick={loadDevice}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Actualizar
+        </Button>
       </div>
 
       {/* Mensaje de error */}
@@ -167,6 +178,52 @@ export default function DeviceDetailPage() {
         </div>
       )}
 
+      {/* Header con stats */}
+      <DeviceHeader
+        device={device}
+        shadow={reported}
+        stats={stats || { totalSessions: 0, passRate: 0, todayAppointments: 0, avgScore: 0 }}
+      />
+
+      {/* Tabs */}
+      <Tabs tabs={DEVICE_TABS} activeTab={activeTab} onChange={setActiveTab} className="mb-6" />
+
+      {/* Contenido del tab activo */}
+      {activeTab === 'estado' && (
+        <EstadoTab
+          device={device}
+          reported={reported}
+          commandLoading={commandLoading}
+          onCommand={handleCommand}
+        />
+      )}
+
+      {activeTab === 'pruebas' && (
+        <DeviceSessionsTable thingName={thingName} />
+      )}
+
+      {activeTab === 'calendario' && (
+        <DeviceCalendar
+          thingName={thingName}
+          vehicleType={device.vehicleType}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Tab Estado (contenido existente sin cambios funcionales) ───
+
+interface EstadoTabProps {
+  device: DeviceDetail
+  reported: import('@/lib/iot-api').ShadowReported
+  commandLoading: string | null
+  onCommand: (command: string) => void
+}
+
+function EstadoTab({ device, reported, commandLoading, onCommand }: EstadoTabProps) {
+  return (
+    <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Información del dispositivo */}
         <div className="bg-white rounded-lg shadow">
@@ -277,7 +334,7 @@ export default function DeviceDetailPage() {
             size="sm"
             disabled={!device.online || commandLoading !== null}
             isLoading={commandLoading === 'restart'}
-            onClick={() => handleCommand('restart')}
+            onClick={() => onCommand('restart')}
           >
             <RotateCcw className="h-4 w-4 mr-2" />
             Reiniciar
@@ -287,7 +344,7 @@ export default function DeviceDetailPage() {
             size="sm"
             disabled={!device.online || commandLoading !== null}
             isLoading={commandLoading === 'reset-wifi'}
-            onClick={() => handleCommand('reset-wifi')}
+            onClick={() => onCommand('reset-wifi')}
           >
             <Wifi className="h-4 w-4 mr-2" />
             Reset WiFi
@@ -297,7 +354,7 @@ export default function DeviceDetailPage() {
             size="sm"
             disabled={!device.online || commandLoading !== null}
             isLoading={commandLoading === 'identify'}
-            onClick={() => handleCommand('identify')}
+            onClick={() => onCommand('identify')}
           >
             <Eye className="h-4 w-4 mr-2" />
             Identificar
@@ -356,7 +413,7 @@ export default function DeviceDetailPage() {
           )}
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
