@@ -195,6 +195,19 @@ export interface DashboardStatsResponse {
   simuladorPendientes: number
 }
 
+// Metrics
+export interface MetricSeries {
+  datapoints: { t: string; v: number }[]
+  total: number
+}
+
+export interface MetricsResponse {
+  period: string
+  start: string
+  end: string
+  metrics: Record<string, MetricSeries>
+}
+
 // Exam submission result
 export interface ExamSubmitResponse {
   totalQuestions: number

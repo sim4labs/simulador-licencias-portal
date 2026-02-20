@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users } from 'lucide-react'
+import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users, BarChart3 } from 'lucide-react'
 
 const navSections = [
   {
@@ -13,6 +13,7 @@ const navSections = [
       { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/admin/calendario', label: 'Calendario', icon: Calendar },
       { href: '/admin/tramites', label: 'Trámites', icon: FileText },
+      { href: '/admin/metrics', label: 'Métricas', icon: BarChart3 },
     ],
   },
   {

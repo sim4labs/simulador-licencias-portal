@@ -7,6 +7,7 @@ import type {
   ConfirmacionResponse,
   DashboardStatsResponse,
   TramitePublicResponse,
+  MetricsResponse,
 } from './adapters'
 
 // ─── Admin endpoints (require admin auth) ───
@@ -96,6 +97,12 @@ export const adminApi = {
       body: data,
       pool: 'admin',
     })
+  },
+
+  // ─── Métricas ───
+
+  getMetrics(period: string = '24h') {
+    return apiRequest<MetricsResponse>(`/admin/metrics?period=${period}`, { pool: 'admin' })
   },
 
   // ─── Admin Users ───
