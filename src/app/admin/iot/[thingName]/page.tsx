@@ -131,7 +131,7 @@ export default function DeviceDetailPage() {
 
   if (!device) return null
 
-  const reported = device.shadow?.reported || {}
+  const reported: import('@/lib/iot-api').ShadowReported = device.shadow?.reported || {}
 
   return (
     <div>
@@ -150,8 +150,8 @@ export default function DeviceDetailPage() {
           <p className="text-sm text-gray-500 font-mono">{device.thingName}</p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant={device.connected ? 'success' : 'destructive'} className="text-sm px-3 py-1">
-            {device.connected ? 'En línea' : 'Fuera de línea'}
+          <Badge variant={device.online ? 'success' : 'destructive'} className="text-sm px-3 py-1">
+            {device.online ? 'En línea' : 'Fuera de línea'}
           </Badge>
           <Button variant="outline" size="sm" onClick={loadDevice}>
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -221,7 +221,7 @@ export default function DeviceDetailPage() {
             <InfoRow
               icon={HardDrive}
               label="Heap libre"
-              value={reported.freeHeap != null ? formatBytes(reported.freeHeap) : '—'}
+              value={reported.heap != null ? formatBytes(reported.heap) : '—'}
             />
             <InfoRow
               icon={Signal}
@@ -248,8 +248,13 @@ export default function DeviceDetailPage() {
             />
             <InfoRow
               icon={Activity}
-              label="Estado del motor"
-              value={reported.motorState || '—'}
+              label="Motor 1"
+              value={reported.m1 ? `${reported.m1.state} (pos: ${reported.m1.pos}°)` : '—'}
+            />
+            <InfoRow
+              icon={Activity}
+              label="Motor 2"
+              value={reported.m2 ? `${reported.m2.state} (pos: ${reported.m2.pos}°)` : '—'}
             />
             <InfoRow
               icon={Wifi}
@@ -270,7 +275,7 @@ export default function DeviceDetailPage() {
           <Button
             variant="outline"
             size="sm"
-            disabled={!device.connected || commandLoading !== null}
+            disabled={!device.online || commandLoading !== null}
             isLoading={commandLoading === 'restart'}
             onClick={() => handleCommand('restart')}
           >
@@ -280,7 +285,7 @@ export default function DeviceDetailPage() {
           <Button
             variant="outline"
             size="sm"
-            disabled={!device.connected || commandLoading !== null}
+            disabled={!device.online || commandLoading !== null}
             isLoading={commandLoading === 'reset-wifi'}
             onClick={() => handleCommand('reset-wifi')}
           >
@@ -290,14 +295,14 @@ export default function DeviceDetailPage() {
           <Button
             variant="outline"
             size="sm"
-            disabled={!device.connected || commandLoading !== null}
+            disabled={!device.online || commandLoading !== null}
             isLoading={commandLoading === 'identify'}
             onClick={() => handleCommand('identify')}
           >
             <Eye className="h-4 w-4 mr-2" />
             Identificar
           </Button>
-          {!device.connected && (
+          {!device.online && (
             <p className="text-xs text-gray-400 self-center ml-2">
               El dispositivo debe estar en línea para recibir comandos
             </p>

@@ -5,19 +5,22 @@ import { apiRequest } from './api'
 export interface Device {
   thingName: string
   nickname: string
-  connected: boolean
+  online: boolean
   firmwareVersion: string
   rssi?: number
-  lastSeen?: string
+  ip?: string
+  lastUpdate?: number
 }
 
 export interface ShadowReported {
   uptime?: number
-  freeHeap?: number
+  heap?: number
   rssi?: number
-  motorState?: string
-  firmwareVersion?: string
   ip?: string
+  firmware?: string
+  lastUpdate?: number
+  m1?: { state: string; pos: number; speed: number; moving: boolean; cycles: number }
+  m2?: { state: string; pos: number; speed: number; moving: boolean; cycles: number }
   [key: string]: unknown
 }
 
@@ -159,8 +162,8 @@ export const iotApi = {
     return {
       data: {
         totalDevices: devices.length,
-        online: devices.filter(d => d.connected).length,
-        offline: devices.filter(d => !d.connected).length,
+        online: devices.filter(d => d.online).length,
+        offline: devices.filter(d => !d.online).length,
         activeJobs: jobs.length,
       },
       error: null,

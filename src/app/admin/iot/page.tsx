@@ -66,8 +66,8 @@ export default function IoTDashboardPage() {
       key: 'estado',
       header: 'Estado',
       render: (d: Device) => (
-        <Badge variant={d.connected ? 'success' : 'destructive'}>
-          {d.connected ? 'En línea' : 'Fuera de línea'}
+        <Badge variant={d.online ? 'success' : 'destructive'}>
+          {d.online ? 'En línea' : 'Fuera de línea'}
         </Badge>
       ),
     },
@@ -97,8 +97,8 @@ export default function IoTDashboardPage() {
       header: 'Última conexión',
       render: (d: Device) => (
         <span className="text-xs text-gray-500">
-          {d.lastSeen
-            ? new Date(d.lastSeen).toLocaleString('es-MX', {
+          {d.lastUpdate
+            ? new Date(d.lastUpdate * 1000).toLocaleString('es-MX', {
                 day: 'numeric',
                 month: 'short',
                 hour: '2-digit',
