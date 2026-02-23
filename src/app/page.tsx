@@ -58,7 +58,6 @@ const STEP_ROUTES: Record<number, string> = {
 
 export default function Home() {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
   const [activeTramite, setActiveTramite] = useState<Tramite | null>(null)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const stepsSection = useInView(0.15)
@@ -89,12 +88,9 @@ export default function Home() {
       } catch {
         // Not logged in — no active tramite banner
       }
-      setLoading(false)
     }
     load()
   }, [])
-
-  if (loading) return null
 
   return (
     <main className="min-h-screen flex flex-col bg-white">
