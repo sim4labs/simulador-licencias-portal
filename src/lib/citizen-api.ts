@@ -56,4 +56,46 @@ export const citizenApi = {
       pool: 'citizen',
     })
   },
+
+  getPhotoUploadUrl(tramiteId: string) {
+    return apiRequest<{ uploadUrl: string; s3Key: string }>(
+      `/ciudadano/tramites/${tramiteId}/foto-url`,
+      { method: 'POST', pool: 'citizen' }
+    )
+  },
+}
+
+// ─── Kiosk API (público — sin auth) ───
+
+export const kioskApi = {
+  createSession() {
+    return apiRequest<{ sessionId: string; expiresAt: string }>('/kiosk/sessions', {
+      method: 'POST',
+    })
+  },
+
+  startVerify(sessionId: string, appointmentCode: string) {
+    return apiRequest<{ livenessSessionId: string; citizenName: string; tramiteId: string }>(
+      `/kiosk/sessions/${sessionId}/start`,
+      { method: 'POST', body: { appointmentCode } }
+    )
+  },
+
+  completeVerify(sessionId: string) {
+    return apiRequest<{ verified: boolean; confidence: number }>(
+      `/kiosk/sessions/${sessionId}/complete`,
+      { method: 'POST' }
+    )
+  },
+
+  getSessionStatus(sessionId: string) {
+    return apiRequest<{
+      status: 'pending' | 'verifying' | 'verified' | 'failed'
+      citizenName?: string
+      tramiteId?: string
+      verifiedAt?: string
+      faceMatchConfidence?: number
+      reason?: string
+    }>(`/kiosk/sessions/${sessionId}/status`)
+  },
 }
