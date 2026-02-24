@@ -60,6 +60,7 @@ export interface FirmwareFile {
   size: number
   lastModified: string
   version?: string
+  environment?: string
 }
 
 export interface Job {
