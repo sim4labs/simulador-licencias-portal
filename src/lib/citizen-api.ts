@@ -74,10 +74,10 @@ export const kioskApi = {
     })
   },
 
-  startVerify(sessionId: string, appointmentCode: string) {
-    return apiRequest<{ livenessSessionId: string; citizenName: string; tramiteId: string }>(
+  startVerify(sessionId: string) {
+    return apiRequest<{ livenessSessionId: string }>(
       `/kiosk/sessions/${sessionId}/start`,
-      { method: 'POST', body: { appointmentCode } }
+      { method: 'POST' }
     )
   },
 
