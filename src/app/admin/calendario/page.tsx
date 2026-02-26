@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { startOfMonth, endOfMonth, format } from 'date-fns'
 import type { Tramite } from '@/lib/tramite'
 import { adminApi } from '@/lib/admin-api'
 import { adaptTramite } from '@/lib/adapters'
@@ -11,7 +12,10 @@ export default function CalendarioPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await adminApi.getCitas({})
+      const now = new Date()
+      const desde = format(startOfMonth(now), 'yyyy-MM-dd')
+      const hasta = format(endOfMonth(now), 'yyyy-MM-dd')
+      const { data } = await adminApi.getCitas({ desde, hasta })
       if (data) setTramites(data.map(adaptTramite))
     }
     load()
