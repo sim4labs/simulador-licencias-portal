@@ -10,6 +10,28 @@ import type {
   MetricsResponse,
 } from './adapters'
 
+export interface ScoringConfig {
+  penalties: {
+    speeding: number
+    pedestrianHit: number
+    bicycleCollision: number
+    vehicleCollision: number
+    signCollision: number
+    obstacleCollision: number
+    redLight: number
+    wrongWay: number
+    dangerousGearChange: number
+  }
+  passingScore: number
+  gradeThresholds: {
+    apto: number
+    aptoCondicionado: number
+    aptoReentrenamiento: number
+  }
+  examDurationSeconds: number
+  updatedAt?: string
+}
+
 // ─── Admin endpoints (require admin auth) ───
 
 export const adminApi = {
@@ -93,6 +115,20 @@ export const adminApi = {
 
   actualizarLicencia(licenseId: string, data: Partial<LicenciaResponse>) {
     return apiRequest<LicenciaResponse>(`/admin/licencias/${licenseId}`, {
+      method: 'PUT',
+      body: data,
+      pool: 'admin',
+    })
+  },
+
+  // ─── Scoring Config ───
+
+  getScoringConfig() {
+    return apiRequest<ScoringConfig>('/admin/scoring-config', { pool: 'admin' })
+  },
+
+  updateScoringConfig(data: ScoringConfig) {
+    return apiRequest<{ success: boolean; updatedAt: string }>('/admin/scoring-config', {
       method: 'PUT',
       body: data,
       pool: 'admin',

@@ -1,0 +1,268 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { adminApi } from '@/lib/admin-api'
+import type { ScoringConfig } from '@/lib/admin-api'
+import { Button } from '@/components/ui/Button'
+import { Save, RefreshCw, AlertTriangle } from 'lucide-react'
+
+const DEFAULTS: ScoringConfig = {
+  penalties: {
+    speeding: 5,
+    pedestrianHit: 25,
+    bicycleCollision: 15,
+    vehicleCollision: 10,
+    signCollision: 5,
+    obstacleCollision: 5,
+    redLight: 20,
+    wrongWay: 15,
+    dangerousGearChange: 20,
+  },
+  passingScore: 70,
+  gradeThresholds: {
+    apto: 90,
+    aptoCondicionado: 80,
+    aptoReentrenamiento: 70,
+  },
+  examDurationSeconds: 300,
+}
+
+const PENALTY_LABELS: Record<string, { label: string; severity: string }> = {
+  pedestrianHit: { label: 'Atropello de peatón', severity: 'critical' },
+  bicycleCollision: { label: 'Colisión con bicicleta', severity: 'major' },
+  vehicleCollision: { label: 'Colisión vehicular', severity: 'major' },
+  redLight: { label: 'Semáforo en rojo', severity: 'major' },
+  wrongWay: { label: 'Sentido contrario', severity: 'major' },
+  dangerousGearChange: { label: 'Cambio de marcha peligroso', severity: 'major' },
+  speeding: { label: 'Exceso de velocidad', severity: 'minor' },
+  signCollision: { label: 'Colisión con señalamiento', severity: 'minor' },
+  obstacleCollision: { label: 'Colisión con obstáculo', severity: 'minor' },
+}
+
+const SEVERITY_COLORS: Record<string, string> = {
+  critical: 'bg-red-100 text-red-700 border-red-200',
+  major: 'bg-amber-100 text-amber-700 border-amber-200',
+  minor: 'bg-blue-100 text-blue-700 border-blue-200',
+}
+
+export default function ScoringPage() {
+  const [config, setConfig] = useState<ScoringConfig>(DEFAULTS)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [lastSync, setLastSync] = useState<string | null>(null)
+
+  const load = async () => {
+    setLoading(true)
+    setError(null)
+    const { data, error: err } = await adminApi.getScoringConfig()
+    if (data) {
+      setConfig({ ...DEFAULTS, ...data })
+      setLastSync(data.updatedAt ?? null)
+    } else if (err) {
+      setError(err)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    setSaved(false)
+    const { error: err } = await adminApi.updateScoringConfig(config)
+    if (err) {
+      setError(err)
+    } else {
+      setSaved(true)
+      await load()
+      setTimeout(() => setSaved(false), 3000)
+    }
+    setSaving(false)
+  }
+
+  const setPenalty = (key: string, value: number) => {
+    setConfig(prev => ({
+      ...prev,
+      penalties: { ...prev.penalties, [key]: value },
+    }))
+  }
+
+  const setThreshold = (key: string, value: number) => {
+    setConfig(prev => ({
+      ...prev,
+      gradeThresholds: { ...prev.gradeThresholds, [key]: value },
+    }))
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Calificación del Simulador</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Configuración de penalizaciones, umbrales de aprobación y duración del examen.
+            {lastSync && (
+              <span className="ml-2 text-gray-400">
+                Última actualización: {new Date(lastSync).toLocaleString('es-MX')}
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={load} disabled={saving}>
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Recargar
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            <Save className="h-4 w-4 mr-1" />
+            {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar'}
+          </Button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Penalizaciones */}
+        <div className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Penalizaciones por infracción</h2>
+          <p className="text-xs text-gray-500 mb-4">Puntos que se restan por cada tipo de infracción durante el examen.</p>
+          <div className="space-y-3">
+            {Object.entries(PENALTY_LABELS).map(([key, { label, severity }]) => (
+              <div key={key} className="flex items-center gap-3">
+                <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border ${SEVERITY_COLORS[severity]}`}>
+                  {severity === 'critical' ? 'CRIT' : severity === 'major' ? 'MAJ' : 'MIN'}
+                </span>
+                <label className="flex-1 text-sm text-gray-700">{label}</label>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm text-gray-400">-</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={config.penalties[key as keyof typeof config.penalties]}
+                    onChange={e => setPenalty(key, parseInt(e.target.value) || 0)}
+                    className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                  <span className="text-sm text-gray-400">pts</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Umbrales y Duración */}
+        <div className="space-y-6">
+          {/* Calificación mínima */}
+          <div className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Calificación mínima aprobatoria</h2>
+            <div className="flex items-center gap-4">
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={config.passingScore}
+                onChange={e => setConfig(prev => ({ ...prev, passingScore: parseInt(e.target.value) }))}
+                className="flex-1 accent-primary"
+              />
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={config.passingScore}
+                  onChange={e => setConfig(prev => ({ ...prev, passingScore: parseInt(e.target.value) || 0 }))}
+                  className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-400">pts</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Umbrales de grado */}
+          <div className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Umbrales de resultado</h2>
+            <p className="text-xs text-gray-500 mb-4">Rangos de puntuación para cada resultado del examen.</p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="w-36 text-sm font-medium text-green-700">APTO</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={config.gradeThresholds.apto}
+                  onChange={e => setThreshold('apto', parseInt(e.target.value) || 0)}
+                  className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-500">- 100 pts</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-36 text-sm font-medium text-amber-600">APTO CONDICIONADO</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={config.gradeThresholds.aptoCondicionado}
+                  onChange={e => setThreshold('aptoCondicionado', parseInt(e.target.value) || 0)}
+                  className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-500">- {config.gradeThresholds.apto - 1} pts</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-36 text-sm font-medium text-amber-500">REENTRENAMIENTO</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={config.gradeThresholds.aptoReentrenamiento}
+                  onChange={e => setThreshold('aptoReentrenamiento', parseInt(e.target.value) || 0)}
+                  className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-500">- {config.gradeThresholds.aptoCondicionado - 1} pts</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-36 text-sm font-medium text-red-600">NO APTO</span>
+                <span className="text-sm text-gray-500">0 - {config.gradeThresholds.aptoReentrenamiento - 1} pts</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Duración */}
+          <div className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Duración del examen</h2>
+            <div className="flex items-center gap-4">
+              <input
+                type="number"
+                min={60}
+                max={1800}
+                step={30}
+                value={config.examDurationSeconds}
+                onChange={e => setConfig(prev => ({ ...prev, examDurationSeconds: parseInt(e.target.value) || 300 }))}
+                className="w-24 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+              <span className="text-sm text-gray-500">
+                segundos ({Math.floor(config.examDurationSeconds / 60)}:{String(config.examDurationSeconds % 60).padStart(2, '0')} min)
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

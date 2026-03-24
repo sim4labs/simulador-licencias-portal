@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Bus, Truck, Car, Bike, CircleDashed, Settings, ArrowRight } from 'lucide-react'
+import { Bus, Truck, Car, Bike, CircleDashed, Settings, ArrowRight, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Device } from '@/lib/iot-api'
 import { Button } from '@/components/ui/Button'
@@ -147,7 +147,18 @@ export function SimulatorCard({ device, onEdit }: SimulatorCardProps) {
         </div>
         <div>
           <span className="text-gray-400 text-xs">IP</span>
-          <p className="font-mono text-gray-700 text-xs">{device.ip || '—'}</p>
+          {device.ip ? (
+            <a
+              href={`http://${device.ip}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-xs text-blue-600 hover:text-blue-800 hover:underline block"
+            >
+              {device.ip}
+            </a>
+          ) : (
+            <p className="font-mono text-gray-700 text-xs">—</p>
+          )}
         </div>
         <div>
           <span className="text-gray-400 text-xs">Última</span>
@@ -166,10 +177,20 @@ export function SimulatorCard({ device, onEdit }: SimulatorCardProps) {
 
       {/* Acciones */}
       <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-between mt-auto">
-        <Button variant="outline" size="sm" onClick={() => onEdit(device)}>
-          <Settings className="h-3.5 w-3.5 mr-1.5" />
-          {isSpare ? 'Asignar' : 'Configurar'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => onEdit(device)}>
+            <Settings className="h-3.5 w-3.5 mr-1.5" />
+            {isSpare ? 'Asignar' : 'Configurar'}
+          </Button>
+          {device.online && device.ip && (
+            <a href={`http://${device.ip}`} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm">
+                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                Panel local
+              </Button>
+            </a>
+          )}
+        </div>
         <Link href={`/admin/iot/${device.thingName}`}>
           <Button variant="ghost" size="sm">
             Ver detalle
