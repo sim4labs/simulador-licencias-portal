@@ -51,7 +51,11 @@ export async function loginAdmin(
     // Clear any stale session
     try { await signOut() } catch { /* ignore */ }
 
-    const result = await signIn({ username: trimmed, password })
+    const result = await signIn({
+      username: trimmed,
+      password,
+      options: { authFlowType: 'USER_PASSWORD_AUTH' },
+    })
 
     if (result.isSignedIn) {
       return { ok: true }
