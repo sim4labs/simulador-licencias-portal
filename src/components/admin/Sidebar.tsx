@@ -36,8 +36,18 @@ const navSections = [
   },
 ]
 
+// Collect all hrefs, sorted longest first, to find the most specific match
+const allHrefs = navSections.flatMap(s => s.items.map(i => i.href)).sort((a, b) => b.length - a.length)
+
+function getActiveHref(pathname: string): string {
+  return allHrefs.find(href =>
+    pathname === href || (href !== '/admin' && pathname.startsWith(href + '/'))
+  ) || '/admin'
+}
+
 export function Sidebar() {
   const pathname = usePathname()
+  const activeHref = getActiveHref(pathname)
 
   return (
     <aside className="fixed top-16 bottom-0 left-0 w-64 bg-[#EBEBED] border-r border-[#DCDCE0] flex-col hidden lg:flex">
@@ -52,7 +62,7 @@ export function Sidebar() {
             </p>
             <div className="space-y-1">
               {section.items.map(item => {
-                const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href))
+                const isActive = activeHref === item.href
                 return (
                   <Link
                     key={item.href}
