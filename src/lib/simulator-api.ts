@@ -45,6 +45,7 @@ export interface SimulatorPC {
   online: boolean
   simulatorId: string | null
   createdAt: string
+  pendingConfig?: { apiBaseUrl: string; environment: string } | null
 }
 
 export interface CreateSimulatorRequest {
@@ -102,6 +103,14 @@ export const simulatorApi = {
 
   getPC(pcId: string) {
     return apiRequest<SimulatorPC>(`/admin/pcs/${encodeURIComponent(pcId)}`, { pool: 'admin' })
+  },
+
+  updatePCEnvironment(pcId: string, environment: string) {
+    return apiRequest<{ message: string }>(`/admin/pcs/${encodeURIComponent(pcId)}/environment`, {
+      method: 'PATCH',
+      body: { environment },
+      pool: 'admin',
+    })
   },
 
   getSimulatorSessions(simulatorId: string, params?: { desde?: string; hasta?: string; resultado?: string }) {
