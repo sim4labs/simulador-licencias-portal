@@ -154,14 +154,21 @@ export default function BuildsPage() {
   }, [])
 
   useEffect(() => {
+    const controller = new AbortController()
     loadData()
     const interval = setInterval(loadData, 15_000) // Poll cada 15s para ver status updates
-    return () => clearInterval(interval)
+    return () => { controller.abort(); clearInterval(interval) }
   }, [loadData])
 
   // ─── Upload handlers ───
 
   const handleFileSelect = async (file: File) => {
+    // Validar tamaño máximo (2GB)
+    if (file.size > 2 * 1024 * 1024 * 1024) {
+      setUploadError('El archivo excede el límite de 2GB')
+      return
+    }
+
     setUploadFile(file)
     setUploadError(null)
     setUploadSha256('')
