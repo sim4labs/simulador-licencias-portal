@@ -164,6 +164,8 @@ export function SimulatorSessionsTable({ simulatorId }: SimulatorSessionsTablePr
                             <Badge variant="info">En curso</Badge>
                           ) : session.status === 'cancelled' ? (
                             <Badge variant="default">Cancelada</Badge>
+                          ) : session.status === 'interrupted' ? (
+                            <Badge variant="warning">Interrumpida</Badge>
                           ) : (
                             <Badge variant={session.passed ? 'success' : 'destructive'}>
                               {session.passed ? 'Aprobado' : 'Reprobado'}

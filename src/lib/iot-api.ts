@@ -113,7 +113,7 @@ export interface Session {
   startedAt: string
   endedAt?: string
   duration?: number
-  status: 'active' | 'completed' | 'cancelled'
+  status: 'active' | 'completed' | 'cancelled' | 'interrupted'
   passed?: boolean
   score?: number
   faults?: SessionFault[]
