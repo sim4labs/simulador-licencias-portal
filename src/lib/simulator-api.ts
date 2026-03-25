@@ -35,6 +35,21 @@ export interface SimulatorDetail extends Simulator {
   } | null
 }
 
+export interface PendingUpdate {
+  version: string
+  s3Key: string
+  sha256: string
+  size: number
+  releaseNotes: string
+  mandatory: boolean
+  scheduledAfter: string
+  status: 'PENDING' | 'DOWNLOADING' | 'DOWNLOADED' | 'INSTALLING' | 'INSTALLED' | 'FAILED'
+  statusUpdatedAt: string
+  createdAt: string
+  createdBy: string
+  error?: string
+}
+
 export interface SimulatorPC {
   pcId: string
   name: string
@@ -46,6 +61,27 @@ export interface SimulatorPC {
   simulatorId: string | null
   createdAt: string
   pendingConfig?: { apiBaseUrl: string; environment: string } | null
+  pendingUpdate?: PendingUpdate | null
+}
+
+export interface UnityBuild {
+  version: string
+  s3Key: string
+  filename: string
+  size: number
+  lastModified: string
+  isLatest: boolean
+}
+
+export interface StartUploadResponse {
+  uploadId: string
+  s3Key: string
+  version: string
+}
+
+export interface PartUrlResponse {
+  url: string
+  partNumber: number
 }
 
 export interface CreateSimulatorRequest {
@@ -129,6 +165,52 @@ export const simulatorApi = {
     return apiRequest<{ totalSessions: number; passRate: number; todayAppointments: number; avgScore: number }>(
       `/admin/simulators/${simulatorId}/stats`,
       { pool: 'admin' }
+    )
+  },
+
+  // ─── Unity Builds ───
+
+  listUnityBuilds() {
+    return apiRequest<{ builds: UnityBuild[]; latestVersion: string | null }>(
+      '/admin/unity-builds',
+      { pool: 'admin' }
+    )
+  },
+
+  startUpload(data: { version: string; filename: string; sha256: string; size: number; releaseNotes?: string }) {
+    return apiRequest<StartUploadResponse>('/admin/unity-builds/start-upload', {
+      method: 'POST',
+      body: data,
+      pool: 'admin',
+    })
+  },
+
+  getPartUrl(data: { uploadId: string; s3Key: string; partNumber: number }) {
+    return apiRequest<PartUrlResponse>('/admin/unity-builds/part-url', {
+      method: 'POST',
+      body: data,
+      pool: 'admin',
+    })
+  },
+
+  completeUpload(data: {
+    uploadId: string; s3Key: string; parts: { partNumber: number; etag: string }[];
+    version: string; sha256?: string; size?: number; releaseNotes?: string; mandatory?: boolean
+  }) {
+    return apiRequest<{ success: boolean; version: string }>('/admin/unity-builds/complete-upload', {
+      method: 'POST',
+      body: data,
+      pool: 'admin',
+    })
+  },
+
+  deployUnityBuild(data: {
+    version: string; s3Key: string; sha256?: string; size?: number;
+    releaseNotes?: string; mandatory?: boolean; scheduledAfter?: string; targetPcIds: string[]
+  }) {
+    return apiRequest<{ success: boolean; deployedTo: number; scheduledAfter: string }>(
+      '/admin/unity-builds/deploy',
+      { method: 'POST', body: data, pool: 'admin' }
     )
   },
 }

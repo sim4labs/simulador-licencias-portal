@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { RefreshCw, Loader2, Monitor, ArrowUpRight } from 'lucide-react'
+import { RefreshCw, Loader2, Monitor, ArrowUpRight, Download } from 'lucide-react'
 import { simulatorApi, type SimulatorPC } from '@/lib/simulator-api'
 import { Button } from '@/components/ui/Button'
 
@@ -95,6 +95,7 @@ export default function PCsPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-500">IP</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Simulador</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Estado</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Actualizacion</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Ambiente</th>
               </tr>
             </thead>
@@ -115,6 +116,27 @@ export default function PCsPage() {
                       <span className={`h-2 w-2 rounded-full ${pc.online ? 'bg-green-500' : 'bg-gray-300'}`} />
                       {pc.online ? 'Online' : 'Offline'}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {pc.pendingUpdate ? (
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                        pc.pendingUpdate.status === 'INSTALLED' ? 'text-green-700'
+                          : pc.pendingUpdate.status === 'FAILED' ? 'text-red-600'
+                          : pc.pendingUpdate.status === 'DOWNLOADING' || pc.pendingUpdate.status === 'INSTALLING' ? 'text-blue-600'
+                          : 'text-amber-600'
+                      }`}>
+                        <Download className="h-3 w-3" />
+                        v{pc.pendingUpdate.version} · {
+                          pc.pendingUpdate.status === 'INSTALLED' ? 'Instalado'
+                            : pc.pendingUpdate.status === 'FAILED' ? 'Fallido'
+                            : pc.pendingUpdate.status === 'DOWNLOADING' ? 'Descargando'
+                            : pc.pendingUpdate.status === 'INSTALLING' ? 'Instalando'
+                            : 'Pendiente'
+                        }
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {pc.pendingConfig ? (
