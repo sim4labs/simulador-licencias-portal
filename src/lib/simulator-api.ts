@@ -1,5 +1,5 @@
 import { apiRequest } from './api'
-import type { VehicleType } from './iot-api'
+import type { VehicleType, Session } from './iot-api'
 
 // ─── Interfaces ───
 
@@ -119,7 +119,7 @@ export const simulatorApi = {
     if (params?.hasta) qp.set('hasta', params.hasta)
     if (params?.resultado) qp.set('resultado', params.resultado)
     const qs = qp.toString()
-    return apiRequest<any[]>(
+    return apiRequest<Session[]>(
       `/admin/simulators/${simulatorId}/sessions${qs ? `?${qs}` : ''}`,
       { pool: 'admin' }
     )

@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, Monitor, Cpu, Save } from 'lucide-react'
 import { simulatorApi, type SimulatorDetail, type SimulatorPC, type UpdateSimulatorRequest } from '@/lib/simulator-api'
 import { iotApi, type Device, type VehicleType } from '@/lib/iot-api'
 import { Button } from '@/components/ui/Button'
+import { SimulatorSessionsTable } from '@/components/admin/SimulatorSessionsTable'
 import Link from 'next/link'
 
 const vehicleTypeLabels: Record<string, string> = {
@@ -26,6 +27,8 @@ export default function SimulatorDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [stats, setStats] = useState<{ totalSessions: number; passRate: number; todayAppointments: number; avgScore: number } | null>(null)
+
+  const [activeTab, setActiveTab] = useState<'config' | 'sessions'>('config')
 
   // Editable fields
   const [name, setName] = useState('')
@@ -110,6 +113,26 @@ export default function SimulatorDetailPage() {
         </div>
       )}
 
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('config')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'config' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+        >
+          Configuracion
+        </button>
+        <button
+          onClick={() => setActiveTab('sessions')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'sessions' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+        >
+          Sesiones
+        </button>
+      </div>
+
+      {activeTab === 'sessions' ? (
+        <SimulatorSessionsTable simulatorId={simulatorId} />
+      ) : (
+      <>
       {/* Configuration */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
         <h2 className="text-lg font-semibold text-gray-900">Configuracion</h2>
@@ -227,6 +250,8 @@ export default function SimulatorDetailPage() {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   )
 }

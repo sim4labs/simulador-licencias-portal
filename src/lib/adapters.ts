@@ -24,6 +24,7 @@ export interface TramiteResponse {
   simulatorPassed?: boolean
   simulatorScore?: number
   simulatorFeedback?: string[]
+  simulatorFaults?: { type: string; description: string; secondsFromStart: number; severity: string; deduction: number }[]
   simulatorCompletedAt?: string
   createdAt: string
   updatedAt: string
@@ -70,6 +71,7 @@ export function adaptTramite(r: TramiteResponse): Tramite {
       passed: r.simulatorPassed,
       score: r.simulatorScore || 0,
       feedback: r.simulatorFeedback || [],
+      faults: r.simulatorFaults || [],
       completedAt: r.simulatorCompletedAt || '',
     }
   }
@@ -92,6 +94,7 @@ export interface TramitePublicResponse {
   appointmentCode?: string
   simulatorPassed?: boolean
   simulatorScore?: number
+  simulatorFaults?: { type: string; description: string; secondsFromStart: number; severity: string; deduction: number }[]
 }
 
 export function adaptPublicTramite(r: TramitePublicResponse): Partial<Tramite> {
@@ -133,6 +136,7 @@ export function adaptPublicTramite(r: TramitePublicResponse): Partial<Tramite> {
       passed: r.simulatorPassed,
       score: r.simulatorScore || 0,
       feedback: [],
+      faults: r.simulatorFaults || [],
       completedAt: '',
     }
   }

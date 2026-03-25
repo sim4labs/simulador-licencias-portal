@@ -9,6 +9,7 @@ import { ProgressStepper } from '@/components/ProgressStepper'
 import type { Tramite } from '@/lib/tramite'
 import { publicApi } from '@/lib/admin-api'
 import { adaptPublicTramite } from '@/lib/adapters'
+import { Badge } from '@/components/admin/Badge'
 import {
   Search,
   CheckCircle,
@@ -301,22 +302,45 @@ export function ResultadosContent({ basePath = '' }: ResultadosContentProps) {
                 </p>
               </div>
 
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3">Observaciones:</h3>
-                <ul className="space-y-2">
-                  {searchResult.simulatorResult.feedback.map((item, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm">
-                      <span
-                        className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0"
-                        style={{
-                          backgroundColor: searchResult.simulatorResult?.passed ? '#86B747' : '#f59e0b',
-                        }}
-                      />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {searchResult.simulatorResult.faults.length > 0 && (
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-3">Infracciones ({searchResult.simulatorResult.faults.length})</h3>
+                  <div className="bg-gray-50 rounded-lg overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead>
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Minuto</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Infracción</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Severidad</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Puntos</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {searchResult.simulatorResult.faults.map((fault, idx) => {
+                          const min = Math.floor(fault.secondsFromStart / 60)
+                          const sec = fault.secondsFromStart % 60
+                          const severityVariant: Record<string, 'warning' | 'secondary' | 'destructive'> = { minor: 'warning', major: 'secondary', critical: 'destructive' }
+                          const severityLabel: Record<string, string> = { minor: 'Menor', major: 'Mayor', critical: 'Crítica' }
+                          return (
+                            <tr key={idx}>
+                              <td className="px-3 py-2 text-sm font-mono text-gray-600 whitespace-nowrap">
+                                {min}:{sec.toString().padStart(2, '0')}
+                              </td>
+                              <td className="px-3 py-2 text-sm text-gray-900">{fault.description}</td>
+                              <td className="px-3 py-2">
+                                <Badge variant={severityVariant[fault.severity] || 'default'}>
+                                  {severityLabel[fault.severity] || fault.severity}
+                                </Badge>
+                              </td>
+                              <td className="px-3 py-2 text-sm text-right font-medium text-red-600">-{fault.deduction}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
               {searchResult.simulatorResult.passed ? (
                 <div className="mt-6 p-4 rounded-lg" style={{ backgroundColor: 'rgba(134, 183, 71, 0.15)' }}>

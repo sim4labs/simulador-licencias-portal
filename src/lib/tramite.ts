@@ -21,10 +21,19 @@ export interface Appointment {
   code: string
 }
 
+export interface SimulatorFault {
+  type: string
+  description: string
+  secondsFromStart: number
+  severity: string
+  deduction: number
+}
+
 export interface SimulatorResult {
   passed: boolean
   score: number
   feedback: string[]
+  faults: SimulatorFault[]
   completedAt: string
 }
 
