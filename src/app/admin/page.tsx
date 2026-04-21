@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { FileText, CalendarDays, Award, Gauge } from 'lucide-react'
-import { type Tramite, LICENSE_TYPE_NAMES } from '@/lib/tramite'
-import { adminApi } from '@/lib/admin-api'
-import { adaptTramite, type DashboardStatsResponse } from '@/lib/adapters'
+import { LICENSE_TYPE_NAMES } from '@/lib/tramite'
+import { useAdminStats, useAdminTramites } from '@/lib/admin-queries'
+import type { DashboardStatsResponse } from '@/lib/adapters'
 import { StatCard } from '@/components/admin/StatCard'
 import { Badge, statusVariant, statusLabel } from '@/components/admin/Badge'
 
@@ -28,24 +28,17 @@ const LICENSE_COLORS: Record<string, string> = {
   '18': 'bg-rose-500',    // Emergencias
 }
 
-export default function AdminDashboard() {
-  const [tramites, setTramites] = useState<Tramite[]>([])
-  const [stats, setStats] = useState<DashboardStatsResponse>({
-    total: 0, byStatus: {}, byLicenseType: {}, citasHoy: 0,
-    examenesAprobados: 0, examenesTotales: 0, simuladorPendientes: 0,
-  })
+const EMPTY_STATS: DashboardStatsResponse = {
+  total: 0, byStatus: {}, byLicenseType: {}, citasHoy: 0,
+  examenesAprobados: 0, examenesTotales: 0, simuladorPendientes: 0,
+}
 
-  useEffect(() => {
-    async function load() {
-      const [statsRes, tramitesRes] = await Promise.all([
-        adminApi.getStats(),
-        adminApi.listarTramites(),
-      ])
-      if (statsRes.data) setStats(statsRes.data)
-      if (tramitesRes.data) setTramites(tramitesRes.data.map(adaptTramite))
-    }
-    load()
-  }, [])
+export default function AdminDashboard() {
+  const statsQuery = useAdminStats()
+  const tramitesQuery = useAdminTramites({ limit: 10 })
+
+  const stats = statsQuery.data ?? EMPTY_STATS
+  const tramites = tramitesQuery.data?.items ?? []
 
   const examPassRate = stats.examenesTotales > 0
     ? Math.round((stats.examenesAprobados / stats.examenesTotales) * 100)

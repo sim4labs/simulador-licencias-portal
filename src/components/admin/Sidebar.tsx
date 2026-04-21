@@ -4,35 +4,51 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { usePrefetchAdmin } from '@/lib/admin-queries'
+import { usePrefetchIot } from '@/lib/iot-queries'
+import { usePrefetchSimulator } from '@/lib/simulator-queries'
 import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users, BarChart3, Download, ClipboardCheck, Monitor, Box, Upload, KeyRound } from 'lucide-react'
 
-const navSections = [
+type AdminPrefetchKey = 'stats' | 'tramites' | 'licencias' | 'users' | 'preguntas' | 'scoringConfig'
+type IotPrefetchKey = 'devices' | 'firmware'
+type SimPrefetchKey = 'simulators' | 'pcs' | 'unityBuilds'
+
+type NavItem = {
+  href: string
+  label: string
+  icon: any
+  prefetchAdmin?: AdminPrefetchKey
+  prefetchIot?: IotPrefetchKey
+  prefetchSim?: SimPrefetchKey
+}
+
+const navSections: Array<{ title: string; items: NavItem[] }> = [
   {
     title: 'Principal',
     items: [
-      { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, prefetchAdmin: 'stats' },
       { href: '/admin/calendario', label: 'Calendario', icon: Calendar },
-      { href: '/admin/tramites', label: 'Trámites', icon: FileText },
+      { href: '/admin/tramites', label: 'Trámites', icon: FileText, prefetchAdmin: 'tramites' },
       { href: '/admin/metrics', label: 'Métricas', icon: BarChart3 },
     ],
   },
   {
     title: 'Simuladores',
     items: [
-      { href: '/admin/simuladores', label: 'Simuladores', icon: Box },
-      { href: '/admin/simuladores/pcs', label: 'PCs', icon: Monitor },
-      { href: '/admin/simuladores/builds', label: 'Builds Unity', icon: Upload },
-      { href: '/admin/iot', label: 'Controladores', icon: Cpu },
-      { href: '/admin/iot/firmware', label: 'Firmware', icon: Download },
+      { href: '/admin/simuladores', label: 'Simuladores', icon: Box, prefetchSim: 'simulators' },
+      { href: '/admin/simuladores/pcs', label: 'PCs', icon: Monitor, prefetchSim: 'pcs' },
+      { href: '/admin/simuladores/builds', label: 'Builds Unity', icon: Upload, prefetchSim: 'unityBuilds' },
+      { href: '/admin/iot', label: 'Controladores', icon: Cpu, prefetchIot: 'devices' },
+      { href: '/admin/iot/firmware', label: 'Firmware', icon: Download, prefetchIot: 'firmware' },
     ],
   },
   {
     title: 'Configuración',
     items: [
-      { href: '/admin/scoring', label: 'Calificación', icon: ClipboardCheck },
-      { href: '/admin/preguntas', label: 'Preguntas', icon: HelpCircle },
-      { href: '/admin/licencias', label: 'Licencias', icon: CreditCard },
-      { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
+      { href: '/admin/scoring', label: 'Calificación', icon: ClipboardCheck, prefetchAdmin: 'scoringConfig' },
+      { href: '/admin/preguntas', label: 'Preguntas', icon: HelpCircle, prefetchAdmin: 'preguntas' },
+      { href: '/admin/licencias', label: 'Licencias', icon: CreditCard, prefetchAdmin: 'licencias' },
+      { href: '/admin/usuarios', label: 'Usuarios', icon: Users, prefetchAdmin: 'users' },
       { href: '/admin/integraciones', label: 'Integraciones', icon: KeyRound },
     ],
   },
@@ -50,6 +66,9 @@ function getActiveHref(pathname: string): string {
 export function Sidebar() {
   const pathname = usePathname()
   const activeHref = getActiveHref(pathname)
+  const prefetchAdmin = usePrefetchAdmin()
+  const prefetchIot = usePrefetchIot()
+  const prefetchSim = usePrefetchSimulator()
 
   return (
     <aside className="fixed top-16 bottom-0 left-0 w-64 bg-[#EBEBED] border-r border-[#DCDCE0] flex-col hidden lg:flex">
@@ -65,10 +84,18 @@ export function Sidebar() {
             <div className="space-y-1">
               {section.items.map(item => {
                 const isActive = activeHref === item.href
+                const warmup = () => {
+                  if (item.prefetchAdmin) prefetchAdmin[item.prefetchAdmin]()
+                  if (item.prefetchIot) prefetchIot[item.prefetchIot]()
+                  if (item.prefetchSim) prefetchSim[item.prefetchSim]()
+                }
+                const hasPrefetch = !!(item.prefetchAdmin || item.prefetchIot || item.prefetchSim)
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
+                    onMouseEnter={hasPrefetch ? warmup : undefined}
+                    onFocus={hasPrefetch ? warmup : undefined}
                     className={cn(
                       'flex items-center gap-3 px-3 py-2 rounded-r-lg border-l-2 text-sm font-medium transition-colors',
                       isActive

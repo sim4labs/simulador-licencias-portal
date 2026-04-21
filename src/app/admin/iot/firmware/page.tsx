@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -17,7 +18,8 @@ import {
   Car,
   Bike,
 } from 'lucide-react'
-import { iotApi, type FirmwareFile, type Device, type Job, type JobDetail } from '@/lib/iot-api'
+import { iotApi, type FirmwareFile, type JobDetail } from '@/lib/iot-api'
+import { iotKeys, useIotDevices, useIotFirmware, useIotJobs } from '@/lib/iot-queries'
 import { Badge } from '@/components/admin/Badge'
 import { Button } from '@/components/ui/Button'
 
@@ -111,11 +113,15 @@ function groupByEnvironment(files: FirmwareFile[]): { env: string; files: Firmwa
 }
 
 export default function FirmwarePage() {
-  const [firmware, setFirmware] = useState<FirmwareFile[]>([])
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [devices, setDevices] = useState<Device[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const qc = useQueryClient()
+  const firmwareQuery = useIotFirmware()
+  const jobsQuery = useIotJobs()
+  const devicesQuery = useIotDevices()
+  const firmware = firmwareQuery.data ?? []
+  const jobs = jobsQuery.data ?? []
+  const devices = devicesQuery.data ?? []
+  const loading = firmwareQuery.isLoading || jobsQuery.isLoading || devicesQuery.isLoading
+  const [error, setError] = useState<string | null>(firmwareQuery.error?.message ?? null)
 
   // Secciones colapsadas (por ambiente)
   const [expandedEnvs, setExpandedEnvs] = useState<Record<string, boolean>>({})
@@ -131,24 +137,11 @@ export default function FirmwarePage() {
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
   const [jobDetail, setJobDetail] = useState<JobDetail | null>(null)
 
-  const loadData = useCallback(async () => {
-    const [fwRes, jobsRes, devicesRes] = await Promise.all([
-      iotApi.listFirmware(),
-      iotApi.listJobs(),
-      iotApi.listDevices(),
-    ])
-
-    if (fwRes.error) setError(fwRes.error)
-    else setFirmware(fwRes.data || [])
-
-    setJobs(jobsRes.data || [])
-    setDevices(devicesRes.data || [])
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const loadData = () => {
+    qc.invalidateQueries({ queryKey: iotKeys.firmware })
+    qc.invalidateQueries({ queryKey: iotKeys.jobs() })
+    qc.invalidateQueries({ queryKey: iotKeys.devices })
+  }
 
   const toggleEnvExpanded = (env: string) => {
     setExpandedEnvs(prev => ({ ...prev, [env]: !prev[env] }))

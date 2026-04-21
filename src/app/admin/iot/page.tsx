@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { RefreshCw, Loader2 } from 'lucide-react'
-import { iotApi, type Device } from '@/lib/iot-api'
+import { type Device } from '@/lib/iot-api'
+import { iotKeys, useIotDevices } from '@/lib/iot-queries'
 import { SimulatorCard } from '@/components/admin/SimulatorCard'
 import { EditDeviceModal } from '@/components/admin/EditDeviceModal'
 import { Button } from '@/components/ui/Button'
@@ -30,33 +32,16 @@ const vehicleTypeLabels: Record<string, string> = {
 }
 
 export default function IoTDashboardPage() {
-  const [devices, setDevices] = useState<Device[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const qc = useQueryClient()
+  const devicesQuery = useIotDevices()
+  const devices = devicesQuery.data ?? []
+  const loading = devicesQuery.isLoading
+  const error = devicesQuery.error ? devicesQuery.error.message : null
   const [editingDevice, setEditingDevice] = useState<Device | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
 
-  const loadData = useCallback(async () => {
-    const devicesRes = await iotApi.listDevices()
-
-    if (devicesRes.error) {
-      setError(devicesRes.error)
-    } else {
-      setDevices(devicesRes.data || [])
-      setError(null)
-    }
-
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    loadData()
-
-    // Polling cada 10 segundos
-    const interval = setInterval(loadData, 10_000)
-    return () => clearInterval(interval)
-  }, [loadData])
+  const loadData = () => qc.invalidateQueries({ queryKey: iotKeys.devices })
 
   const totalDevices = devices.length
   const onlineCount = devices.filter(d => d.online).length

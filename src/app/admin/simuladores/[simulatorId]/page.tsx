@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Loader2, Monitor, Cpu, Save } from 'lucide-react'
-import { simulatorApi, type SimulatorDetail, type SimulatorPC, type UpdateSimulatorRequest } from '@/lib/simulator-api'
-import { iotApi, type Device, type VehicleType } from '@/lib/iot-api'
+import { simulatorApi, type UpdateSimulatorRequest } from '@/lib/simulator-api'
+import { simulatorKeys, useSimulator, useSimulatorPCs, useSimulatorStats } from '@/lib/simulator-queries'
+import { type VehicleType } from '@/lib/iot-api'
+import { useIotDevices } from '@/lib/iot-queries'
 import { Button } from '@/components/ui/Button'
 import { SimulatorSessionsTable } from '@/components/admin/SimulatorSessionsTable'
 import Link from 'next/link'
@@ -20,13 +23,18 @@ export default function SimulatorDetailPage() {
   const params = useParams()
   const router = useRouter()
   const simulatorId = params.simulatorId as string
+  const qc = useQueryClient()
 
-  const [simulator, setSimulator] = useState<SimulatorDetail | null>(null)
-  const [pcs, setPcs] = useState<SimulatorPC[]>([])
-  const [devices, setDevices] = useState<Device[]>([])
-  const [loading, setLoading] = useState(true)
+  const simulatorQuery = useSimulator(simulatorId)
+  const pcsQuery = useSimulatorPCs()
+  const devicesQuery = useIotDevices()
+  const statsQuery = useSimulatorStats(simulatorId)
+  const simulator = simulatorQuery.data ?? null
+  const pcs = pcsQuery.data ?? []
+  const devices = devicesQuery.data ?? []
+  const stats = statsQuery.data ?? null
+  const loading = simulatorQuery.isLoading
   const [saving, setSaving] = useState(false)
-  const [stats, setStats] = useState<{ totalSessions: number; passRate: number; todayAppointments: number; avgScore: number } | null>(null)
 
   const [activeTab, setActiveTab] = useState<'config' | 'sessions'>('config')
 
@@ -36,34 +44,24 @@ export default function SimulatorDetailPage() {
   const [selectedPcId, setSelectedPcId] = useState('')
   const [selectedDof, setSelectedDof] = useState('')
 
-  const loadData = useCallback(async () => {
-    const [simRes, pcsRes, devicesRes, statsRes] = await Promise.all([
-      simulatorApi.getSimulator(simulatorId),
-      simulatorApi.listPCs(),
-      iotApi.listDevices(),
-      simulatorApi.getSimulatorStats(simulatorId),
-    ])
-
-    if (simRes.error || !simRes.data) {
+  useEffect(() => {
+    if (simulatorQuery.isError) {
       router.push('/admin/simuladores')
       return
     }
+    if (simulator) {
+      setName(simulator.name)
+      setVehicleType(simulator.vehicleType || '')
+      setSelectedPcId(simulator.pcId || '')
+      setSelectedDof(simulator.dofThingName || '')
+    }
+  }, [simulator, simulatorQuery.isError, router])
 
-    const sim = simRes.data
-    setSimulator(sim)
-    setName(sim.name)
-    setVehicleType(sim.vehicleType || '')
-    setSelectedPcId(sim.pcId || '')
-    setSelectedDof(sim.dofThingName || '')
-    setPcs(pcsRes.data || [])
-    setDevices(devicesRes.data || [])
-    setStats(statsRes.data || null)
-    setLoading(false)
-  }, [simulatorId, router])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const loadData = () => {
+    qc.invalidateQueries({ queryKey: simulatorKeys.simulator(simulatorId) })
+    qc.invalidateQueries({ queryKey: simulatorKeys.simulatorStats(simulatorId) })
+    qc.invalidateQueries({ queryKey: simulatorKeys.pcs })
+  }
 
   const handleSave = async () => {
     setSaving(true)

@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/lib/admin-api'
+import { adminKeys, useAdminScoringConfig } from '@/lib/admin-queries'
 import type { ScoringConfig } from '@/lib/admin-api'
 import { Button } from '@/components/ui/Button'
 import { Save, RefreshCw, AlertTriangle } from 'lucide-react'
@@ -46,27 +48,24 @@ const SEVERITY_COLORS: Record<string, string> = {
 }
 
 export default function ScoringPage() {
+  const qc = useQueryClient()
+  const scoringQuery = useAdminScoringConfig()
   const [config, setConfig] = useState<ScoringConfig>(DEFAULTS)
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(scoringQuery.error?.message ?? null)
   const [lastSync, setLastSync] = useState<string | null>(null)
 
-  const load = async () => {
-    setLoading(true)
-    setError(null)
-    const { data, error: err } = await adminApi.getScoringConfig()
-    if (data) {
-      setConfig({ ...DEFAULTS, ...data })
-      setLastSync(data.updatedAt ?? null)
-    } else if (err) {
-      setError(err)
-    }
-    setLoading(false)
-  }
+  const loading = scoringQuery.isLoading
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    if (scoringQuery.data) {
+      setConfig({ ...DEFAULTS, ...scoringQuery.data })
+      setLastSync(scoringQuery.data.updatedAt ?? null)
+    }
+  }, [scoringQuery.data])
+
+  const load = () => qc.invalidateQueries({ queryKey: adminKeys.scoringConfig })
 
   const handleSave = async () => {
     setSaving(true)

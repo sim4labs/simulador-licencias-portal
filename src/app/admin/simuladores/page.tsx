@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { RefreshCw, Loader2, Plus, Box, Monitor, Cpu, Trash2 } from 'lucide-react'
 import { simulatorApi, type Simulator, type CreateSimulatorRequest } from '@/lib/simulator-api'
+import { simulatorKeys, useSimulators } from '@/lib/simulator-queries'
 import type { VehicleType } from '@/lib/iot-api'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
@@ -15,27 +17,14 @@ const vehicleTypeLabels: Record<string, string> = {
 }
 
 export default function SimuladoresPage() {
-  const [simulators, setSimulators] = useState<Simulator[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const qc = useQueryClient()
+  const simulatorsQuery = useSimulators()
+  const simulators = simulatorsQuery.data ?? []
+  const loading = simulatorsQuery.isLoading
+  const error = simulatorsQuery.error ? simulatorsQuery.error.message : null
   const [showCreateModal, setShowCreateModal] = useState(false)
 
-  const loadData = useCallback(async () => {
-    const res = await simulatorApi.listSimulators()
-    if (res.error) {
-      setError(res.error)
-    } else {
-      setSimulators(res.data || [])
-      setError(null)
-    }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    loadData()
-    const interval = setInterval(loadData, 10_000)
-    return () => clearInterval(interval)
-  }, [loadData])
+  const loadData = () => qc.invalidateQueries({ queryKey: simulatorKeys.simulators })
 
   const handleDelete = async (simulatorId: string) => {
     if (!confirm(`Eliminar simulador ${simulatorId}?`)) return

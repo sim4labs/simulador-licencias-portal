@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   RefreshCw,
   Loader2,
@@ -15,8 +16,8 @@ import {
 import {
   simulatorApi,
   type UnityBuild,
-  type SimulatorPC,
 } from '@/lib/simulator-api'
+import { simulatorKeys, useSimulatorPCs, useUnityBuilds } from '@/lib/simulator-queries'
 import { Badge } from '@/components/admin/Badge'
 import { Button } from '@/components/ui/Button'
 
@@ -110,11 +111,14 @@ const SCHEDULE_OPTIONS: { value: SchedulePreset; label: string }[] = [
 // ─── Component ───
 
 export default function BuildsPage() {
-  const [builds, setBuilds] = useState<UnityBuild[]>([])
-  const [pcs, setPcs] = useState<SimulatorPC[]>([])
-  const [latestVersion, setLatestVersion] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const qc = useQueryClient()
+  const buildsQuery = useUnityBuilds()
+  const pcsQuery = useSimulatorPCs()
+  const builds = buildsQuery.data?.builds ?? []
+  const latestVersion = buildsQuery.data?.latestVersion ?? null
+  const pcs = pcsQuery.data ?? []
+  const loading = buildsQuery.isLoading || pcsQuery.isLoading
+  const error = buildsQuery.error ? buildsQuery.error.message : null
 
   // Upload state
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -135,30 +139,10 @@ export default function BuildsPage() {
   const [deploying, setDeploying] = useState(false)
   const [deployError, setDeployError] = useState<string | null>(null)
 
-  const loadData = useCallback(async () => {
-    const [buildsRes, pcsRes] = await Promise.all([
-      simulatorApi.listUnityBuilds(),
-      simulatorApi.listPCs(),
-    ])
-
-    if (buildsRes.error) {
-      setError(buildsRes.error)
-    } else if (buildsRes.data) {
-      setBuilds(buildsRes.data.builds || [])
-      setLatestVersion(buildsRes.data.latestVersion)
-      setError(null)
-    }
-
-    if (pcsRes.data) setPcs(pcsRes.data)
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    const controller = new AbortController()
-    loadData()
-    const interval = setInterval(loadData, 15_000) // Poll cada 15s para ver status updates
-    return () => { controller.abort(); clearInterval(interval) }
-  }, [loadData])
+  const loadData = () => {
+    qc.invalidateQueries({ queryKey: simulatorKeys.unityBuilds })
+    qc.invalidateQueries({ queryKey: simulatorKeys.pcs })
+  }
 
   // ─── Upload handlers ───
 

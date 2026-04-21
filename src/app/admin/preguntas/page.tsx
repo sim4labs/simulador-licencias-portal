@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/lib/admin-api'
+import { useAdminPreguntas } from '@/lib/admin-queries'
 import type { QuestionResponse } from '@/lib/adapters'
 import { DataTable } from '@/components/admin/DataTable'
 import { Badge, categoryVariant, difficultyVariant } from '@/components/admin/Badge'
@@ -39,30 +41,27 @@ const emptyQuestion: QuestionResponse = {
 }
 
 export default function PreguntasPage() {
-  const [questions, setQuestions] = useState<QuestionResponse[]>([])
+  const qc = useQueryClient()
+  const preguntasQuery = useAdminPreguntas()
+  const questions = useMemo(() => preguntasQuery.data ?? [], [preguntasQuery.data])
   const [categoryTab, setCategoryTab] = useState('todas')
   const [difficultyFilter, setDifficultyFilter] = useState('all')
   const [editModal, setEditModal] = useState(false)
   const [editQuestion, setEditQuestion] = useState<QuestionResponse>(emptyQuestion)
   const [isNew, setIsNew] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<QuestionResponse | null>(null)
-  const [stats, setStats] = useState<{ total: number; byCategory: Record<string, number>; byDifficulty: Record<string, number> }>({ total: 0, byCategory: {}, byDifficulty: {} })
 
-  const reload = async () => {
-    const { data } = await adminApi.listarPreguntas()
-    if (data) {
-      setQuestions(data)
-      const byCategory: Record<string, number> = {}
-      const byDifficulty: Record<string, number> = {}
-      for (const q of data) {
-        byCategory[q.category] = (byCategory[q.category] || 0) + 1
-        byDifficulty[q.difficulty] = (byDifficulty[q.difficulty] || 0) + 1
-      }
-      setStats({ total: data.length, byCategory, byDifficulty })
+  const stats = useMemo(() => {
+    const byCategory: Record<string, number> = {}
+    const byDifficulty: Record<string, number> = {}
+    for (const q of questions) {
+      byCategory[q.category] = (byCategory[q.category] || 0) + 1
+      byDifficulty[q.difficulty] = (byDifficulty[q.difficulty] || 0) + 1
     }
-  }
+    return { total: questions.length, byCategory, byDifficulty }
+  }, [questions])
 
-  useEffect(() => { reload() }, [])
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['admin', 'preguntas'] })
 
   const filtered = useMemo(() => {
     return questions.filter(q => {
@@ -99,14 +98,14 @@ export default function PreguntasPage() {
       await adminApi.actualizarPregunta(editQuestion.questionId, editQuestion)
     }
     setEditModal(false)
-    reload()
+    invalidate()
   }
 
   const handleDelete = async () => {
     if (!deleteConfirm) return
     await adminApi.eliminarPregunta(deleteConfirm.questionId)
     setDeleteConfirm(null)
-    reload()
+    invalidate()
   }
 
   const columns = [

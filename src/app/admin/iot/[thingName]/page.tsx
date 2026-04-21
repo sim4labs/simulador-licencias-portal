@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -27,6 +28,7 @@ import {
   type JobExecution,
   type DeviceStats,
 } from '@/lib/iot-api'
+import { iotKeys, useIotDevice } from '@/lib/iot-queries'
 import { Badge } from '@/components/admin/Badge'
 import { Button } from '@/components/ui/Button'
 import { Tabs } from '@/components/admin/Tabs'
@@ -88,24 +90,20 @@ const DEVICE_TABS = [
 export default function DeviceDetailPage() {
   const params = useParams()
   const thingName = params.thingName as string
+  const qc = useQueryClient()
 
-  const [device, setDevice] = useState<DeviceDetail | null>(null)
+  const deviceQuery = useIotDevice(thingName)
+  const device = deviceQuery.data ?? null
+  const loading = deviceQuery.isLoading
   const [stats, setStats] = useState<DeviceStats | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(deviceQuery.error?.message ?? null)
   const [commandLoading, setCommandLoading] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('estado')
 
-  const loadDevice = useCallback(async () => {
-    const { data, error: err } = await iotApi.getDevice(thingName)
-    if (err) {
-      setError(err)
-    } else {
-      setDevice(data)
-      setError(null)
-    }
-    setLoading(false)
-  }, [thingName])
+  const loadDevice = useCallback(
+    () => qc.invalidateQueries({ queryKey: iotKeys.device(thingName) }),
+    [qc, thingName],
+  )
 
   const loadStats = useCallback(async () => {
     const data = await getDeviceStats(thingName)
@@ -113,13 +111,8 @@ export default function DeviceDetailPage() {
   }, [thingName])
 
   useEffect(() => {
-    loadDevice()
     loadStats()
-
-    // Polling cada 5 segundos
-    const interval = setInterval(loadDevice, 5_000)
-    return () => clearInterval(interval)
-  }, [loadDevice, loadStats])
+  }, [loadStats])
 
   const handleCommand = async (command: string) => {
     setCommandLoading(command)
@@ -128,7 +121,6 @@ export default function DeviceDetailPage() {
       setError(err)
     }
     setCommandLoading(null)
-    // Recargar datos después de enviar comando
     setTimeout(loadDevice, 1000)
   }
 

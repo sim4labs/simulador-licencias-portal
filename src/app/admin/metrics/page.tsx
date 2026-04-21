@@ -1,16 +1,37 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { adminApi } from '@/lib/admin-api'
-import type { MetricsResponse } from '@/lib/adapters'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import dynamic from 'next/dynamic'
+import { adminKeys, useAdminMetrics } from '@/lib/admin-queries'
 import { RefreshCw } from 'lucide-react'
-import {
-  LineChart, Line, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
-} from 'recharts'
+
+function ChartsSkeleton({ rows = 1 }: { rows?: number }) {
+  return (
+    <div className="space-y-6">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[0, 1].map(j => (
+            <div key={j} className="bg-white rounded-lg shadow p-5 h-[340px] animate-pulse">
+              <div className="h-5 w-48 bg-gray-200 rounded mb-4" />
+              <div className="h-[280px] bg-gray-100 rounded" />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const TopCharts = dynamic(
+  () => import('./MetricsCharts').then(m => m.TopCharts),
+  { ssr: false, loading: () => <ChartsSkeleton rows={2} /> },
+)
+
+const PerfCharts = dynamic(
+  () => import('./MetricsCharts').then(m => m.PerfCharts),
+  { ssr: false, loading: () => <ChartsSkeleton rows={1} /> },
+)
 
 const PERIODS = ['1h', '24h', '7d', '30d'] as const
 type Period = (typeof PERIODS)[number]
@@ -25,16 +46,9 @@ const PERIOD_LABELS: Record<Period, string> = {
 const COLORS = {
   primary: '#582672',
   success: '#22c55e',
-  danger: '#ef4444',
   info: '#3b82f6',
   warning: '#f59e0b',
-  slate: '#64748b',
-}
-
-function formatTimestamp(iso: string, period: Period): string {
-  const d = new Date(iso)
-  if (period === '1h' || period === '24h') return format(d, 'HH:mm', { locale: es })
-  return format(d, 'dd MMM', { locale: es })
+  danger: '#ef4444',
 }
 
 function StatCard({ title, value, color, unit }: { title: string; value: number; color: string; unit?: string }) {
@@ -48,99 +62,21 @@ function StatCard({ title, value, color, unit }: { title: string; value: number;
   )
 }
 
-function mergeDatapoints(
-  series: Record<string, { t: string; v: number }[]>,
-  period: Period,
-): Record<string, string | number>[] {
-  const map = new Map<string, Record<string, string | number>>()
-  for (const [key, points] of Object.entries(series)) {
-    for (const dp of points) {
-      const label = formatTimestamp(dp.t, period)
-      if (!map.has(dp.t)) map.set(dp.t, { time: label })
-      map.get(dp.t)![key] = dp.v
-    }
-  }
-  return Array.from(map.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, v]) => v)
-}
-
 export default function MetricsPage() {
+  const qc = useQueryClient()
   const [period, setPeriod] = useState<Period>('24h')
-  const [data, setData] = useState<MetricsResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const metricsQuery = useAdminMetrics(period)
+  const data = metricsQuery.data ?? null
+  const loading = metricsQuery.isFetching
+  const error = metricsQuery.error ? metricsQuery.error.message : null
 
-  const fetchMetrics = useCallback(async (p: Period) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await adminApi.getMetrics(p)
-      if (res.error) {
-        setError(res.error)
-      } else {
-        setData(res.data)
-      }
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar métricas')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchMetrics(period)
-  }, [period, fetchMetrics])
+  const fetchMetrics = (p: Period) =>
+    qc.invalidateQueries({ queryKey: adminKeys.metrics(p) })
 
   const m = data?.metrics
 
-  const tramitesCitasData = m
-    ? mergeDatapoints({
-        'Trámites': m.tramitesCreated?.datapoints || [],
-        'Citas': m.appointmentsScheduled?.datapoints || [],
-      }, period)
-    : []
-
-  const examenesData = m
-    ? mergeDatapoints({
-        'Aprobados': m.examsPassed?.datapoints || [],
-        'Reprobados': m.examsFailed?.datapoints || [],
-      }, period)
-    : []
-
-  const iotData = m
-    ? mergeDatapoints({
-        'Comandos IoT': m.iotCommandsSent?.datapoints || [],
-        'Jobs OTA': m.otaJobsCreated?.datapoints || [],
-      }, period)
-    : []
-
-  const authColdData = m
-    ? mergeDatapoints({
-        'Auth Failures': m.authFailures?.datapoints || [],
-        'Cold Starts': m.coldStarts?.datapoints || [],
-      }, period)
-    : []
-
-  const latencyData = m
-    ? mergeDatapoints({
-        'Latencia Avg': m.apiLatencyAvg?.datapoints || [],
-        'Latencia P99': m.apiLatencyP99?.datapoints || [],
-        'Integración Avg': m.apiIntegrationLatency?.datapoints || [],
-      }, period)
-    : []
-
-  const apiErrorsData = m
-    ? mergeDatapoints({
-        'Requests': m.apiRequests?.datapoints || [],
-        '4xx': m.api4xx?.datapoints || [],
-        '5xx': m.api5xx?.datapoints || [],
-      }, period)
-    : []
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900">Métricas</h1>
         <div className="flex items-center gap-2">
@@ -176,7 +112,6 @@ export default function MetricsPage() {
         </div>
       )}
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Trámites creados" value={m?.tramitesCreated?.total ?? 0} color={COLORS.primary} />
         <StatCard title="Exámenes aprobados" value={m?.examsPassed?.total ?? 0} color={COLORS.success} />
@@ -184,73 +119,8 @@ export default function MetricsPage() {
         <StatCard title="Auth failures" value={m?.authFailures?.total ?? 0} color={COLORS.danger} />
       </div>
 
-      {/* Row 2: Trámites+Citas & Exámenes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Trámites y Citas</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={tramitesCitasData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" fontSize={12} />
-              <YAxis fontSize={12} allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="Trámites" stroke={COLORS.primary} strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Citas" stroke={COLORS.info} strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+      {m && <TopCharts metrics={m} period={period} />}
 
-        <div className="bg-white rounded-lg shadow p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Exámenes</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={examenesData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" fontSize={12} />
-              <YAxis fontSize={12} allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="Aprobados" stackId="exam" fill={COLORS.success} />
-              <Bar dataKey="Reprobados" stackId="exam" fill={COLORS.danger} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Row 3: IoT & Auth/ColdStarts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">IoT & OTA</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={iotData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" fontSize={12} />
-              <YAxis fontSize={12} allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="Comandos IoT" stroke={COLORS.primary} strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Jobs OTA" stroke={COLORS.info} strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Auth Failures & Cold Starts</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={authColdData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" fontSize={12} />
-              <YAxis fontSize={12} allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="Auth Failures" fill={COLORS.danger} />
-              <Bar dataKey="Cold Starts" fill={COLORS.info} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* API Performance */}
       <h2 className="text-xl font-bold text-gray-900 pt-2">Performance API</h2>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -260,39 +130,7 @@ export default function MetricsPage() {
         <StatCard title="Errores 5xx" value={m?.api5xx?.total ?? 0} color={COLORS.danger} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Latencia (ms)</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={latencyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" fontSize={12} />
-              <YAxis fontSize={12} unit=" ms" />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="Latencia Avg" stroke={COLORS.info} strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Latencia P99" stroke={COLORS.danger} strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Integración Avg" stroke={COLORS.slate} strokeWidth={2} strokeDasharray="5 5" dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Requests y Errores</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={apiErrorsData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" fontSize={12} />
-              <YAxis fontSize={12} allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="Requests" fill={COLORS.primary} />
-              <Bar dataKey="4xx" fill={COLORS.warning} />
-              <Bar dataKey="5xx" fill={COLORS.danger} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      {m && <PerfCharts metrics={m} period={period} />}
     </div>
   )
 }
