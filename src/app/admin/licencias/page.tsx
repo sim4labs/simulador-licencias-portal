@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/lib/admin-api'
+import { adminKeys, useAdminLicencias } from '@/lib/admin-queries'
 import type { LicenciaResponse } from '@/lib/adapters'
 import { Modal } from '@/components/admin/Modal'
 import { Button } from '@/components/ui/Button'
@@ -19,26 +21,20 @@ function LicenseIcon({ name, size = 24 }: { name: string; size?: number }) {
 }
 
 export default function LicenciasPage() {
-  const [licenseTypes, setLicenseTypes] = useState<LicenciaResponse[]>([])
+  const qc = useQueryClient()
+  const licenciasQuery = useAdminLicencias()
+  const licenseTypes = licenciasQuery.data ?? []
   const [editModal, setEditModal] = useState(false)
   const [editing, setEditing] = useState<LicenciaResponse | null>(null)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editRequirements, setEditRequirements] = useState('')
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await adminApi.listarLicencias()
-      if (data) setLicenseTypes(data)
-    }
-    load()
-  }, [])
-
   const openEdit = (lt: LicenciaResponse) => {
     setEditing(lt)
     setEditName(lt.name)
     setEditDescription(lt.description)
-    setEditRequirements(lt.requirements.join('\n'))
+    setEditRequirements((lt.requirements || []).join('\n'))
     setEditModal(true)
   }
 
@@ -49,8 +45,7 @@ export default function LicenciasPage() {
       description: editDescription,
       requirements: editRequirements.split('\n').filter(Boolean),
     })
-    const { data } = await adminApi.listarLicencias()
-    if (data) setLicenseTypes(data)
+    qc.invalidateQueries({ queryKey: adminKeys.licencias })
     setEditModal(false)
   }
 
@@ -90,7 +85,7 @@ export default function LicenciasPage() {
                 <div className="border-t border-gray-100 mt-4 pt-4">
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Requisitos</h3>
                   <ul className="space-y-1.5">
-                    {lt.requirements.map((r, i) => (
+                    {(lt.requirements || []).map((r, i) => (
                       <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
                         <CheckCircle className="h-4 w-4 text-primary/60 mt-0.5 shrink-0" />
                         {r}

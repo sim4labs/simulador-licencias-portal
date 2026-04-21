@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { RefreshCw, Loader2, Monitor, ArrowUpRight, Download } from 'lucide-react'
-import { simulatorApi, type SimulatorPC } from '@/lib/simulator-api'
+import { simulatorApi } from '@/lib/simulator-api'
+import { simulatorKeys, useSimulatorPCs } from '@/lib/simulator-queries'
 import { Button } from '@/components/ui/Button'
 
 const ENV_LABEL: Record<string, string> = {
@@ -14,27 +16,14 @@ const ENV_LABEL: Record<string, string> = {
 const CURRENT_ENV = process.env.NEXT_PUBLIC_ENV || 'dev'
 
 export default function PCsPage() {
-  const [pcs, setPcs] = useState<SimulatorPC[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const qc = useQueryClient()
+  const pcsQuery = useSimulatorPCs()
+  const pcs = pcsQuery.data ?? []
+  const loading = pcsQuery.isLoading
+  const error = pcsQuery.error ? pcsQuery.error.message : null
   const [promoting, setPromoting] = useState<string | null>(null)
 
-  const loadData = useCallback(async () => {
-    const res = await simulatorApi.listPCs()
-    if (res.error) {
-      setError(res.error)
-    } else {
-      setPcs(res.data || [])
-      setError(null)
-    }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    loadData()
-    const interval = setInterval(loadData, 10_000)
-    return () => clearInterval(interval)
-  }, [loadData])
+  const loadData = () => qc.invalidateQueries({ queryKey: simulatorKeys.pcs })
 
   const handleEnvironmentChange = async (pcId: string, environment: string) => {
     if (environment === CURRENT_ENV) return

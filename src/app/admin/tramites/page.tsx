@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
 import { adminApi } from '@/lib/admin-api'
-import { adaptTramite, type LicenciaResponse } from '@/lib/adapters'
+import { adminKeys, useAdminLicencias, useAdminTramites } from '@/lib/admin-queries'
 import { DataTable } from '@/components/admin/DataTable'
 import { Badge, statusVariant, statusLabel } from '@/components/admin/Badge'
 import { Modal } from '@/components/admin/Modal'
@@ -13,7 +14,7 @@ import { Textarea } from '@/components/admin/Textarea'
 import { Search, ClipboardEdit } from 'lucide-react'
 
 export default function TramitesPage() {
-  const [tramites, setTramites] = useState<Tramite[]>([])
+  const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
@@ -23,19 +24,10 @@ export default function TramitesPage() {
   const [simPassed, setSimPassed] = useState(true)
   const [simFeedback, setSimFeedback] = useState('')
 
-  const [licenseTypes, setLicenseTypes] = useState<LicenciaResponse[]>([])
-
-  useEffect(() => {
-    async function load() {
-      const [tramitesRes, licenciasRes] = await Promise.all([
-        adminApi.listarTramites(),
-        adminApi.listarLicencias(),
-      ])
-      if (tramitesRes.data) setTramites(tramitesRes.data.map(adaptTramite))
-      if (licenciasRes.data) setLicenseTypes(licenciasRes.data)
-    }
-    load()
-  }, [])
+  const tramitesQuery = useAdminTramites()
+  const licenciasQuery = useAdminLicencias()
+  const tramites = tramitesQuery.data?.items ?? []
+  const licenseTypes = licenciasQuery.data ?? []
 
   const filtered = useMemo(() => {
     return tramites.filter(t => {
@@ -59,9 +51,8 @@ export default function TramitesPage() {
     }
     const { error } = await adminApi.registrarSimulador(simModal.id, body)
     if (!error) {
-      // Reload tramites to get updated data
-      const { data } = await adminApi.listarTramites()
-      if (data) setTramites(data.map(adaptTramite))
+      qc.invalidateQueries({ queryKey: ['admin', 'tramites'] })
+      qc.invalidateQueries({ queryKey: adminKeys.stats })
     }
     setSimModal(null)
     setSimScore('80')

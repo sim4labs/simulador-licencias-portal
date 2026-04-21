@@ -1,6 +1,4 @@
-'use client'
-
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { ProgressStepper } from '@/components/ProgressStepper'
 import { Bike, Car, Bus, Truck, UserCog, UserPlus, Ambulance } from 'lucide-react'
@@ -23,21 +21,18 @@ const LICENSE_TYPES: Array<{
   { id: '18', name: 'Emergencias', icon: Ambulance, description: 'Vehículos de emergencia' },
 ]
 
+const COVERAGE = new Set(LICENSE_TYPES.map((t) => t.id))
+const MISSING = LICENSE_TYPE_IDS.filter((id) => !COVERAGE.has(id))
+if (MISSING.length > 0 && process.env.NODE_ENV !== 'production') {
+  console.warn('LICENSE_TYPES no cubre:', MISSING)
+}
+
+export const metadata = {
+  title: 'Selecciona el tipo de licencia',
+  description: 'Elige el tipo de licencia que deseas tramitar en el simulador de Tlaxcala.',
+}
+
 export default function TipoLicenciaPage() {
-  const router = useRouter()
-
-  const handleSelectType = (typeId: LicenseTypeId) => {
-    sessionStorage.setItem('selectedLicenseType', typeId)
-    router.push('/portal/solicitud')
-  }
-
-  // Guardia en tiempo de desarrollo: el render cubre TODOS los IDs oficiales.
-  const coverage = new Set(LICENSE_TYPES.map(t => t.id))
-  const missing = LICENSE_TYPE_IDS.filter(id => !coverage.has(id))
-  if (missing.length > 0 && process.env.NODE_ENV !== 'production') {
-    console.warn('LICENSE_TYPES no cubre:', missing)
-  }
-
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -56,22 +51,27 @@ export default function TipoLicenciaPage() {
           {LICENSE_TYPES.map((type) => {
             const Icon = type.icon
             return (
-              <Card
+              <Link
                 key={type.id}
-                padding="lg"
-                className="cursor-pointer transition-all hover:shadow-lg hover:border-primary-300"
-                onClick={() => handleSelectType(type.id)}
+                href={`/portal/solicitud?tipo=${type.id}`}
+                prefetch
+                className="block"
               >
-                <div className="flex items-center">
-                  <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center mr-4">
-                    <Icon className="w-7 h-7 text-primary-600" />
+                <Card
+                  padding="lg"
+                  className="cursor-pointer transition-all hover:shadow-lg hover:border-primary-300"
+                >
+                  <div className="flex items-center">
+                    <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center mr-4">
+                      <Icon className="w-7 h-7 text-primary-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{type.name}</h3>
+                      <p className="text-sm text-gray-500">{type.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{type.name}</h3>
-                    <p className="text-sm text-gray-500">{type.description}</p>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </Link>
             )
           })}
         </div>

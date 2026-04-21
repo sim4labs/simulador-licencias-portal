@@ -1,16 +1,20 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { adminApi, type AdminUser } from '@/lib/admin-api'
+import { adminKeys, useAdminUsers } from '@/lib/admin-queries'
 import { DataTable } from '@/components/admin/DataTable'
 import { Modal } from '@/components/admin/Modal'
 import { Badge } from '@/components/admin/Badge'
 import { Plus, RotateCcw, ToggleLeft, ToggleRight, Copy, Check } from 'lucide-react'
 
 export default function UsuariosPage() {
-  const [admins, setAdmins] = useState<AdminUser[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const qc = useQueryClient()
+  const usersQuery = useAdminUsers()
+  const admins = usersQuery.data ?? []
+  const loading = usersQuery.isLoading
+  const [error, setError] = useState<string | null>(usersQuery.error?.message ?? null)
 
   // Modal: crear admin
   const [showCreate, setShowCreate] = useState(false)
@@ -30,20 +34,7 @@ export default function UsuariosPage() {
   } | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
 
-  const fetchAdmins = useCallback(async () => {
-    setLoading(true)
-    const { data, error } = await adminApi.listarAdmins()
-    if (error) {
-      setError(error)
-    } else {
-      setAdmins(data || [])
-    }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    fetchAdmins()
-  }, [fetchAdmins])
+  const invalidateUsers = () => qc.invalidateQueries({ queryKey: adminKeys.users })
 
   // ─── Crear admin ───
   const handleCreate = async () => {
@@ -60,7 +51,7 @@ export default function UsuariosPage() {
     setResultPassword(data!.temporaryPassword)
     setResultMessage(`Admin "${data!.username}" creado exitosamente`)
     setShowResult(true)
-    fetchAdmins()
+    invalidateUsers()
   }
 
   // ─── Toggle estado ───
@@ -73,7 +64,7 @@ export default function UsuariosPage() {
       setError(error)
       return
     }
-    fetchAdmins()
+    invalidateUsers()
   }
 
   // ─── Reset password ───

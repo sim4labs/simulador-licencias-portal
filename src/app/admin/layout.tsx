@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { AdminAuth } from '@/components/admin/AdminAuth'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { getCurrentAdmin, logoutAdmin } from '@/lib/admin-auth'
+import { AdminQueryProvider } from '@/lib/query-client'
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState(false)
@@ -31,5 +32,9 @@ export default function AdminRootLayout({ children }: { children: React.ReactNod
     return <AdminAuth onAuthenticated={handleAuthenticated} />
   }
 
-  return <AdminLayout onLogout={handleLogout}>{children}</AdminLayout>
+  return (
+    <AdminQueryProvider>
+      <AdminLayout onLogout={handleLogout}>{children}</AdminLayout>
+    </AdminQueryProvider>
+  )
 }
