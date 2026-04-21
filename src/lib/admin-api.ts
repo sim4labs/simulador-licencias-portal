@@ -39,15 +39,24 @@ export const adminApi = {
     return apiRequest<DashboardStatsResponse>('/admin/stats', { pool: 'admin' })
   },
 
-  listarTramites(params?: { status?: string; tipo?: string; search?: string }) {
+  listarTramites(params?: {
+    status?: string
+    tipo?: string
+    search?: string
+    limit?: number
+    cursor?: string
+  }) {
     const qs = new URLSearchParams()
     if (params?.status) qs.set('status', params.status)
     if (params?.tipo) qs.set('tipo', params.tipo)
     if (params?.search) qs.set('search', params.search)
+    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.cursor) qs.set('cursor', params.cursor)
     const query = qs.toString()
-    return apiRequest<TramiteResponse[]>(`/admin/tramites${query ? `?${query}` : ''}`, {
-      pool: 'admin',
-    })
+    return apiRequest<{ items: TramiteResponse[]; nextCursor: string | null }>(
+      `/admin/tramites${query ? `?${query}` : ''}`,
+      { pool: 'admin' },
+    )
   },
 
   getTramite(tramiteId: string) {
