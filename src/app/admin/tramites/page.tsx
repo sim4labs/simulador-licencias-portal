@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import type { Tramite } from '@/lib/tramite'
+import { LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
 import { adminApi } from '@/lib/admin-api'
 import { adaptTramite, type LicenciaResponse } from '@/lib/adapters'
 import { DataTable } from '@/components/admin/DataTable'
@@ -78,7 +78,7 @@ export default function TramitesPage() {
     },
     {
       key: 'tipo', header: 'Tipo', render: (t: Tramite) => (
-        <span className="capitalize text-xs">{t.licenseType || '—'}</span>
+        <span className="text-xs">{t.licenseType ? (LICENSE_TYPE_NAMES[t.licenseType as keyof typeof LICENSE_TYPE_NAMES] || t.licenseType) : '—'}</span>
       ),
     },
     {

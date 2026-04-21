@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Wifi,
   Eye,
+  ExternalLink,
   Loader2,
   Cpu,
   Clock,
@@ -17,6 +18,7 @@ import {
   Activity,
   MapPin,
   Calendar,
+  Zap,
 } from 'lucide-react'
 import {
   iotApi,
@@ -318,6 +320,20 @@ function EstadoTab({ device, reported, commandLoading, onCommand }: EstadoTabPro
               label="IP"
               value={reported.ip || '—'}
               mono
+              href={reported.ip ? `http://${reported.ip}` : undefined}
+            />
+            <InfoRow
+              icon={Zap}
+              label="Fuente DC"
+              value={reported.dcOk != null ? (reported.dcOk ? 'OK' : 'Falla') : '—'}
+              badge={
+                reported.dcOk != null
+                  ? {
+                      variant: reported.dcOk ? ('success' as const) : ('destructive' as const),
+                      label: reported.dcOk ? 'OK' : 'Falla',
+                    }
+                  : undefined
+              }
             />
           </div>
         </div>
@@ -359,6 +375,14 @@ function EstadoTab({ device, reported, commandLoading, onCommand }: EstadoTabPro
             <Eye className="h-4 w-4 mr-2" />
             Identificar
           </Button>
+          {device.online && reported.ip && (
+            <a href={`http://${reported.ip}`} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Abrir panel local
+              </Button>
+            </a>
+          )}
           {!device.online && (
             <p className="text-xs text-gray-400 self-center ml-2">
               El dispositivo debe estar en línea para recibir comandos
@@ -424,15 +448,27 @@ interface InfoRowProps {
   label: string
   value: string
   mono?: boolean
+  href?: string
   badge?: { variant: 'success' | 'warning' | 'destructive'; label: string }
 }
 
-function InfoRow({ icon: Icon, label, value, mono, badge }: InfoRowProps) {
+function InfoRow({ icon: Icon, label, value, mono, href, badge }: InfoRowProps) {
   return (
     <div className="flex items-center gap-3">
       <Icon className="h-4 w-4 text-gray-400 flex-shrink-0" />
       <span className="text-sm text-gray-500 w-36 flex-shrink-0">{label}</span>
-      <span className={`text-sm text-gray-900 ${mono ? 'font-mono' : ''}`}>{value}</span>
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`text-sm text-blue-600 hover:text-blue-800 hover:underline ${mono ? 'font-mono' : ''}`}
+        >
+          {value}
+        </a>
+      ) : (
+        <span className={`text-sm text-gray-900 ${mono ? 'font-mono' : ''}`}>{value}</span>
+      )}
       {badge && (
         <Badge variant={badge.variant} className="ml-2">{badge.label}</Badge>
       )}

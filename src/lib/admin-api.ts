@@ -10,6 +10,28 @@ import type {
   MetricsResponse,
 } from './adapters'
 
+export interface ScoringConfig {
+  penalties: {
+    speeding: number
+    pedestrianHit: number
+    bicycleCollision: number
+    vehicleCollision: number
+    signCollision: number
+    obstacleCollision: number
+    redLight: number
+    wrongWay: number
+    dangerousGearChange: number
+  }
+  passingScore: number
+  gradeThresholds: {
+    apto: number
+    aptoCondicionado: number
+    aptoReentrenamiento: number
+  }
+  examDurationSeconds: number
+  updatedAt?: string
+}
+
 // ─── Admin endpoints (require admin auth) ───
 
 export const adminApi = {
@@ -99,6 +121,20 @@ export const adminApi = {
     })
   },
 
+  // ─── Scoring Config ───
+
+  getScoringConfig() {
+    return apiRequest<ScoringConfig>('/admin/scoring-config', { pool: 'admin' })
+  },
+
+  updateScoringConfig(data: ScoringConfig) {
+    return apiRequest<{ success: boolean; updatedAt: string }>('/admin/scoring-config', {
+      method: 'PUT',
+      body: data,
+      pool: 'admin',
+    })
+  },
+
   // ─── Métricas ───
 
   getMetrics(period: string = '24h') {
@@ -132,6 +168,39 @@ export const adminApi = {
       { method: 'POST', pool: 'admin' }
     )
   },
+
+  // ─── Integration Tokens (bearer tokens para sistemas externos) ───
+
+  listIntegrationTokens() {
+    return apiRequest<{ tokens: IntegrationToken[] }>('/admin/integration-tokens', { pool: 'admin' })
+  },
+
+  createIntegrationToken(data: { name: string; description?: string; expiresAt?: string }) {
+    return apiRequest<IntegrationToken & { token: string }>('/admin/integration-tokens', {
+      method: 'POST',
+      body: data,
+      pool: 'admin',
+    })
+  },
+
+  revokeIntegrationToken(tokenId: string) {
+    return apiRequest<void>(`/admin/integration-tokens/${tokenId}`, {
+      method: 'DELETE',
+      pool: 'admin',
+    })
+  },
+}
+
+export interface IntegrationToken {
+  tokenId: string
+  name: string
+  description: string
+  createdBy: string
+  createdAt: string
+  lastUsedAt: string | null
+  expiresAt: string | null
+  isActive: boolean
+  revokedAt: string | null
 }
 
 export interface AdminUser {

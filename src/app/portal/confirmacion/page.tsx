@@ -7,19 +7,14 @@ import { useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ProgressStepper } from '@/components/ProgressStepper'
-import type { Tramite } from '@/lib/tramite'
+import { LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
 import { citizenApi } from '@/lib/citizen-api'
 import { adaptTramite } from '@/lib/adapters'
 import { CheckCircle, Calendar, Clock, Car, Download, Home, User, Mail, Phone } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import QRCode from 'qrcode'
 
-const LICENSE_NAMES: Record<string, string> = {
-  motocicleta: 'Motocicleta',
-  particular: 'Vehículo Particular',
-  publico: 'Transporte Público',
-  carga: 'Carga Pesada',
-}
+const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
 
 function ConfirmacionContent() {
   const searchParams = useSearchParams()

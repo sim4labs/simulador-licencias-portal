@@ -19,7 +19,8 @@ import {
 } from 'lucide-react'
 import { citizenApi } from '@/lib/citizen-api'
 import { adaptTramite } from '@/lib/adapters'
-import type { Tramite } from '@/lib/tramite'
+import { Badge } from '@/components/admin/Badge'
+import { LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
 
 /* ─── Constants ─── */
 
@@ -60,18 +61,21 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 }
 
 const LICENSE_ICONS: Record<string, typeof Car> = {
+  '1': Bus,
+  '2': Car,
+  '3': Car,
+  '4': Bike,
+  '6': Truck,
+  '9': Car,
+  '18': Car,
+  // Legacy string IDs (trámites creados antes de la migración al catálogo oficial)
   motocicleta: Bike,
   particular: Car,
   publico: Bus,
   carga: Truck,
 }
 
-const LICENSE_NAMES: Record<string, string> = {
-  motocicleta: 'Motocicleta',
-  particular: 'Particular',
-  publico: 'Transporte Público',
-  carga: 'Carga Pesada',
-}
+const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
 
 /* ─── Sub-components ─── */
 
@@ -156,17 +160,43 @@ function SimulatorResultBlock({ tramite }: { tramite: Tramite }) {
             />
           </div>
           <p className="text-xs text-gray-500">Mínimo aprobatorio: 70/100</p>
-          {sim.feedback.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-100">
-              <p className="text-xs font-medium text-gray-700 mb-1">Retroalimentación:</p>
-              <ul className="space-y-1">
-                {sim.feedback.map((f, i) => (
-                  <li key={i} className="text-xs text-gray-600 flex items-start gap-1.5">
-                    <span className="text-gray-400 mt-0.5">&#8226;</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
+          {sim.faults.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <p className="text-xs font-semibold text-gray-700 mb-2">Infracciones ({sim.faults.length})</p>
+              <div className="bg-gray-50 rounded-lg overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Minuto</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Infracción</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Severidad</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Puntos</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {sim.faults.map((fault, idx) => {
+                      const min = Math.floor(fault.secondsFromStart / 60)
+                      const sec = fault.secondsFromStart % 60
+                      const severityVariant: Record<string, 'warning' | 'secondary' | 'destructive'> = { minor: 'warning', major: 'secondary', critical: 'destructive' }
+                      const severityLabel: Record<string, string> = { minor: 'Menor', major: 'Mayor', critical: 'Crítica' }
+                      return (
+                        <tr key={idx}>
+                          <td className="px-3 py-2 text-sm font-mono text-gray-600 whitespace-nowrap">
+                            {min}:{sec.toString().padStart(2, '0')}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">{fault.description}</td>
+                          <td className="px-3 py-2">
+                            <Badge variant={severityVariant[fault.severity] || 'default'}>
+                              {severityLabel[fault.severity] || fault.severity}
+                            </Badge>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-right font-medium text-red-600">-{fault.deduction}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

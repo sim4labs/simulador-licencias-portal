@@ -21,12 +21,12 @@ const TIME_SLOTS = [
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie']
 
-/** Mapeo de vehicleType del dispositivo a licenseType de las citas */
+/** Mapeo de vehicleType del dispositivo al licenseType oficial (ID numérico como string). */
 const VEHICLE_TO_LICENSE: Record<VehicleType, string> = {
-  motorcycle: 'motocicleta',
-  car: 'particular',
-  passenger_bus: 'publico',
-  cargo_truck: 'carga',
+  motorcycle: '4',       // Motociclista
+  car: '3',              // Automovilista
+  passenger_bus: '1',    // Servicio Público
+  cargo_truck: '6',      // Servicio de Carga
 }
 
 const STATUS_BG: Record<string, string> = {

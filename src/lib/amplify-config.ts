@@ -2,6 +2,8 @@ import { Amplify } from 'aws-amplify'
 
 type Pool = 'citizen' | 'admin'
 
+const identityPoolId = process.env.NEXT_PUBLIC_IDENTITY_POOL_ID || ''
+
 const poolConfigs: Record<Pool, { userPoolId: string; userPoolClientId: string }> = {
   citizen: {
     userPoolId: process.env.NEXT_PUBLIC_CITIZEN_POOL_ID || '',
@@ -22,14 +24,27 @@ export function configureAmplifyForPool(pool: Pool): void {
     console.warn(`[Auth] ${pool} pool not configured`)
     return
   }
-  Amplify.configure({
-    Auth: {
-      Cognito: {
-        userPoolId: config.userPoolId,
-        userPoolClientId: config.userPoolClientId,
+
+  if (pool === 'citizen' && identityPoolId) {
+    Amplify.configure({
+      Auth: {
+        Cognito: {
+          userPoolId: config.userPoolId,
+          userPoolClientId: config.userPoolClientId,
+          identityPoolId,
+        },
       },
-    },
-  })
+    })
+  } else {
+    Amplify.configure({
+      Auth: {
+        Cognito: {
+          userPoolId: config.userPoolId,
+          userPoolClientId: config.userPoolClientId,
+        },
+      },
+    })
+  }
   currentPool = pool
 }
 

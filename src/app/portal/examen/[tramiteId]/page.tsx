@@ -29,6 +29,14 @@ import {
 } from 'lucide-react'
 
 const LICENSE_TYPE_INFO: Record<string, { name: string; icon: typeof Bike }> = {
+  '1': { name: 'Servicio Público', icon: Bus },
+  '2': { name: 'Chofer Particular', icon: Car },
+  '3': { name: 'Automovilista', icon: Car },
+  '4': { name: 'Motociclista', icon: Bike },
+  '6': { name: 'Servicio de Carga', icon: Truck },
+  '9': { name: 'Permiso para Menores', icon: Car },
+  '18': { name: 'Emergencias', icon: Car },
+  // Legacy IDs previos al catálogo oficial.
   motocicleta: { name: 'Motocicleta', icon: Bike },
   particular: { name: 'Vehículo Particular', icon: Car },
   publico: { name: 'Transporte Público', icon: Bus },

@@ -20,16 +20,18 @@ import {
 } from 'lucide-react'
 import { citizenApi } from '@/lib/citizen-api'
 import { adaptTramite } from '@/lib/adapters'
-import { canProceedToStep, type Tramite } from '@/lib/tramite'
+import { canProceedToStep, LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
 
-const LICENSE_NAMES: Record<string, string> = {
-  motocicleta: 'Motocicleta',
-  particular: 'Vehículo Particular',
-  publico: 'Transporte Público',
-  carga: 'Carga Pesada',
-}
+const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
 
 const LICENSE_ICONS: Record<string, typeof Car> = {
+  '1': Bus,
+  '2': Car,
+  '3': Car,
+  '4': Bike,
+  '6': Truck,
+  '9': Car,
+  '18': Car,
   motocicleta: Bike,
   particular: Car,
   publico: Bus,

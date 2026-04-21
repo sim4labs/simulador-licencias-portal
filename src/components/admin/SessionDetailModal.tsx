@@ -83,10 +83,19 @@ export function SessionDetailModal({ session, onClose }: SessionDetailModalProps
           </div>
           <div>
             <span className="text-gray-500">Resultado:</span>{' '}
-            <Badge variant={session.passed ? 'success' : 'destructive'}>
-              {session.passed ? 'Aprobado' : 'Reprobado'}
-            </Badge>
+            {session.status === 'interrupted' ? (
+              <Badge variant="warning">Interrumpida</Badge>
+            ) : (
+              <Badge variant={session.passed ? 'success' : 'destructive'}>
+                {session.passed ? 'Aprobado' : 'Reprobado'}
+              </Badge>
+            )}
           </div>
+          {session.status === 'interrupted' && (
+            <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+              Esta prueba fue interrumpida. La calificación es parcial y no cuenta como resultado oficial.
+            </div>
+          )}
         </div>
 
         {/* Tabla de faltas */}

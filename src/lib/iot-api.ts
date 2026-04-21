@@ -31,6 +31,7 @@ export interface ShadowReported {
   ip?: string
   firmware?: string
   lastUpdate?: number
+  dcOk?: boolean
   m1?: { state: string; pos: number; speed: number; moving: boolean; cycles: number }
   m2?: { state: string; pos: number; speed: number; moving: boolean; cycles: number }
   [key: string]: unknown
@@ -112,7 +113,7 @@ export interface Session {
   startedAt: string
   endedAt?: string
   duration?: number
-  status: 'active' | 'completed' | 'cancelled'
+  status: 'active' | 'completed' | 'cancelled' | 'interrupted'
   passed?: boolean
   score?: number
   faults?: SessionFault[]

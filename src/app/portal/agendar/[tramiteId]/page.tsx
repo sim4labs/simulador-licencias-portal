@@ -6,19 +6,14 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ProgressStepper } from '@/components/ProgressStepper'
-import { canProceedToStep, type Tramite } from '@/lib/tramite'
+import { canProceedToStep, LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
 import { citizenApi } from '@/lib/citizen-api'
 import { publicApi } from '@/lib/admin-api'
 import { adaptTramite } from '@/lib/adapters'
 import { formatDate } from '@/lib/utils'
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
 
-const LICENSE_NAMES: Record<string, string> = {
-  motocicleta: 'Motocicleta',
-  particular: 'Vehículo Particular',
-  publico: 'Transporte Público',
-  carga: 'Carga Pesada',
-}
+const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate()

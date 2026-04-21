@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users, BarChart3, Download } from 'lucide-react'
+import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users, BarChart3, Download, ClipboardCheck, Monitor, Box, Upload, KeyRound } from 'lucide-react'
 
 const navSections = [
   {
@@ -19,22 +19,37 @@ const navSections = [
   {
     title: 'Simuladores',
     items: [
-      { href: '/admin/iot', label: 'Dispositivos IoT', icon: Cpu },
+      { href: '/admin/simuladores', label: 'Simuladores', icon: Box },
+      { href: '/admin/simuladores/pcs', label: 'PCs', icon: Monitor },
+      { href: '/admin/simuladores/builds', label: 'Builds Unity', icon: Upload },
+      { href: '/admin/iot', label: 'Controladores', icon: Cpu },
       { href: '/admin/iot/firmware', label: 'Firmware', icon: Download },
     ],
   },
   {
     title: 'Configuración',
     items: [
+      { href: '/admin/scoring', label: 'Calificación', icon: ClipboardCheck },
       { href: '/admin/preguntas', label: 'Preguntas', icon: HelpCircle },
       { href: '/admin/licencias', label: 'Licencias', icon: CreditCard },
       { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
+      { href: '/admin/integraciones', label: 'Integraciones', icon: KeyRound },
     ],
   },
 ]
 
+// Collect all hrefs, sorted longest first, to find the most specific match
+const allHrefs = navSections.flatMap(s => s.items.map(i => i.href)).sort((a, b) => b.length - a.length)
+
+function getActiveHref(pathname: string): string {
+  return allHrefs.find(href =>
+    pathname === href || (href !== '/admin' && pathname.startsWith(href + '/'))
+  ) || '/admin'
+}
+
 export function Sidebar() {
   const pathname = usePathname()
+  const activeHref = getActiveHref(pathname)
 
   return (
     <aside className="fixed top-16 bottom-0 left-0 w-64 bg-[#EBEBED] border-r border-[#DCDCE0] flex-col hidden lg:flex">
@@ -49,7 +64,7 @@ export function Sidebar() {
             </p>
             <div className="space-y-1">
               {section.items.map(item => {
-                const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href))
+                const isActive = activeHref === item.href
                 return (
                   <Link
                     key={item.href}

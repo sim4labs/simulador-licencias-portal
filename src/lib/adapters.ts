@@ -1,4 +1,4 @@
-import type { Tramite } from './tramite'
+import type { Tramite, LicenseTypeId, TipoSangre, EstadoCivil } from './tramite'
 
 // DynamoDB flat tramite shape (as returned by the API)
 export interface TramiteResponse {
@@ -9,8 +9,19 @@ export interface TramiteResponse {
   apellidoMaterno?: string
   fechaNacimiento?: string
   curp?: string
+  rfc?: string
   email?: string
   telefono?: string
+  tipoSangre?: string
+  alergias?: string
+  estadoCivil?: string
+  calle?: string
+  noExterior?: string
+  noInterior?: string
+  codigoPostal?: string
+  municipio?: string
+  colonia?: string
+  donador?: boolean
   direccion?: string
   licenseType?: string
   currentStep: number
@@ -24,6 +35,7 @@ export interface TramiteResponse {
   simulatorPassed?: boolean
   simulatorScore?: number
   simulatorFeedback?: string[]
+  simulatorFaults?: { type: string; description: string; secondsFromStart: number; severity: string; deduction: number }[]
   simulatorCompletedAt?: string
   createdAt: string
   updatedAt: string
@@ -38,11 +50,21 @@ export function adaptTramite(r: TramiteResponse): Tramite {
       apellidoMaterno: r.apellidoMaterno || '',
       fechaNacimiento: r.fechaNacimiento || '',
       curp: r.curp || '',
+      rfc: r.rfc || '',
       email: r.email || '',
       telefono: r.telefono || '',
-      direccion: r.direccion || '',
+      tipoSangre: (r.tipoSangre || '') as TipoSangre | '',
+      alergias: r.alergias || '',
+      estadoCivil: (r.estadoCivil || '') as EstadoCivil | '',
+      calle: r.calle || '',
+      noExterior: r.noExterior || '',
+      noInterior: r.noInterior || '',
+      codigoPostal: r.codigoPostal || '',
+      municipio: r.municipio || '',
+      colonia: r.colonia || '',
+      donador: r.donador === true,
     },
-    licenseType: r.licenseType,
+    licenseType: r.licenseType as LicenseTypeId | undefined,
     currentStep: (r.currentStep || 1) as Tramite['currentStep'],
     status: (r.status || 'iniciado') as Tramite['status'],
     createdAt: r.createdAt,
@@ -70,6 +92,7 @@ export function adaptTramite(r: TramiteResponse): Tramite {
       passed: r.simulatorPassed,
       score: r.simulatorScore || 0,
       feedback: r.simulatorFeedback || [],
+      faults: r.simulatorFaults || [],
       completedAt: r.simulatorCompletedAt || '',
     }
   }
@@ -92,6 +115,7 @@ export interface TramitePublicResponse {
   appointmentCode?: string
   simulatorPassed?: boolean
   simulatorScore?: number
+  simulatorFaults?: { type: string; description: string; secondsFromStart: number; severity: string; deduction: number }[]
 }
 
 export function adaptPublicTramite(r: TramitePublicResponse): Partial<Tramite> {
@@ -103,11 +127,21 @@ export function adaptPublicTramite(r: TramitePublicResponse): Partial<Tramite> {
       apellidoMaterno: '',
       fechaNacimiento: '',
       curp: '',
+      rfc: '',
       email: '',
       telefono: '',
-      direccion: '',
+      tipoSangre: '',
+      alergias: '',
+      estadoCivil: '',
+      calle: '',
+      noExterior: '',
+      noInterior: '',
+      codigoPostal: '',
+      municipio: '',
+      colonia: '',
+      donador: false,
     },
-    licenseType: r.licenseType,
+    licenseType: r.licenseType as LicenseTypeId | undefined,
     currentStep: (r.currentStep || 1) as Tramite['currentStep'],
     status: (r.status || 'iniciado') as Tramite['status'],
   }
@@ -133,6 +167,7 @@ export function adaptPublicTramite(r: TramitePublicResponse): Partial<Tramite> {
       passed: r.simulatorPassed,
       score: r.simulatorScore || 0,
       feedback: [],
+      faults: r.simulatorFaults || [],
       completedAt: '',
     }
   }

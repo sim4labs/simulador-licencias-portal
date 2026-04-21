@@ -1211,8 +1211,20 @@ export function getQuestionsByLicenseType(licenseType: string, count: number = 2
   // Siempre incluir preguntas generales
   const generalPool = pool.filter(q => q.category === 'general')
 
+  // Mapeo de ID oficial de licencia (sistema de cobros) → categoría de preguntas.
+  const CATEGORY_BY_LICENSE_ID: Record<string, string> = {
+    '1': 'publico',       // Servicio Público
+    '2': 'particular',    // Chofer Particular
+    '3': 'particular',    // Automovilista
+    '4': 'motocicleta',   // Motociclista
+    '6': 'carga',         // Servicio de Carga
+    '9': 'particular',    // Permiso para Menores
+    '18': 'particular',   // Emergencias
+  }
+
   // Agregar preguntas específicas según el tipo
-  const category = ['motocicleta', 'particular', 'publico', 'carga'].includes(licenseType) ? licenseType : 'particular'
+  const category = CATEGORY_BY_LICENSE_ID[licenseType]
+    ?? (['motocicleta', 'particular', 'publico', 'carga'].includes(licenseType) ? licenseType : 'particular')
   const specificPool = pool.filter(q => q.category === category)
 
   // Tomar preguntas: 60% generales, 40% específicas
