@@ -189,10 +189,25 @@ export const adminApi = {
       pool: 'admin',
     })
   },
+
+  rotateIntegrationToken(tokenId: string) {
+    return apiRequest<IntegrationToken & { token: string }>(
+      `/admin/integration-tokens/${tokenId}/rotate`,
+      { method: 'POST', pool: 'admin' }
+    )
+  },
+
+  getIntegrationTokenCalls(tokenId: string, limit = 100) {
+    return apiRequest<{ tokenId: string; calls: IntegrationTokenCall[]; count: number }>(
+      `/admin/integration-tokens/${tokenId}/calls?limit=${limit}`,
+      { pool: 'admin' }
+    )
+  },
 }
 
 export interface IntegrationToken {
   tokenId: string
+  tokenPreview: string | null
   name: string
   description: string
   createdBy: string
@@ -201,6 +216,15 @@ export interface IntegrationToken {
   expiresAt: string | null
   isActive: boolean
   revokedAt: string | null
+  rotatedIntoTokenId: string | null
+  rotatedFromTokenId: string | null
+}
+
+export interface IntegrationTokenCall {
+  timestamp: string
+  curp: string
+  result: 'no_existe' | 'sin_aprobar' | 'aprobado'
+  sourceIp: string
 }
 
 export interface AdminUser {

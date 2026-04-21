@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { adminApi, type IntegrationToken } from '@/lib/admin-api'
+import { adminApi, type IntegrationToken, type IntegrationTokenCall } from '@/lib/admin-api'
 import { DataTable } from '@/components/admin/DataTable'
 import { Modal } from '@/components/admin/Modal'
 import { Badge } from '@/components/admin/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/admin/Textarea'
-import { Copy, KeyRound, Trash2, Check } from 'lucide-react'
+import { Copy, KeyRound, Trash2, Check, RefreshCw, History } from 'lucide-react'
 
 function formatDate(iso: string | null) {
   if (!iso) return '—'
@@ -18,18 +18,37 @@ function formatDate(iso: string | null) {
   })
 }
 
+function resultBadge(r: IntegrationTokenCall['result']) {
+  if (r === 'aprobado')    return <Badge variant="success">Aprobado</Badge>
+  if (r === 'sin_aprobar') return <Badge variant="warning">Sin aprobar</Badge>
+  return <Badge variant="default">No existe</Badge>
+}
+
 export default function IntegracionesPage() {
   const [tokens, setTokens] = useState<IntegrationToken[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Crear
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [newToken, setNewToken] = useState<string | null>(null)
+  const [newToken, setNewToken] = useState<{ value: string; rotatedFromName?: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Revocar
   const [revokeTarget, setRevokeTarget] = useState<IntegrationToken | null>(null)
   const [revoking, setRevoking] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+
+  // Rotar
+  const [rotateTarget, setRotateTarget] = useState<IntegrationToken | null>(null)
+  const [rotating, setRotating] = useState(false)
+
+  // Historial
+  const [callsTarget, setCallsTarget] = useState<IntegrationToken | null>(null)
+  const [calls, setCalls] = useState<IntegrationTokenCall[]>([])
+  const [callsLoading, setCallsLoading] = useState(false)
 
   const reload = async () => {
     setLoading(true)
@@ -42,48 +61,41 @@ export default function IntegracionesPage() {
     reload()
   }, [])
 
-  const openCreate = () => {
+  const resetCreateState = () => {
     setName('')
     setDescription('')
     setNewToken(null)
     setCopied(false)
     setError(null)
+  }
+
+  const openCreate = () => {
+    resetCreateState()
     setCreateOpen(true)
   }
 
   const closeCreate = () => {
     setCreateOpen(false)
-    setName('')
-    setDescription('')
-    setNewToken(null)
-    setCopied(false)
-    setError(null)
+    resetCreateState()
   }
 
   const handleCreate = async () => {
-    if (!name.trim()) {
-      setError('El nombre es obligatorio')
-      return
-    }
-    setSubmitting(true)
-    setError(null)
+    if (!name.trim()) { setError('El nombre es obligatorio'); return }
+    setSubmitting(true); setError(null)
     const { data, error: apiError } = await adminApi.createIntegrationToken({
       name: name.trim(),
       description: description.trim(),
     })
     setSubmitting(false)
-    if (apiError || !data) {
-      setError(apiError || 'No se pudo crear el token')
-      return
-    }
-    setNewToken(data.token)
+    if (apiError || !data) { setError(apiError || 'No se pudo crear el token'); return }
+    setNewToken({ value: data.token })
     await reload()
   }
 
   const handleCopy = async () => {
     if (!newToken) return
     try {
-      await navigator.clipboard.writeText(newToken)
+      await navigator.clipboard.writeText(newToken.value)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
@@ -96,12 +108,30 @@ export default function IntegracionesPage() {
     setRevoking(true)
     const { error: apiError } = await adminApi.revokeIntegrationToken(revokeTarget.tokenId)
     setRevoking(false)
-    if (apiError) {
-      setError(apiError)
-      return
-    }
+    if (apiError) { setError(apiError); return }
     setRevokeTarget(null)
     await reload()
+  }
+
+  const handleRotate = async () => {
+    if (!rotateTarget) return
+    setRotating(true); setError(null)
+    const { data, error: apiError } = await adminApi.rotateIntegrationToken(rotateTarget.tokenId)
+    setRotating(false)
+    if (apiError || !data) { setError(apiError || 'No se pudo rotar el token'); return }
+    setNewToken({ value: data.token, rotatedFromName: rotateTarget.name })
+    setRotateTarget(null)
+    setCreateOpen(true)
+    await reload()
+  }
+
+  const openCalls = async (t: IntegrationToken) => {
+    setCallsTarget(t)
+    setCallsLoading(true)
+    setCalls([])
+    const { data } = await adminApi.getIntegrationTokenCalls(t.tokenId, 100)
+    if (data) setCalls(data.calls)
+    setCallsLoading(false)
   }
 
   const columns = [
@@ -111,6 +141,11 @@ export default function IntegracionesPage() {
           <KeyRound className="h-4 w-4 text-gray-400" />
           <span className="font-medium">{t.name}</span>
         </div>
+      ),
+    },
+    {
+      key: 'preview', header: 'Token', render: (t: IntegrationToken) => (
+        <code className="text-xs text-gray-600">{t.tokenPreview || '—'}</code>
       ),
     },
     {
@@ -132,20 +167,37 @@ export default function IntegracionesPage() {
       key: 'status', header: 'Estado', render: (t: IntegrationToken) => (
         t.isActive
           ? <Badge variant="success">Activo</Badge>
-          : <Badge variant="destructive">Revocado</Badge>
+          : t.rotatedIntoTokenId
+            ? <Badge variant="default">Rotado</Badge>
+            : <Badge variant="destructive">Revocado</Badge>
       ),
     },
     {
       key: 'acciones', header: 'Acciones', render: (t: IntegrationToken) => (
-        t.isActive ? (
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setRevokeTarget(t)}
-            className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700"
+            onClick={() => openCalls(t)}
+            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            Revocar
+            <History className="h-3.5 w-3.5" /> Historial
           </button>
-        ) : <span className="text-xs text-gray-400">—</span>
+          {t.isActive && (
+            <>
+              <button
+                onClick={() => setRotateTarget(t)}
+                className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Rotar
+              </button>
+              <button
+                onClick={() => setRevokeTarget(t)}
+                className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Revocar
+              </button>
+            </>
+          )}
+        </div>
       ),
     },
   ]
@@ -156,7 +208,7 @@ export default function IntegracionesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Integraciones</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Tokens para que sistemas externos consulten el API de trámites por CURP.
+            Tokens bearer para que sistemas externos consulten el API por CURP.
           </p>
         </div>
         <Button onClick={openCreate}>Crear token</Button>
@@ -173,30 +225,26 @@ export default function IntegracionesPage() {
         />
       )}
 
+      {/* ── Crear / mostrar token generado (también se reusa tras rotar) ── */}
       <Modal
         open={createOpen}
         onClose={closeCreate}
-        title={newToken ? 'Token generado' : 'Crear token de integración'}
+        title={newToken ? (newToken.rotatedFromName ? `Token rotado (${newToken.rotatedFromName})` : 'Token generado') : 'Crear token de integración'}
       >
         {newToken ? (
           <div className="space-y-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
               <strong>Guarda este token ahora.</strong> No lo volverás a ver después de cerrar esta ventana.
+              {newToken.rotatedFromName && (
+                <div className="mt-2 text-xs">El token anterior quedó revocado automáticamente.</div>
+              )}
             </div>
             <div className="bg-gray-900 rounded-lg p-3">
-              <code className="text-xs text-gray-100 break-all block">{newToken}</code>
+              <code className="text-xs text-gray-100 break-all block">{newToken.value}</code>
             </div>
             <div className="flex gap-2">
               <Button onClick={handleCopy} variant="secondary" className="flex-1">
-                {copied ? (
-                  <>
-                    <Check className="h-4 w-4 mr-1" /> Copiado
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-1" /> Copiar
-                  </>
-                )}
+                {copied ? (<><Check className="h-4 w-4 mr-1" /> Copiado</>) : (<><Copy className="h-4 w-4 mr-1" /> Copiar</>)}
               </Button>
               <Button onClick={closeCreate} className="flex-1">Cerrar</Button>
             </div>
@@ -218,27 +266,18 @@ export default function IntegracionesPage() {
               rows={3}
             />
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700">
-                {error}
-              </div>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700">{error}</div>
             )}
             <div className="flex gap-2 justify-end">
-              <Button onClick={closeCreate} variant="secondary" disabled={submitting}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreate} isLoading={submitting}>
-                Crear token
-              </Button>
+              <Button onClick={closeCreate} variant="secondary" disabled={submitting}>Cancelar</Button>
+              <Button onClick={handleCreate} isLoading={submitting}>Crear token</Button>
             </div>
           </div>
         )}
       </Modal>
 
-      <Modal
-        open={!!revokeTarget}
-        onClose={() => setRevokeTarget(null)}
-        title="Revocar token"
-      >
+      {/* ── Revocar ── */}
+      <Modal open={!!revokeTarget} onClose={() => setRevokeTarget(null)} title="Revocar token">
         <div className="space-y-4">
           <p className="text-sm text-gray-700">
             El sistema externo que use este token perderá acceso inmediatamente. Esta acción no se puede deshacer.
@@ -246,24 +285,79 @@ export default function IntegracionesPage() {
           {revokeTarget && (
             <div className="bg-gray-50 rounded-lg p-3 text-sm">
               <div><strong>Nombre:</strong> {revokeTarget.name}</div>
-              {revokeTarget.description && (
-                <div className="text-gray-600"><strong>Descripción:</strong> {revokeTarget.description}</div>
-              )}
-            </div>
-          )}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700">
-              {error}
+              <div className="text-gray-600"><strong>Token:</strong> <code>{revokeTarget.tokenPreview}</code></div>
             </div>
           )}
           <div className="flex gap-2 justify-end">
-            <Button onClick={() => setRevokeTarget(null)} variant="secondary" disabled={revoking}>
-              Cancelar
-            </Button>
-            <Button onClick={handleRevoke} isLoading={revoking}>
-              Revocar
-            </Button>
+            <Button onClick={() => setRevokeTarget(null)} variant="secondary" disabled={revoking}>Cancelar</Button>
+            <Button onClick={handleRevoke} isLoading={revoking}>Revocar</Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* ── Rotar ── */}
+      <Modal open={!!rotateTarget} onClose={() => setRotateTarget(null)} title="Rotar token">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-700">
+            Se generará un token nuevo con el mismo nombre y descripción. El token actual queda revocado en la misma operación.
+          </p>
+          {rotateTarget && (
+            <div className="bg-gray-50 rounded-lg p-3 text-sm">
+              <div><strong>Nombre:</strong> {rotateTarget.name}</div>
+              <div className="text-gray-600"><strong>Token actual:</strong> <code>{rotateTarget.tokenPreview}</code></div>
+            </div>
+          )}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700">{error}</div>
+          )}
+          <div className="flex gap-2 justify-end">
+            <Button onClick={() => setRotateTarget(null)} variant="secondary" disabled={rotating}>Cancelar</Button>
+            <Button onClick={handleRotate} isLoading={rotating}>Rotar token</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Historial ── */}
+      <Modal
+        open={!!callsTarget}
+        onClose={() => setCallsTarget(null)}
+        title={callsTarget ? `Historial · ${callsTarget.name}` : 'Historial'}
+        className="max-w-3xl"
+      >
+        <div className="space-y-3">
+          {callsTarget && (
+            <div className="text-xs text-gray-500">
+              Token <code>{callsTarget.tokenPreview}</code> · últimas 100 llamadas (retención 90 días)
+            </div>
+          )}
+          {callsLoading ? (
+            <p className="text-sm text-gray-400">Cargando...</p>
+          ) : calls.length === 0 ? (
+            <p className="text-sm text-gray-400">Este token aún no tiene llamadas registradas.</p>
+          ) : (
+            <div className="overflow-x-auto max-h-[60vh]">
+              <table className="min-w-full divide-y divide-gray-200 text-xs">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">CURP</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">Resultado</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">IP</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {calls.map((c, i) => (
+                    <tr key={`${c.timestamp}-${i}`}>
+                      <td className="px-3 py-2 whitespace-nowrap text-gray-700">{formatDate(c.timestamp)}</td>
+                      <td className="px-3 py-2 font-mono">{c.curp}</td>
+                      <td className="px-3 py-2">{resultBadge(c.result)}</td>
+                      <td className="px-3 py-2 text-gray-500">{c.sourceIp}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </Modal>
     </div>
