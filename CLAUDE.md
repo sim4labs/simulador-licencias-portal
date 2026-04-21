@@ -127,13 +127,52 @@ Definida en `tailwind.config.ts`:
 - Formularios con validación básica HTML5 + estados controlados
 - Suspense boundaries para componentes que usan `useSearchParams`
 
+### Estrategia de renderizado (SSR-first)
+
+Rutas públicas y formularios del flujo ciudadano son **server components** con islas cliente aisladas. Nuevas páginas deben seguir este patrón.
+
+- **`/` (landing)**: server component prerenderizado estático. Islas cliente en `src/components/landing/`:
+  - `ScrollReveal` — wrapper con `data-revealed` (cascada CSS a `.animate-on-scroll` descendientes server-rendered).
+  - `FaqAccordion` — accordion interactivo.
+  - `LandingSessionGate` — redirect `/ → /portal` si hay sesión Cognito + banner de trámite activo.
+- **`/portal/tipo-licencia`**: server component estático. Tarjetas son `<Link href="/portal/solicitud?tipo={id}">` — **no** `onClick + sessionStorage`.
+- **`/portal/solicitud`**: server component dinámico. Valida `searchParams.tipo` y `redirect()` sin flash si inválido. Pasa `licenseType` al form cliente (`SolicitudForm.tsx`).
+- **`/portal/layout.tsx`**: server component con `metadata` (robots:noindex). Auth gate extraído a `src/components/portal/PortalAuthGate.tsx` como isla cliente.
+- **Resto de `/portal/*`** (dashboard, examen, agendar, perfil, historial, confirmacion, verificacion, foto): siguen `'use client'` porque Amplify guarda tokens en localStorage y requieren sesión. SSR completo requeriría migrar auth a cookies HTTP-only (no priorizado).
+- **`loading.tsx`, `error.tsx`, `not-found.tsx`** en `src/app/portal/` dan skeleton/error/404 UI para el segmento ciudadano.
+
+**Reglas al agregar rutas nuevas:**
+
+1. **Estado entre páginas → URL query params**, no `sessionStorage` ni `localStorage`. Query params son deep-linkable, server-readable y sobreviven refresh.
+2. **Constantes estáticas (FAQs, labels, costos, pasos)**: extraerlas a `src/lib/landing-content.ts` o similares para que server components las consuman sin `'use client'`.
+3. **Metadata**: cada ruta server-rendered debe exportar `metadata` o `generateMetadata` para SEO. Rutas autenticadas llevan `robots: { index: false }`.
+4. **Animaciones CSS con `animate-on-scroll`**: envolver en `<ScrollReveal>` (el selector `[data-revealed="true"] .animate-on-scroll` en `globals.css` cascadea a hijos server-rendered, así el HTML server sigue siendo el ground truth).
+
+### Data fetching en `/admin/*` (TanStack Query v5)
+
+- **Nunca** usar `useEffect(() => fetch())` en páginas admin. Siempre `useQuery` vía los hooks en:
+  - `src/lib/admin-queries.ts` (endpoints `/admin/*`)
+  - `src/lib/iot-queries.ts` (endpoints `/admin/iot/*`)
+  - `src/lib/simulator-queries.ts` (endpoints `/admin/simulators`, `/admin/pcs`, `/admin/unity-builds`)
+- Query keys centralizadas en cada archivo (`adminKeys`, `iotKeys`, `simulatorKeys`) — nunca hard-codear keys en una página.
+- Tras una mutation, invalidar con `queryClient.invalidateQueries({ queryKey: ... })`. Evitar `reload()` manual.
+- Listados paginados: `placeholderData: keepPreviousData` para no mostrar blank state al filtrar.
+- Polling: `refetchInterval`, no `setInterval`.
+- Para un query nuevo: agregarlo al archivo correspondiente + agregarlo a la función `usePrefetch*()` si la ruta está en el Sidebar.
+- El provider `<AdminQueryProvider>` vive en `admin/layout.tsx` después del gate de auth — páginas fuera de `/admin/*` no tienen acceso a la caché admin.
+
+### Code splitting
+
+- Route-level es automático por App Router. No hace falta `next/dynamic` para componentes que sólo se usan en una ruta.
+- Usar `next/dynamic` cuando: (1) el componente es pesado y sólo se renderiza tras interacción (tabs, modales), o (2) queremos que el resto de la página aparezca primero (caso `/admin/metrics` con recharts extraído a `MetricsCharts.tsx`).
+
 ## Notas de Desarrollo
 
 ### Almacenamiento
-Actualmente usa `localStorage` para persistir citas (demo). En producción requiere:
-- Backend API para gestión de citas y resultados de exámenes
-- Base de datos para almacenamiento persistente
-- Sistema de autenticación
+- Tokens de sesión: Amplify v6 los guarda en localStorage (citizen pool y admin pool, `configureAmplifyForPool()`).
+- Estado de trámite: DynamoDB vía API (`citizen-api.ts`). No usar `localStorage` para datos de trámite.
+- Estado transitorio UI entre páginas (p.ej. tipo de licencia seleccionado): **URL query params**, no `sessionStorage` (ver Estrategia de renderizado).
+- `sessionStorage.currentTramiteId` es el único uso de session storage activo (puente post-solicitud → examen); migrable a query param si se necesita SSR en `/portal/examen`.
 
 ### Pool de Preguntas
 Ubicado en `src/lib/examQuestions.ts`:
@@ -167,13 +206,14 @@ Este portal es parte del proyecto más amplio del Simulador de Movimiento 2DOF, 
 
 ## TODO
 
-- [ ] Integración con backend real (API REST)
+- [x] Integración con backend real (API REST) — Cognito + API Gateway + DynamoDB
+- [x] Panel administrativo para gestión de citas — `/admin/*`
+- [x] Autenticación de usuarios — Cognito dual pool
+- [x] Persistencia de resultados de exámenes — DynamoDB
 - [ ] Sistema de notificaciones por email
-- [ ] Panel administrativo para gestión de citas
 - [ ] Integración con sistema de resultados del simulador
-- [ ] Autenticación de usuarios
 - [ ] Validación de CURP/INE
-- [ ] Persistencia de resultados de exámenes
 - [ ] Certificado digital de aprobación del examen teórico
 - [ ] Estadísticas de preguntas más falladas
 - [ ] Modo práctica (sin tiempo límite)
+- [ ] SSR con datos autenticados (requiere migrar Amplify a cookies HTTP-only)
