@@ -20,7 +20,7 @@ import {
 import { citizenApi } from '@/lib/citizen-api'
 import { adaptTramite } from '@/lib/adapters'
 import { Badge } from '@/components/admin/Badge'
-import type { Tramite } from '@/lib/tramite'
+import { LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
 
 /* ─── Constants ─── */
 
@@ -61,18 +61,21 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 }
 
 const LICENSE_ICONS: Record<string, typeof Car> = {
+  '1': Bus,
+  '2': Car,
+  '3': Car,
+  '4': Bike,
+  '6': Truck,
+  '9': Car,
+  '18': Car,
+  // Legacy string IDs (trámites creados antes de la migración al catálogo oficial)
   motocicleta: Bike,
   particular: Car,
   publico: Bus,
   carga: Truck,
 }
 
-const LICENSE_NAMES: Record<string, string> = {
-  motocicleta: 'Motocicleta',
-  particular: 'Particular',
-  publico: 'Transporte Público',
-  carga: 'Carga Pesada',
-}
+const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
 
 /* ─── Sub-components ─── */
 

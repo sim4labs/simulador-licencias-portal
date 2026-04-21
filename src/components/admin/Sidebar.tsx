@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users, BarChart3, Download, ClipboardCheck, Monitor, Box, Upload } from 'lucide-react'
+import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users, BarChart3, Download, ClipboardCheck, Monitor, Box, Upload, KeyRound } from 'lucide-react'
 
 const navSections = [
   {
@@ -33,6 +33,7 @@ const navSections = [
       { href: '/admin/preguntas', label: 'Preguntas', icon: HelpCircle },
       { href: '/admin/licencias', label: 'Licencias', icon: CreditCard },
       { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
+      { href: '/admin/integraciones', label: 'Integraciones', icon: KeyRound },
     ],
   },
 ]

@@ -3,21 +3,39 @@
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { ProgressStepper } from '@/components/ProgressStepper'
-import { Bike, Car, Bus, Truck } from 'lucide-react'
+import { Bike, Car, Bus, Truck, UserCog, UserPlus, Ambulance } from 'lucide-react'
+import { LICENSE_TYPE_IDS, type LicenseTypeId } from '@/lib/tramite'
 
-const LICENSE_TYPES = [
-  { id: 'motocicleta', name: 'Motocicleta', icon: Bike, description: 'Vehículos de dos ruedas' },
-  { id: 'particular', name: 'Vehículo Particular', icon: Car, description: 'Automóviles y camionetas' },
-  { id: 'publico', name: 'Transporte Público', icon: Bus, description: 'Taxis y colectivos' },
-  { id: 'carga', name: 'Carga Pesada', icon: Truck, description: 'Camiones y tractocamiones' },
+type LucideIcon = typeof Bike
+
+const LICENSE_TYPES: Array<{
+  id: LicenseTypeId
+  name: string
+  icon: LucideIcon
+  description: string
+}> = [
+  { id: '3', name: 'Automovilista', icon: Car, description: 'Automóviles y camionetas particulares' },
+  { id: '4', name: 'Motociclista', icon: Bike, description: 'Motocicletas y motonetas' },
+  { id: '2', name: 'Chofer Particular', icon: UserCog, description: 'Chofer privado de vehículo particular' },
+  { id: '1', name: 'Servicio Público', icon: Bus, description: 'Transporte público de pasajeros' },
+  { id: '6', name: 'Servicio de Carga', icon: Truck, description: 'Tractocamiones y carga pesada' },
+  { id: '9', name: 'Permiso para Menores', icon: UserPlus, description: 'Conductores entre 15 y 17 años' },
+  { id: '18', name: 'Emergencias', icon: Ambulance, description: 'Vehículos de emergencia' },
 ]
 
 export default function TipoLicenciaPage() {
   const router = useRouter()
 
-  const handleSelectType = (typeId: string) => {
+  const handleSelectType = (typeId: LicenseTypeId) => {
     sessionStorage.setItem('selectedLicenseType', typeId)
     router.push('/portal/solicitud')
+  }
+
+  // Guardia en tiempo de desarrollo: el render cubre TODOS los IDs oficiales.
+  const coverage = new Set(LICENSE_TYPES.map(t => t.id))
+  const missing = LICENSE_TYPE_IDS.filter(id => !coverage.has(id))
+  if (missing.length > 0 && process.env.NODE_ENV !== 'production') {
+    console.warn('LICENSE_TYPES no cubre:', missing)
   }
 
   return (

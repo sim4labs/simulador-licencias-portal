@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/admin/Textarea'
 import { Badge } from '@/components/admin/Badge'
-import { Pencil, Bike, Car, Bus, Truck, CheckCircle, type LucideIcon } from 'lucide-react'
+import { Pencil, Bike, Car, Bus, Truck, UserCog, UserPlus, Ambulance, CheckCircle, type LucideIcon } from 'lucide-react'
 
-const ICON_MAP: Record<string, LucideIcon> = { Bike, Car, Bus, Truck }
+const ICON_MAP: Record<string, LucideIcon> = { Bike, Car, Bus, Truck, UserCog, UserPlus, Ambulance }
 
 function LicenseIcon({ name, size = 24 }: { name: string; size?: number }) {
   const Icon = ICON_MAP[name]

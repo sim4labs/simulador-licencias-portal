@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { ProgressStepper } from '@/components/ProgressStepper'
-import type { Tramite } from '@/lib/tramite'
+import { LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
 import { publicApi } from '@/lib/admin-api'
 import { adaptPublicTramite } from '@/lib/adapters'
 import { Badge } from '@/components/admin/Badge'
@@ -24,12 +24,7 @@ import {
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
-const LICENSE_NAMES: Record<string, string> = {
-  motocicleta: 'Motocicleta',
-  particular: 'Vehículo Particular',
-  publico: 'Transporte Público',
-  carga: 'Carga Pesada',
-}
+const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
 
 interface ResultadosContentProps {
   basePath?: string

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { FileText, CalendarDays, Award, Gauge } from 'lucide-react'
-import type { Tramite } from '@/lib/tramite'
+import { type Tramite, LICENSE_TYPE_NAMES } from '@/lib/tramite'
 import { adminApi } from '@/lib/admin-api'
 import { adaptTramite, type DashboardStatsResponse } from '@/lib/adapters'
 import { StatCard } from '@/components/admin/StatCard'
@@ -17,11 +17,15 @@ const STATUS_COLORS: Record<string, string> = {
   'finalizado': 'bg-green-600',
 }
 
+// Claves = IDs oficiales del catálogo de licencias (ver tramite.ts).
 const LICENSE_COLORS: Record<string, string> = {
-  'motocicleta': 'bg-blue-400',
-  'particular': 'bg-purple-500',
-  'publico': 'bg-yellow-400',
-  'carga': 'bg-red-400',
+  '1': 'bg-yellow-400',   // Servicio Público
+  '2': 'bg-indigo-400',   // Chofer Particular
+  '3': 'bg-purple-500',   // Automovilista
+  '4': 'bg-blue-400',     // Motociclista
+  '6': 'bg-red-400',      // Servicio de Carga
+  '9': 'bg-pink-400',     // Permiso Menores
+  '18': 'bg-rose-500',    // Emergencias
 }
 
 export default function AdminDashboard() {
@@ -102,7 +106,7 @@ export default function AdminDashboard() {
               {Object.entries(stats.byLicenseType).map(([type, count]) => (
                 <div key={type}>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-600 capitalize">{type}</span>
+                    <span className="text-gray-600">{LICENSE_TYPE_NAMES[type as keyof typeof LICENSE_TYPE_NAMES] || type}</span>
                     <span className="font-medium">{count}</span>
                   </div>
                   <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
@@ -135,7 +139,7 @@ export default function AdminDashboard() {
                     {t.personalData.nombre} {t.personalData.apellidoPaterno}
                   </span>
                   {t.licenseType && (
-                    <span className="text-xs text-gray-400 capitalize">{t.licenseType}</span>
+                    <span className="text-xs text-gray-400">{LICENSE_TYPE_NAMES[t.licenseType] || t.licenseType}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-3">

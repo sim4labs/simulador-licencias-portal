@@ -1,5 +1,5 @@
 import { apiRequest } from './api'
-import type { PersonalData } from './tramite'
+import type { PersonalData, LicenseTypeId } from './tramite'
 import type {
   TramiteResponse,
   ExamSubmitResponse,
@@ -11,7 +11,7 @@ export const citizenApi = {
     return apiRequest<TramiteResponse | null>('/ciudadano/tramite-activo', { pool: 'citizen' })
   },
 
-  crearTramite(data: PersonalData & { licenseType: string }) {
+  crearTramite(data: PersonalData & { licenseType: LicenseTypeId }) {
     return apiRequest<TramiteResponse>('/ciudadano/tramites', {
       method: 'POST',
       body: data,
@@ -19,7 +19,7 @@ export const citizenApi = {
     })
   },
 
-  seleccionarTipo(tramiteId: string, licenseType: string) {
+  seleccionarTipo(tramiteId: string, licenseType: LicenseTypeId) {
     return apiRequest<TramiteResponse>(`/ciudadano/tramites/${tramiteId}/tipo`, {
       method: 'PATCH',
       body: { licenseType },
