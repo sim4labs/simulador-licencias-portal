@@ -16,14 +16,27 @@ import {
   Car,
   Bus,
   Truck,
+  UserCog,
+  UserPlus,
+  Ambulance,
   AlertCircle,
   Clock,
   MapPin,
+  type LucideIcon,
 } from 'lucide-react'
 import { getCurrentCitizen } from '@/lib/citizen-auth'
 import { citizenApi } from '@/lib/citizen-api'
+import { publicApi } from '@/lib/admin-api'
 import { adaptTramite } from '@/lib/adapters'
+import type { LicenciaResponse } from '@/lib/adapters'
+import { formatMXN } from '@/lib/utils'
 import type { Tramite } from '@/lib/tramite'
+import { ProfileRequiredModal } from '@/components/portal/ProfileRequiredModal'
+import { useProfileGate } from '@/components/portal/useProfileGate'
+
+const LICENSE_ICON_MAP: Record<string, LucideIcon> = {
+  Bike, Car, Bus, Truck, UserCog, UserPlus, Ambulance,
+}
 
 /* ─── Constants ─── */
 
@@ -57,23 +70,6 @@ const QUICK_ACTIONS = [
   { label: 'Examen Teórico', desc: 'Practica antes de tu examen', href: '/portal/examen', icon: BookOpen, color: 'bg-blue-50 text-blue-600 border-blue-200' },
   { label: 'Consultar Resultados', desc: 'Revisa el estado de tu prueba', href: '/portal/resultados', icon: ClipboardList, color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
   { label: 'Administrar Citas', desc: 'Gestiona tus citas en el simulador', href: '/portal/agendar', icon: CalendarDays, color: 'bg-amber-50 text-amber-600 border-amber-200' },
-]
-
-const REQUISITOS = [
-  'Identificación oficial vigente (INE/IFE)',
-  'CURP (formato impreso o digital)',
-  'Comprobante de domicilio reciente (no mayor a 3 meses)',
-  'Certificado médico (tipo de sangre y agudeza visual)',
-  'Constancia de no antecedentes penales',
-  'Fotografías tamaño infantil (2 piezas)',
-  'Comprobante de pago de derechos',
-]
-
-const COSTOS = [
-  { tipo: 'Motocicleta', icon: Bike, vigencia: '3 años', costo: '$850 MXN' },
-  { tipo: 'Particular', icon: Car, vigencia: '3 años', costo: '$1,200 MXN' },
-  { tipo: 'Transporte Público', icon: Bus, vigencia: '2 años', costo: '$1,800 MXN' },
-  { tipo: 'Carga Pesada', icon: Truck, vigencia: '2 años', costo: '$2,500 MXN' },
 ]
 
 const FAQ_ITEMS = [
@@ -120,6 +116,8 @@ export default function PortalPage() {
   const [citizenName, setCitizenName] = useState('')
   const [activeTramite, setActiveTramite] = useState<Tramite | null>(null)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [licencias, setLicencias] = useState<LicenciaResponse[]>([])
+  const { modalOpen, setModalOpen, gate } = useProfileGate()
 
   useEffect(() => {
     async function load() {
@@ -131,14 +129,30 @@ export default function PortalPage() {
         const t = adaptTramite(data)
         if (t.currentStep < 6) setActiveTramite(t)
       }
+
+      const lic = await publicApi.getLicencias()
+      if (lic.data) setLicencias(lic.data)
     }
     load()
   }, [])
+
+  const costos = licencias
+    .filter(l => typeof l.costo === 'number' && l.costo > 0 && l.name)
+    .sort((a, b) => (a.costo ?? 0) - (b.costo ?? 0))
+
+  const selectedLicencia = activeTramite?.licenseType
+    ? licencias.find(l => l.licenseId === activeTramite.licenseType) ?? null
+    : null
 
   const firstName = citizenName.split(' ')[0]
 
   return (
     <div className="space-y-10">
+      <ProfileRequiredModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        returnTo="/"
+      />
       {/* ── 1. Saludo + Nuevo Trámite (siempre visible) ── */}
       <div className="relative bg-gradient-to-br from-primary-600 to-primary-accent rounded-2xl overflow-hidden">
         <div
@@ -157,7 +171,8 @@ export default function PortalPage() {
             </p>
           </div>
           <Link
-            href="/portal/tipo-licencia"
+            href="/tipo-licencia"
+            onClick={gate(() => { /* Link gestiona la navegación */ })}
             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary-700 rounded-xl font-semibold text-sm hover:bg-primary-50 transition-colors shadow-lg group"
           >
             Nuevo Trámite
@@ -319,25 +334,36 @@ export default function PortalPage() {
               <h3 className="text-sm font-semibold text-gray-900">Costos y Vigencia</h3>
             </div>
             <div className="p-6">
-              <div className="space-y-3">
-                {COSTOS.map((item) => (
-                  <div
-                    key={item.tipo}
-                    className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
-                        <item.icon className="w-4.5 h-4.5 text-gray-600" />
+              {costos.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-6">
+                  Cargando tarifas...
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {costos.map((item) => {
+                    const Icon = LICENSE_ICON_MAP[item.icon] ?? DollarSign
+                    return (
+                      <div
+                        key={item.licenseId}
+                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
+                            <Icon className="w-4.5 h-4.5 text-gray-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                            {item.vigencia && (
+                              <p className="text-xs text-gray-500">Vigencia: {item.vigencia}</p>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900">{formatMXN(item.costo)}</span>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{item.tipo}</p>
-                        <p className="text-xs text-gray-500">Vigencia: {item.vigencia}</p>
-                      </div>
-                    </div>
-                    <span className="text-sm font-semibold text-gray-900">{item.costo}</span>
-                  </div>
-                ))}
-              </div>
+                    )
+                  })}
+                </div>
+              )}
               <p className="mt-4 text-xs text-gray-500 text-center">
                 Precios sujetos a cambios. Consulta la tabla oficial de derechos vigente.
               </p>
@@ -350,25 +376,44 @@ export default function PortalPage() {
               <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
                 <FileText className="w-4 h-4 text-primary-600" />
               </div>
-              <h3 className="text-sm font-semibold text-gray-900">Requisitos del Trámite</h3>
+              <h3 className="text-sm font-semibold text-gray-900">
+                {selectedLicencia ? `Requisitos · ${selectedLicencia.name}` : 'Requisitos del Trámite'}
+              </h3>
             </div>
             <div className="p-6">
-              <ul className="space-y-3">
-                {REQUISITOS.map((req, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <div className="mt-0.5 w-5 h-5 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0">
-                      <span className="text-[10px] font-bold text-primary-600">{i + 1}</span>
-                    </div>
-                    <span className="text-sm text-gray-700">{req}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-5 p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-800">
-                  Todos los documentos deben ser originales y estar vigentes. Las copias no serán aceptadas.
-                </p>
-              </div>
+              {selectedLicencia && selectedLicencia.requirements.length > 0 ? (
+                <>
+                  <ul className="space-y-3">
+                    {selectedLicencia.requirements.map((req, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <div className="mt-0.5 w-5 h-5 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0">
+                          <span className="text-[10px] font-bold text-primary-600">{i + 1}</span>
+                        </div>
+                        <span className="text-sm text-gray-700">{req}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-5 p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-amber-800">
+                      Todos los documentos deben ser originales y estar vigentes. Las copias no serán aceptadas.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="py-8 text-center">
+                  <p className="text-sm text-gray-600 mb-3">
+                    Los requisitos varían por tipo de licencia.
+                  </p>
+                  <Link
+                    href="/tipo-licencia"
+                    onClick={gate(() => { /* Link gestiona la navegación */ })}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700"
+                  >
+                    Selecciona tu tipo de licencia <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>

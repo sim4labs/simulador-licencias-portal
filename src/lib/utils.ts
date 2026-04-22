@@ -24,6 +24,15 @@ export function formatTime(date: Date): string {
   })
 }
 
+export function formatMXN(value?: number | null): string {
+  if (value == null || !Number.isFinite(value)) return '—'
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
 export function generateAppointmentCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let code = ''

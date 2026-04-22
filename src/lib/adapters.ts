@@ -1,4 +1,4 @@
-import type { Tramite, LicenseTypeId, TipoSangre, EstadoCivil } from './tramite'
+import type { Tramite, LicenseTypeId, TipoSangre, EstadoCivil, Nacionalidad, EstadoMx } from './tramite'
 
 // DynamoDB flat tramite shape (as returned by the API)
 export interface TramiteResponse {
@@ -8,6 +8,7 @@ export interface TramiteResponse {
   apellidoPaterno: string
   apellidoMaterno?: string
   fechaNacimiento?: string
+  nacionalidad?: string
   curp?: string
   rfc?: string
   email?: string
@@ -21,6 +22,7 @@ export interface TramiteResponse {
   codigoPostal?: string
   municipio?: string
   colonia?: string
+  estado?: string
   donador?: boolean
   direccion?: string
   licenseType?: string
@@ -49,6 +51,7 @@ export function adaptTramite(r: TramiteResponse): Tramite {
       apellidoPaterno: r.apellidoPaterno || '',
       apellidoMaterno: r.apellidoMaterno || '',
       fechaNacimiento: r.fechaNacimiento || '',
+      nacionalidad: (r.nacionalidad || '') as Nacionalidad | '',
       curp: r.curp || '',
       rfc: r.rfc || '',
       email: r.email || '',
@@ -62,6 +65,7 @@ export function adaptTramite(r: TramiteResponse): Tramite {
       codigoPostal: r.codigoPostal || '',
       municipio: r.municipio || '',
       colonia: r.colonia || '',
+      estado: (r.estado || '') as EstadoMx | '',
       donador: r.donador === true,
     },
     licenseType: r.licenseType as LicenseTypeId | undefined,
@@ -126,6 +130,7 @@ export function adaptPublicTramite(r: TramitePublicResponse): Partial<Tramite> {
       apellidoPaterno: r.apellidoPaterno || '',
       apellidoMaterno: '',
       fechaNacimiento: '',
+      nacionalidad: '',
       curp: '',
       rfc: '',
       email: '',
@@ -139,6 +144,7 @@ export function adaptPublicTramite(r: TramitePublicResponse): Partial<Tramite> {
       codigoPostal: '',
       municipio: '',
       colonia: '',
+      estado: '',
       donador: false,
     },
     licenseType: r.licenseType as LicenseTypeId | undefined,
@@ -195,6 +201,8 @@ export interface LicenciaResponse {
   icon: string
   description: string
   requirements: string[]
+  costo?: number
+  vigencia?: string
   questionCount?: number
   generalQuestionCount?: number
   updatedAt?: string

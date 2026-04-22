@@ -25,11 +25,66 @@ export const ESTADO_CIVIL_LABELS: Record<EstadoCivil, string> = {
   UNION_LIBRE: 'Unión libre',
 }
 
+export const NACIONALIDADES = ['MEXICANA', 'EXTRANJERA'] as const
+export type Nacionalidad = typeof NACIONALIDADES[number]
+
+export const NACIONALIDAD_LABELS: Record<Nacionalidad, string> = {
+  MEXICANA: 'Mexicana',
+  EXTRANJERA: 'Extranjera',
+}
+
+export const ESTADOS_MX = [
+  'AGUASCALIENTES', 'BAJA_CALIFORNIA', 'BAJA_CALIFORNIA_SUR', 'CAMPECHE',
+  'CHIAPAS', 'CHIHUAHUA', 'CIUDAD_DE_MEXICO', 'COAHUILA', 'COLIMA',
+  'DURANGO', 'ESTADO_DE_MEXICO', 'GUANAJUATO', 'GUERRERO', 'HIDALGO',
+  'JALISCO', 'MICHOACAN', 'MORELOS', 'NAYARIT', 'NUEVO_LEON', 'OAXACA',
+  'PUEBLA', 'QUERETARO', 'QUINTANA_ROO', 'SAN_LUIS_POTOSI', 'SINALOA',
+  'SONORA', 'TABASCO', 'TAMAULIPAS', 'TLAXCALA', 'VERACRUZ', 'YUCATAN',
+  'ZACATECAS',
+] as const
+export type EstadoMx = typeof ESTADOS_MX[number]
+
+export const ESTADO_MX_LABELS: Record<EstadoMx, string> = {
+  AGUASCALIENTES: 'Aguascalientes',
+  BAJA_CALIFORNIA: 'Baja California',
+  BAJA_CALIFORNIA_SUR: 'Baja California Sur',
+  CAMPECHE: 'Campeche',
+  CHIAPAS: 'Chiapas',
+  CHIHUAHUA: 'Chihuahua',
+  CIUDAD_DE_MEXICO: 'Ciudad de México',
+  COAHUILA: 'Coahuila',
+  COLIMA: 'Colima',
+  DURANGO: 'Durango',
+  ESTADO_DE_MEXICO: 'Estado de México',
+  GUANAJUATO: 'Guanajuato',
+  GUERRERO: 'Guerrero',
+  HIDALGO: 'Hidalgo',
+  JALISCO: 'Jalisco',
+  MICHOACAN: 'Michoacán',
+  MORELOS: 'Morelos',
+  NAYARIT: 'Nayarit',
+  NUEVO_LEON: 'Nuevo León',
+  OAXACA: 'Oaxaca',
+  PUEBLA: 'Puebla',
+  QUERETARO: 'Querétaro',
+  QUINTANA_ROO: 'Quintana Roo',
+  SAN_LUIS_POTOSI: 'San Luis Potosí',
+  SINALOA: 'Sinaloa',
+  SONORA: 'Sonora',
+  TABASCO: 'Tabasco',
+  TAMAULIPAS: 'Tamaulipas',
+  TLAXCALA: 'Tlaxcala',
+  VERACRUZ: 'Veracruz',
+  YUCATAN: 'Yucatán',
+  ZACATECAS: 'Zacatecas',
+}
+
 export interface PersonalData {
   nombre: string
   apellidoPaterno: string
   apellidoMaterno: string
   fechaNacimiento: string
+  nacionalidad: Nacionalidad | ''
   curp: string
   rfc: string
   email: string
@@ -43,6 +98,7 @@ export interface PersonalData {
   codigoPostal: string
   municipio: string
   colonia: string
+  estado: EstadoMx | ''
   donador: boolean
 }
 
@@ -134,6 +190,6 @@ export function validateRFC(rfc: string): boolean {
 }
 
 export function validateCP(cp: string): boolean {
-  // CP de Tlaxcala: 5 dígitos que inician con "9".
-  return /^9\d{4}$/.test(cp)
+  // 5 dígitos; permitimos cualquier estado de México.
+  return /^\d{5}$/.test(cp)
 }

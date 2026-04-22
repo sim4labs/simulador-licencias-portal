@@ -6,12 +6,21 @@ import type {
   AppointmentResponse,
 } from './adapters'
 
+export interface PerfilResponse extends Partial<PersonalData> {
+  userId: string
+  email: string
+  name: string
+  profileComplete: boolean
+  profileUpdatedAt?: string
+  createdAt?: string
+}
+
 export const citizenApi = {
   getTramiteActivo() {
     return apiRequest<TramiteResponse | null>('/ciudadano/tramite-activo', { pool: 'citizen' })
   },
 
-  crearTramite(data: PersonalData & { licenseType: LicenseTypeId }) {
+  crearTramite(data: { licenseType: LicenseTypeId }) {
     return apiRequest<TramiteResponse>('/ciudadano/tramites', {
       method: 'POST',
       body: data,
@@ -52,7 +61,13 @@ export const citizenApi = {
   },
 
   getPerfil() {
-    return apiRequest<{ userId: string; email: string; name: string }>('/ciudadano/perfil', {
+    return apiRequest<PerfilResponse>('/ciudadano/perfil', { pool: 'citizen' })
+  },
+
+  updatePerfil(data: PersonalData) {
+    return apiRequest<PerfilResponse>('/ciudadano/perfil', {
+      method: 'PUT',
+      body: data,
       pool: 'citizen',
     })
   },

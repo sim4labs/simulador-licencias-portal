@@ -30,10 +30,10 @@ export default function SolicitudPage({ searchParams }: SolicitudPageProps) {
             <FileText className="w-8 h-8 text-primary-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Solicitud de Licencia
+            Confirmar solicitud
           </h1>
           <p className="text-gray-600">
-            Completa tus datos para iniciar el trámite
+            Revisa tus datos y confirma para iniciar el trámite
           </p>
         </div>
 

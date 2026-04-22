@@ -1,12 +1,30 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, Clock, Phone, DollarSign } from 'lucide-react'
-import { COSTS, PROCESS_STEPS } from '@/lib/landing-content'
+import { PROCESS_STEPS } from '@/lib/landing-content'
 import { LandingSessionGate } from '@/components/landing/LandingSessionGate'
 import { FaqAccordion } from '@/components/landing/FaqAccordion'
 import { ScrollReveal } from '@/components/landing/ScrollReveal'
+import type { LicenciaResponse } from '@/lib/adapters'
+import { formatMXN } from '@/lib/utils'
 
-export default function Home() {
+async function fetchLicenciasCostos(): Promise<LicenciaResponse[]> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+  if (!apiUrl) return []
+  try {
+    const res = await fetch(`${apiUrl}/licencias`, { next: { revalidate: 60 } })
+    if (!res.ok) return []
+    const data = (await res.json()) as LicenciaResponse[]
+    return data
+      .filter(l => typeof l.costo === 'number' && l.costo > 0 && l.name)
+      .sort((a, b) => (a.costo ?? 0) - (b.costo ?? 0))
+  } catch {
+    return []
+  }
+}
+
+export default async function Home() {
+  const costos = await fetchLicenciasCostos()
   return (
     <main className="min-h-screen flex flex-col bg-white">
       {/* Header */}
@@ -185,33 +203,37 @@ export default function Home() {
         </ScrollReveal>
 
         {/* Costs */}
-        <ScrollReveal className="py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12 animate-on-scroll">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Costos y Vigencia</h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Tarifas oficiales por tipo de licencia
+        {costos.length > 0 && (
+          <ScrollReveal className="py-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-12 animate-on-scroll">
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">Costos y Vigencia</h2>
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                  Tarifas oficiales por tipo de licencia
+                </p>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                {costos.map((item, i) => (
+                  <div
+                    key={item.licenseId}
+                    className={`bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm hover:shadow-md transition-shadow animate-on-scroll stagger-${(i % 5) + 1}`}
+                  >
+                    <DollarSign className="w-8 h-8 text-primary-600 mx-auto mb-3" />
+                    <h3 className="font-semibold text-gray-900 mb-2">{item.name}</h3>
+                    <p className="text-3xl font-bold text-primary-600 mb-1">{formatMXN(item.costo)}</p>
+                    {item.vigencia && (
+                      <p className="text-sm text-gray-500">Vigencia: {item.vigencia}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="text-center text-sm text-gray-500 mt-8 animate-on-scroll stagger-5">
+                Métodos de pago aceptados: efectivo en ventanilla, transferencia bancaria y pago en
+                línea. Los precios incluyen el uso del simulador y la emisión de la licencia.
               </p>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-              {COSTS.map((item, i) => (
-                <div
-                  key={item.type}
-                  className={`bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm hover:shadow-md transition-shadow animate-on-scroll stagger-${i + 1}`}
-                >
-                  <DollarSign className="w-8 h-8 text-primary-600 mx-auto mb-3" />
-                  <h3 className="font-semibold text-gray-900 mb-2">{item.type}</h3>
-                  <p className="text-3xl font-bold text-primary-600 mb-1">{item.price}</p>
-                  <p className="text-sm text-gray-500">Vigencia: {item.duration}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-center text-sm text-gray-500 mt-8 animate-on-scroll stagger-5">
-              Métodos de pago aceptados: efectivo en ventanilla, transferencia bancaria y pago en
-              línea. Los precios incluyen el uso del simulador y la emisión de la licencia.
-            </p>
-          </div>
-        </ScrollReveal>
+          </ScrollReveal>
+        )}
 
         {/* Requirements */}
         <ScrollReveal className="bg-gray-100 py-20">
