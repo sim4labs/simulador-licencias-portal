@@ -10,14 +10,20 @@ export function PortalAuthGate({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState(false)
   const [checked, setChecked] = useState(false)
 
-  useEffect(() => {
-    getCurrentCitizen().then((session) => {
-      if (session) {
-        setAuthenticated(true)
-        setCitizenName(session.name)
-      }
+  const loadSession = async () => {
+    const session = await getCurrentCitizen()
+    if (!session) {
+      setAuthenticated(false)
       setChecked(true)
-    })
+      return
+    }
+    setAuthenticated(true)
+    setCitizenName(session.name)
+    setChecked(true)
+  }
+
+  useEffect(() => {
+    loadSession()
   }, [])
 
   const handleLogout = async () => {
@@ -27,11 +33,7 @@ export function PortalAuthGate({ children }: { children: React.ReactNode }) {
   }
 
   const handleAuthenticated = async () => {
-    const session = await getCurrentCitizen()
-    if (session) {
-      setCitizenName(session.name)
-      setAuthenticated(true)
-    }
+    await loadSession()
   }
 
   if (!checked) return null

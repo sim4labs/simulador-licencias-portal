@@ -5,12 +5,15 @@ import { useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/lib/admin-api'
 import { adminKeys, useAdminLicencias } from '@/lib/admin-queries'
 import type { LicenciaResponse } from '@/lib/adapters'
+import { formatMXN } from '@/lib/utils'
 import { Modal } from '@/components/admin/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/admin/Textarea'
 import { Badge } from '@/components/admin/Badge'
 import { Pencil, Bike, Car, Bus, Truck, UserCog, UserPlus, Ambulance, CheckCircle, type LucideIcon } from 'lucide-react'
+
+const VIGENCIA_OPTIONS = ['1 año', '2 años', '3 años', '5 años'] as const
 
 const ICON_MAP: Record<string, LucideIcon> = { Bike, Car, Bus, Truck, UserCog, UserPlus, Ambulance }
 
@@ -29,21 +32,38 @@ export default function LicenciasPage() {
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editRequirements, setEditRequirements] = useState('')
+  const [editCosto, setEditCosto] = useState<number | ''>('')
+  const [editVigencia, setEditVigencia] = useState('')
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const openEdit = (lt: LicenciaResponse) => {
     setEditing(lt)
     setEditName(lt.name)
     setEditDescription(lt.description)
     setEditRequirements((lt.requirements || []).join('\n'))
+    setEditCosto(typeof lt.costo === 'number' ? lt.costo : '')
+    setEditVigencia(lt.vigencia ?? '')
+    setSaveError(null)
     setEditModal(true)
   }
 
   const handleSave = async () => {
     if (!editing) return
+    if (editCosto === '' || Number(editCosto) <= 0) {
+      setSaveError('El costo es obligatorio y debe ser mayor a 0 (MXN).')
+      return
+    }
+    if (!editVigencia) {
+      setSaveError('La vigencia es obligatoria.')
+      return
+    }
+    setSaveError(null)
     await adminApi.actualizarLicencia(editing.licenseId, {
       name: editName,
       description: editDescription,
       requirements: editRequirements.split('\n').filter(Boolean),
+      costo: Number(editCosto),
+      vigencia: editVigencia,
     })
     qc.invalidateQueries({ queryKey: adminKeys.licencias })
     setEditModal(false)
@@ -69,7 +89,15 @@ export default function LicenciasPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">{lt.name}</h2>
-                      <Badge variant="primary" className="mt-1">{questionCount} preguntas</Badge>
+                      <div className="mt-1 flex flex-wrap gap-1.5">
+                        <Badge variant="primary">{questionCount} preguntas</Badge>
+                        {typeof lt.costo === 'number' && lt.costo > 0 && (
+                          <Badge variant="secondary">
+                            {formatMXN(lt.costo)}
+                            {lt.vigencia ? ` · ${lt.vigencia}` : ''}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <button
@@ -110,6 +138,36 @@ export default function LicenciasPage() {
               <span className="font-mono">{editing.licenseId}</span>
             </div>
             <Input label="Nombre" value={editName} onChange={e => setEditName(e.target.value)} />
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Costo en MXN *"
+                type="number"
+                min={1}
+                max={100000}
+                step={50}
+                required
+                value={editCosto}
+                onChange={e => setEditCosto(e.target.value === '' ? '' : Number(e.target.value))}
+                helperText="Obligatorio. Se muestra al ciudadano en el landing."
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vigencia *</label>
+                <select
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={editVigencia}
+                  onChange={e => setEditVigencia(e.target.value)}
+                >
+                  <option value="" disabled>Selecciona...</option>
+                  {VIGENCIA_OPTIONS.map(v => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {saveError && (
+              <p className="text-sm text-destructive">{saveError}</p>
+            )}
             <Textarea
               label="Descripcion"
               value={editDescription}

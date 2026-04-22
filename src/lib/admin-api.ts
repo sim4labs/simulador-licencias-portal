@@ -217,6 +217,7 @@ export const adminApi = {
 export interface IntegrationToken {
   tokenId: string
   tokenPreview: string | null
+  token: string | null
   name: string
   description: string
   createdBy: string

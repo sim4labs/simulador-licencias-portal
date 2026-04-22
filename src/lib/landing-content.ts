@@ -56,10 +56,3 @@ export const PROCESS_STEPS = [
   { num: 4, title: 'Prueba Práctica', desc: 'Preséntate con tu QR y realiza la prueba en el simulador' },
   { num: 5, title: 'Consulta resultados', desc: 'Revisa tus resultados en línea una vez completada la prueba' },
 ] as const
-
-export const COSTS = [
-  { type: 'Motocicleta', price: '$850', duration: '3 años' },
-  { type: 'Particular', price: '$1,200', duration: '3 años' },
-  { type: 'Transporte Público', price: '$1,800', duration: '2 años' },
-  { type: 'Carga Pesada', price: '$2,500', duration: '2 años' },
-] as const
