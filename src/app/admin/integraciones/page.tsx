@@ -2,15 +2,16 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { adminApi, type IntegrationToken } from '@/lib/admin-api'
 import { adminKeys, useAdminIntegrationTokens } from '@/lib/admin-queries'
+import { fetchIntegrationHealth } from '@/lib/integration-probe'
 import { Modal } from '@/components/admin/Modal'
 import { Badge } from '@/components/admin/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/admin/Textarea'
-import { Copy, KeyRound, Check, ArrowRight } from 'lucide-react'
+import { Copy, KeyRound, Check, ArrowRight, Activity, RefreshCw } from 'lucide-react'
 
 function formatDate(iso: string | null) {
   if (!iso) return '—'
@@ -31,6 +32,22 @@ export default function IntegracionesPage() {
   const tokensQuery = useAdminIntegrationTokens()
   const tokens = tokensQuery.data?.tokens ?? []
   const loading = tokensQuery.isLoading
+
+  const healthQuery = useQuery({
+    queryKey: ['admin', 'integration-health'],
+    queryFn: fetchIntegrationHealth,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+  })
+  const health = healthQuery.data
+  const healthTone =
+    health?.status === 'ok'
+      ? { dot: 'bg-success', label: 'success' as const, text: 'Operativo' }
+      : health?.status === 'degraded'
+      ? { dot: 'bg-warning', label: 'warning' as const, text: 'Degradado' }
+      : { dot: 'bg-muted-foreground', label: 'default' as const, text: healthQuery.isLoading ? 'Verificando…' : 'Sin respuesta' }
+  const dynamoLatency = health?.checks?.dynamodb?.latencyMs
 
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
@@ -94,6 +111,39 @@ export default function IntegracionesPage() {
         <Button onClick={openCreate}>Crear token</Button>
       </div>
 
+      <div className="bg-white rounded-xl border border-border p-4 mb-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+            <Activity className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={`inline-block w-2 h-2 rounded-full ${healthTone.dot}`} aria-hidden />
+              <span className="font-medium text-foreground">API de integración</span>
+              <Badge variant={healthTone.label}>{healthTone.text}</Badge>
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-4">
+              <span>
+                <code className="font-mono">GET /integration/health</code>
+              </span>
+              {health?.httpStatus ? <span>HTTP {health.httpStatus}</span> : null}
+              {typeof dynamoLatency === 'number' ? <span>DynamoDB {dynamoLatency} ms</span> : null}
+              {typeof health?.responseMs === 'number' ? <span>Latencia {health.responseMs} ms</span> : null}
+              {health?.environment ? <span>env: {health.environment}</span> : null}
+            </div>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => healthQuery.refetch()}
+          disabled={healthQuery.isFetching}
+        >
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${healthQuery.isFetching ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
+      </div>
+
       {loading ? (
         <p className="text-sm text-gray-400">Cargando...</p>
       ) : tokens.length === 0 ? (
@@ -153,11 +203,11 @@ export default function IntegracionesPage() {
       >
         {newToken ? (
           <div className="space-y-4">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-              <strong>Guarda este token ahora.</strong> No lo volverás a ver después de cerrar esta ventana.
-            </div>
-            <div className="bg-gray-900 rounded-lg p-3">
-              <code className="text-xs text-gray-100 break-all block">{newToken}</code>
+            <p className="text-sm text-foreground">
+              Token creado. Queda disponible en la página de detalle para copiarlo y probarlo cuando lo necesites.
+            </p>
+            <div className="bg-foreground rounded-lg p-3">
+              <code className="text-xs text-background break-all block">{newToken}</code>
             </div>
             <div className="flex gap-2">
               <Button onClick={handleCopy} variant="secondary" className="flex-1">
@@ -183,7 +233,7 @@ export default function IntegracionesPage() {
               rows={3}
             />
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700">{error}</div>
+              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-xs text-destructive">{error}</div>
             )}
             <div className="flex gap-2 justify-end">
               <Button onClick={closeCreate} variant="secondary" disabled={submitting}>Cancelar</Button>
