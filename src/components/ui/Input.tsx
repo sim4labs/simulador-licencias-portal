@@ -12,7 +12,7 @@ export interface InputProps
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, label, error, helperText, id, ...props }, ref) => {
+  ({ className, type, label, error, helperText, id, required, ...props }, ref) => {
     const generatedId = React.useId();
     const inputId = id || generatedId;
     const hasError = Boolean(error);
@@ -23,6 +23,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <Label htmlFor={inputId} className="mb-2 block">
             {label}
+            {required && <span className="text-red-500 ml-0.5">*</span>}
           </Label>
         )}
         <input
@@ -36,6 +37,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           aria-invalid={hasError}
           aria-describedby={errorMessage ? `${inputId}-error` : undefined}
+          required={required}
           {...props}
         />
         {errorMessage && (

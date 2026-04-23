@@ -35,6 +35,18 @@ export function SolicitudForm({ licenseType }: { licenseType: LicenseTypeId }) {
   const handleConfirm = async () => {
     setSubmitting(true)
     setSubmitError(null)
+
+    // Evitar duplicación: si ya existe un trámite activo con este tipo, reutilizarlo.
+    const { data: existingList } = await citizenApi.listarTramites()
+    const existing = existingList?.find(
+      (t) => t.licenseType === licenseType && t.status !== 'finalizado'
+    )
+    if (existing) {
+      sessionStorage.setItem('currentTramiteId', existing.tramiteId)
+      router.push(`/portal/examen/${existing.tramiteId}`)
+      return
+    }
+
     const { data, error } = await citizenApi.crearTramite({ licenseType })
     if (error || !data) {
       setSubmitting(false)
@@ -42,7 +54,7 @@ export function SolicitudForm({ licenseType }: { licenseType: LicenseTypeId }) {
       return
     }
     sessionStorage.setItem('currentTramiteId', data.tramiteId)
-    router.push('/examen')
+    router.push(`/portal/examen/${data.tramiteId}`)
   }
 
   if (loading) {

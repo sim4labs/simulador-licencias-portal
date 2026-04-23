@@ -18,6 +18,13 @@ import { citizenApi } from '@/lib/citizen-api'
 import { adaptTramite } from '@/lib/adapters'
 import type { Tramite } from '@/lib/tramite'
 
+function getContinueUrl(t: Tramite): string {
+  if (t.appointment) return `/portal/confirmacion/${t.id}`
+  if (t.examResult?.passed) return '/portal/agendar'
+  if (t.licenseType) return `/portal/examen/${t.id}`
+  return '/portal/tipo-licencia'
+}
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   'iniciado': { label: 'Iniciado', color: 'bg-gray-100 text-gray-700', icon: Clock },
   'tipo-seleccionado': { label: 'Tipo seleccionado', color: 'bg-blue-50 text-blue-700', icon: Clock },
@@ -152,7 +159,7 @@ export default function HistorialPage() {
                       </span>
                       {isActive && (
                         <Link
-                          href={`/portal/solicitud`}
+                          href={getContinueUrl(t)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 transition-colors"
                         >
                           Continuar
