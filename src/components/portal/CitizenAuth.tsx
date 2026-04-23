@@ -1,9 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle, XCircle } from 'lucide-react'
-import { registerCitizen, loginCitizen, confirmCitizenSignUp } from '@/lib/citizen-auth'
+import {
+  registerCitizen,
+  loginCitizen,
+  confirmCitizenSignUp,
+  resendCitizenVerificationCode,
+} from '@/lib/citizen-auth'
 
 interface CitizenAuthProps {
   onAuthenticated: () => void
@@ -42,6 +47,15 @@ export function CitizenAuth({ onAuthenticated }: CitizenAuthProps) {
   // Confirmation
   const [confirmEmail, setConfirmEmail] = useState('')
   const [confirmCode, setConfirmCode] = useState('')
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendInfo, setResendInfo] = useState('')
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const t = setInterval(() => setResendCooldown((s) => (s <= 1 ? 0 : s - 1)), 1000)
+    return () => clearInterval(t)
+  }, [resendCooldown])
 
   const passwordChecks = {
     length: regPassword.length >= 8,
@@ -103,9 +117,33 @@ export function CitizenAuth({ onAuthenticated }: CitizenAuthProps) {
     }
   }
 
+  const handleResendCode = async () => {
+    if (resendCooldown > 0 || resendLoading) return
+    setError('')
+    setResendInfo('')
+    setResendLoading(true)
+    const result = await resendCitizenVerificationCode(confirmEmail)
+    setResendLoading(false)
+    if (result.ok) {
+      setResendInfo('Enviamos un nuevo código a tu correo. Revisa tu bandeja y spam.')
+      setResendCooldown(60)
+    } else {
+      setError(result.error)
+    }
+  }
+
   const switchTab = (t: Tab) => {
     setTab(t)
     setError('')
+    setResendInfo('')
+  }
+
+  const goToConfirmForExistingAccount = () => {
+    if (!regEmail.trim()) return
+    setConfirmEmail(regEmail.trim().toLowerCase())
+    setTab('confirm')
+    setError('')
+    setResendInfo('')
   }
 
   return (
@@ -180,6 +218,12 @@ export function CitizenAuth({ onAuthenticated }: CitizenAuthProps) {
                   </div>
                 )}
 
+                {resendInfo && !error && (
+                  <div className="bg-emerald-50 text-emerald-700 text-sm px-4 py-3 rounded-xl border border-emerald-100">
+                    {resendInfo}
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={confirmCode.length !== 6 || loading}
@@ -195,16 +239,32 @@ export function CitizenAuth({ onAuthenticated }: CitizenAuthProps) {
                   )}
                 </button>
 
-                <p className="text-center text-sm text-gray-500 mt-4">
-                  ¿No recibiste el código?{' '}
-                  <button
-                    type="button"
-                    onClick={() => switchTab('register')}
-                    className="text-primary-600 font-semibold hover:text-primary-700 hover:underline transition-colors"
-                  >
-                    Volver a registrar
-                  </button>
-                </p>
+                <div className="text-center text-sm text-gray-500 mt-4 space-y-2">
+                  <p>
+                    ¿No recibiste el código?{' '}
+                    <button
+                      type="button"
+                      onClick={handleResendCode}
+                      disabled={resendCooldown > 0 || resendLoading}
+                      className="text-primary-600 font-semibold hover:text-primary-700 hover:underline transition-colors disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
+                    >
+                      {resendLoading
+                        ? 'Enviando...'
+                        : resendCooldown > 0
+                          ? `Reenviar en ${resendCooldown}s`
+                          : 'Reenviar código'}
+                    </button>
+                  </p>
+                  <p>
+                    <button
+                      type="button"
+                      onClick={() => switchTab('login')}
+                      className="text-gray-500 hover:text-gray-700 hover:underline transition-colors"
+                    >
+                      Volver a iniciar sesión
+                    </button>
+                  </p>
+                </div>
               </form>
             </>
           ) : (
@@ -387,8 +447,27 @@ export function CitizenAuth({ onAuthenticated }: CitizenAuthProps) {
                   </div>
 
                   {error && (
-                    <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">
-                      {error}
+                    <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100 space-y-2">
+                      <p>{error}</p>
+                      {error === 'Ya existe una cuenta con este correo' && (
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 border-t border-red-100">
+                          <button
+                            type="button"
+                            onClick={() => switchTab('login')}
+                            className="text-primary-600 font-semibold hover:text-primary-700 hover:underline"
+                          >
+                            Iniciar sesión
+                          </button>
+                          <span className="text-red-300">·</span>
+                          <button
+                            type="button"
+                            onClick={goToConfirmForExistingAccount}
+                            className="text-primary-600 font-semibold hover:text-primary-700 hover:underline"
+                          >
+                            Aún no confirmé mi correo
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 

@@ -3,6 +3,7 @@ import {
   signIn,
   signOut,
   confirmSignUp,
+  resendSignUpCode,
   getCurrentUser,
   fetchAuthSession,
   autoSignIn,
@@ -27,6 +28,8 @@ function ensureCitizenPool() {
 
 function mapError(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err)
+  if (msg.includes('User is already confirmed'))
+    return 'Tu cuenta ya está confirmada. Inicia sesión'
   if (msg.includes('User already exists')) return 'Ya existe una cuenta con este correo'
   if (msg.includes('Password did not conform'))
     return 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número'
@@ -96,6 +99,19 @@ export async function registerCitizen(
       return { ok: true, requiresConfirmation: true, email: trimmedEmail }
     }
 
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: mapError(err) }
+  }
+}
+
+export async function resendCitizenVerificationCode(
+  email: string
+): Promise<AuthResult> {
+  ensureCitizenPool()
+  const trimmedEmail = email.trim().toLowerCase()
+  try {
+    await resendSignUpCode({ username: trimmedEmail })
     return { ok: true }
   } catch (err) {
     return { ok: false, error: mapError(err) }

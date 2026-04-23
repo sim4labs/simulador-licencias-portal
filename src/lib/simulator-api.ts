@@ -3,17 +3,29 @@ import type { VehicleType, Session } from './iot-api'
 
 // ─── Interfaces ───
 
+export interface ActiveSessionSummary {
+  sessionId: string
+  tramiteId: string
+  citizenName: string
+  licenseType: string
+  startedAt: string
+}
+
 export interface Simulator {
   simulatorId: string
   name: string
   pcId: string | null
   pcName: string | null
   pcOnline: boolean
+  pcAppVersion?: string | null
+  pcEnvironment?: string | null
+  pcLastSeen?: string | null
   dofThingName: string | null
   dofOnline: boolean
   vehicleType: VehicleType | null
   location: string | null
   status: 'active' | 'inactive'
+  activeSession?: ActiveSessionSummary | null
   createdAt: string
   updatedAt: string
 }
@@ -158,6 +170,13 @@ export const simulatorApi = {
     return apiRequest<Session[]>(
       `/admin/simulators/${simulatorId}/sessions${qs ? `?${qs}` : ''}`,
       { pool: 'admin' }
+    )
+  },
+
+  cancelSession(sessionId: string, reason?: string) {
+    return apiRequest<{ message: string; sessionId: string; endedAt: string; duration: number }>(
+      `/admin/sessions/${encodeURIComponent(sessionId)}/cancel`,
+      { method: 'POST', body: { reason }, pool: 'admin' }
     )
   },
 

@@ -82,6 +82,7 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
   } | null>(null)
   const [showExplanation, setShowExplanation] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [startError, setStartError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -117,17 +118,22 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
 
   const handleStartExam = async () => {
     if (!tramite?.licenseType) return
+    setStartError(null)
     setLoading(true)
-    const { data: examQuestions } = await publicApi.getPreguntasExamen(tramite.licenseType)
+    const { data: examQuestions, error } = await publicApi.getPreguntasExamen(tramite.licenseType)
+    setLoading(false)
+    if (error) {
+      setStartError(`No pudimos cargar el examen: ${error}. Intenta de nuevo en unos momentos.`)
+      return
+    }
     if (!examQuestions || examQuestions.length === 0) {
-      setLoading(false)
+      setStartError('Aún no hay preguntas disponibles para este tipo de licencia. Comunícate con soporte.')
       return
     }
     setQuestions(examQuestions)
     setCurrentQuestionIndex(0)
     setAnswers([])
     setTimeRemaining(EXAM_CONFIG.timeLimit)
-    setLoading(false)
     setStep('exam')
   }
 
@@ -297,6 +303,12 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
                   <div className="text-sm text-gray-600">Para aprobar</div>
                 </div>
               </div>
+
+              {startError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-sm text-red-700">
+                  {startError}
+                </div>
+              )}
 
               <Button onClick={handleStartExam} className="w-full" size="lg">
                 Iniciar Examen

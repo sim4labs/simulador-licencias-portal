@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { simulatorApi } from './simulator-api'
 import type { ApiResponse } from './api'
 
@@ -19,11 +19,23 @@ function unwrap<T>(res: ApiResponse<T>): T {
   return res.data
 }
 
-export function useSimulators() {
+export function useSimulators(options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: simulatorKeys.simulators,
     queryFn: () => simulatorApi.listSimulators().then(unwrap),
     staleTime: 30_000,
+    refetchInterval: options?.refetchInterval,
+  })
+}
+
+export function useCancelSession() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sessionId, reason }: { sessionId: string; reason?: string }) =>
+      simulatorApi.cancelSession(sessionId, reason).then(unwrap),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: simulatorKeys.simulators })
+    },
   })
 }
 
