@@ -198,7 +198,7 @@ export default function AgendarCitaPage({ params }: { params: { tramiteId: strin
 
             <div className="grid grid-cols-7 gap-1 mb-2">
               {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-                <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+                <div key={day} className="text-center text-xs sm:text-sm font-medium text-gray-500 py-2">
                   {day}
                 </div>
               ))}
@@ -223,7 +223,7 @@ export default function AgendarCitaPage({ params }: { params: { tramiteId: strin
                     onClick={() => handleSelectDate(day)}
                     disabled={!isAvailable}
                     className={`
-                      p-2 text-center rounded-lg transition-colors
+                      py-2 text-center text-sm rounded-lg transition-colors
                       ${isSelected ? 'bg-primary-600 text-white' : ''}
                       ${isToday && !isSelected ? 'ring-2 ring-primary-300' : ''}
                       ${isAvailable && !isSelected ? 'hover:bg-primary-100' : ''}
@@ -249,13 +249,13 @@ export default function AgendarCitaPage({ params }: { params: { tramiteId: strin
                   <div className="animate-pulse">Cargando horarios...</div>
                 </div>
               ) : availableSlots.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {availableSlots.map((time) => (
                     <button
                       key={time}
                       onClick={() => { setSelectedTime(time); setSubmitError(null) }}
                       className={`
-                        py-3 px-4 rounded-lg border text-center transition-colors
+                        py-3 px-2 sm:px-4 rounded-lg border text-center transition-colors
                         ${
                           selectedTime === time
                             ? 'bg-primary-600 text-white border-primary-600'

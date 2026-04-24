@@ -289,18 +289,18 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 mb-6 text-center">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-primary-600">{EXAM_CONFIG.questionsCount}</div>
-                  <div className="text-sm text-gray-600">Preguntas</div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 text-center">
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                  <div className="text-xl sm:text-2xl font-bold text-primary-600">{EXAM_CONFIG.questionsCount}</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Preguntas</div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-primary-600">{EXAM_CONFIG.timeLimit / 60}</div>
-                  <div className="text-sm text-gray-600">Minutos</div>
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                  <div className="text-xl sm:text-2xl font-bold text-primary-600">{EXAM_CONFIG.timeLimit / 60}</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Minutos</div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-primary-600">{EXAM_CONFIG.passingScore}%</div>
-                  <div className="text-sm text-gray-600">Para aprobar</div>
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                  <div className="text-xl sm:text-2xl font-bold text-primary-600">{EXAM_CONFIG.passingScore}%</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Para aprobar</div>
                 </div>
               </div>
 
@@ -454,18 +454,18 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
                 <p className="text-gray-600">Examen de Licencia para {typeInfo?.name}</p>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <div className="text-3xl font-bold text-primary-600">{examResult.score}%</div>
-                  <div className="text-sm text-gray-600">Calificación</div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+                <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl sm:text-3xl font-bold text-primary-600">{examResult.score}%</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Calificación</div>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-3xl font-bold text-green-600">{examResult.correctAnswers}</div>
-                  <div className="text-sm text-gray-600">Correctas</div>
+                <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl sm:text-3xl font-bold text-green-600">{examResult.correctAnswers}</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Correctas</div>
                 </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <div className="text-3xl font-bold text-red-600">{examResult.incorrectAnswers}</div>
-                  <div className="text-sm text-gray-600">Incorrectas</div>
+                <div className="text-center p-3 sm:p-4 bg-red-50 rounded-lg">
+                  <div className="text-2xl sm:text-3xl font-bold text-red-600">{examResult.incorrectAnswers}</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Incorrectas</div>
                 </div>
               </div>
 

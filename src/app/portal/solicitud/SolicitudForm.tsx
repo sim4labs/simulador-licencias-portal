@@ -163,9 +163,9 @@ export function SolicitudForm({ licenseType }: { licenseType: LicenseTypeId }) {
 
 function Row({ label, value }: { label: string; value?: string }) {
   return (
-    <div className="py-2.5 grid grid-cols-3 gap-4">
-      <dt className="text-xs text-gray-500 col-span-1">{label}</dt>
-      <dd className="text-sm text-gray-900 col-span-2 truncate">{value || '—'}</dd>
+    <div className="py-2.5 grid grid-cols-1 sm:grid-cols-3 sm:gap-4">
+      <dt className="text-xs text-gray-500 sm:col-span-1">{label}</dt>
+      <dd className="text-sm text-gray-900 sm:col-span-2 break-words">{value || '—'}</dd>
     </div>
   )
 }
