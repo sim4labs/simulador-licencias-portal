@@ -91,6 +91,19 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
       const t = adaptTramite(data)
       if (!canProceedToStep(t, 3)) { router.replace('/portal/examen'); return }
       setTramite(t)
+      // Si el examen ya está aprobado, saltar directo a la pantalla de resultados.
+      if (t.examResult?.passed) {
+        const total = EXAM_CONFIG.questionsCount
+        const correct = Math.round((t.examResult.score * total) / 100)
+        setExamResult({
+          score: t.examResult.score,
+          passed: true,
+          correctAnswers: correct,
+          incorrectAnswers: total - correct,
+          totalQuestions: total,
+        })
+        setStep('results')
+      }
       setLoading(false)
     }
     load()
@@ -218,7 +231,7 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
               Volver a Examen Teórico
             </Link>
 
-            <ProgressStepper currentStep={3} className="mb-8" />
+            <ProgressStepper currentStep={tramite?.currentStep ?? 3} className="mb-8" />
           </>
         )}
 
