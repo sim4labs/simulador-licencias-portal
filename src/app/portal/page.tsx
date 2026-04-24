@@ -114,7 +114,7 @@ const ENLACES_OFICIALES = [
 
 export default function PortalPage() {
   const [citizenName, setCitizenName] = useState('')
-  const [activeTramite, setActiveTramite] = useState<Tramite | null>(null)
+  const [activeTramites, setActiveTramites] = useState<Tramite[]>([])
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [licencias, setLicencias] = useState<LicenciaResponse[]>([])
   const { modalOpen, setModalOpen, gate } = useProfileGate()
@@ -124,10 +124,13 @@ export default function PortalPage() {
       const session = await getCurrentCitizen()
       if (session) setCitizenName(session.name)
 
-      const { data } = await citizenApi.getTramiteActivo()
+      const { data } = await citizenApi.listarTramites()
       if (data) {
-        const t = adaptTramite(data)
-        if (t.currentStep < 6) setActiveTramite(t)
+        const activos = data
+          .map(adaptTramite)
+          .filter((t) => t.status !== 'finalizado' && t.currentStep < 6)
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        setActiveTramites(activos)
       }
 
       const lic = await publicApi.getLicencias()
@@ -140,9 +143,11 @@ export default function PortalPage() {
     .filter(l => typeof l.costo === 'number' && l.costo > 0 && l.name)
     .sort((a, b) => (a.costo ?? 0) - (b.costo ?? 0))
 
-  const selectedLicencia = activeTramite?.licenseType
-    ? licencias.find(l => l.licenseId === activeTramite.licenseType) ?? null
+  const primaryTramite = activeTramites[0] ?? null
+  const selectedLicencia = primaryTramite?.licenseType
+    ? licencias.find(l => l.licenseId === primaryTramite.licenseType) ?? null
     : null
+  const tramitesConCita = activeTramites.filter((t) => t.appointment)
 
   const firstName = citizenName.split(' ')[0]
 
@@ -165,8 +170,8 @@ export default function PortalPage() {
               Hola, {firstName}
             </h1>
             <p className="text-white/70 text-sm max-w-md">
-              {activeTramite
-                ? 'Continúa con tu trámite o inicia uno nuevo.'
+              {activeTramites.length > 0
+                ? 'Continúa con tus trámites o inicia uno nuevo.'
                 : 'Completa tu solicitud, presenta tu examen teórico y agenda tu cita en el simulador.'}
             </p>
           </div>
@@ -204,116 +209,129 @@ export default function PortalPage() {
       </div>
 
       {/* ── 3. Trámites activos ── */}
-      {activeTramite && (
+      {activeTramites.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Mis Trámites Activos</h2>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-6 pt-6 pb-4">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-sm font-semibold text-gray-900">Trámite {activeTramite.id}</h3>
-                <span className="text-xs text-primary-600 font-medium bg-primary-50 px-2.5 py-1 rounded-full">
-                  Paso {activeTramite.currentStep} de 5
-                </span>
-              </div>
-            </div>
-            <div className="px-6 pb-5">
-              <div className="flex items-center gap-1">
-                {STEPS.map((step, i) => {
-                  const isComplete = activeTramite.currentStep > step.num
-                  const isCurrent = activeTramite.currentStep === step.num
-                  return (
-                    <div key={step.num} className="flex-1 flex flex-col items-center gap-1.5">
-                      <div className="w-full flex items-center">
-                        {i > 0 && (
-                          <div className={`flex-1 h-0.5 ${isComplete ? 'bg-primary-600' : 'bg-gray-200'}`} />
-                        )}
-                        <div
-                          className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold transition-colors ${
-                            isComplete
-                              ? 'bg-primary-600 text-white'
-                              : isCurrent
-                                ? 'bg-primary-600 text-white ring-4 ring-primary-100'
-                                : 'bg-gray-100 text-gray-400'
-                          }`}
-                        >
-                          {isComplete ? <CheckCircle2 className="w-4 h-4" /> : step.num}
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            {activeTramites.length === 1 ? 'Mi Trámite Activo' : `Mis Trámites Activos (${activeTramites.length})`}
+          </h2>
+          <div className="space-y-4">
+            {activeTramites.map((tramite) => (
+              <div key={tramite.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="px-6 pt-6 pb-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-sm font-semibold text-gray-900">Trámite {tramite.id}</h3>
+                    <span className="text-xs text-primary-600 font-medium bg-primary-50 px-2.5 py-1 rounded-full">
+                      Paso {tramite.currentStep} de 5
+                    </span>
+                  </div>
+                </div>
+                <div className="px-6 pb-5">
+                  <div className="flex items-center gap-1">
+                    {STEPS.map((step, i) => {
+                      const isComplete = tramite.currentStep > step.num
+                      const isCurrent = tramite.currentStep === step.num
+                      return (
+                        <div key={step.num} className="flex-1 flex flex-col items-center gap-1.5">
+                          <div className="w-full flex items-center">
+                            {i > 0 && (
+                              <div className={`flex-1 h-0.5 ${isComplete ? 'bg-primary-600' : 'bg-gray-200'}`} />
+                            )}
+                            <div
+                              className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold transition-colors ${
+                                isComplete
+                                  ? 'bg-primary-600 text-white'
+                                  : isCurrent
+                                    ? 'bg-primary-600 text-white ring-4 ring-primary-100'
+                                    : 'bg-gray-100 text-gray-400'
+                              }`}
+                            >
+                              {isComplete ? <CheckCircle2 className="w-4 h-4" /> : step.num}
+                            </div>
+                            {i < STEPS.length - 1 && (
+                              <div className={`flex-1 h-0.5 ${isComplete ? 'bg-primary-600' : 'bg-gray-200'}`} />
+                            )}
+                          </div>
+                          <span className={`text-[11px] ${isCurrent ? 'text-primary-600 font-semibold' : 'text-gray-400'}`}>
+                            {step.label}
+                          </span>
                         </div>
-                        {i < STEPS.length - 1 && (
-                          <div className={`flex-1 h-0.5 ${isComplete ? 'bg-primary-600' : 'bg-gray-200'}`} />
-                        )}
-                      </div>
-                      <span className={`text-[11px] ${isCurrent ? 'text-primary-600 font-semibold' : 'text-gray-400'}`}>
-                        {step.label}
-                      </span>
-                    </div>
-                  )
-                })}
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <p className="text-sm text-gray-700">
+                    Siguiente: <span className="font-medium">{STEP_LABELS[tramite.currentStep]}</span>
+                  </p>
+                  <Link
+                    href={STEP_ROUTES[tramite.currentStep] || '/solicitud'}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-200 text-sm font-medium group shadow-sm"
+                  >
+                    Continuar
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </div>
               </div>
-            </div>
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <p className="text-sm text-gray-700">
-                Siguiente: <span className="font-medium">{STEP_LABELS[activeTramite.currentStep]}</span>
-              </p>
-              <Link
-                href={STEP_ROUTES[activeTramite.currentStep] || '/solicitud'}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-200 text-sm font-medium group shadow-sm"
-              >
-                Continuar
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* ── 4. Citas próximas ── */}
-      {activeTramite?.appointment && (
+      {tramitesConCita.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Mis Citas Próximas</h2>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-5">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0">
-                    <CalendarDays className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Fecha</p>
-                    <p className="text-sm font-semibold text-gray-900">{activeTramite.appointment.date}</p>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            {tramitesConCita.length === 1 ? 'Mi Cita Próxima' : `Mis Citas Próximas (${tramitesConCita.length})`}
+          </h2>
+          <div className="space-y-4">
+            {tramitesConCita.map((tramite) => tramite.appointment && (
+              <div key={tramite.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-5">
+                  <p className="text-xs text-gray-500 mb-3">Trámite {tramite.id}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0">
+                        <CalendarDays className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Fecha</p>
+                        <p className="text-sm font-semibold text-gray-900">{tramite.appointment.date}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center flex-shrink-0">
+                        <Clock className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Hora</p>
+                        <p className="text-sm font-semibold text-gray-900">{tramite.appointment.time}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary-50 border border-primary-200 flex items-center justify-center flex-shrink-0">
+                        <MapPin className="w-5 h-5 text-primary-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Código de cita</p>
+                        <p className="text-sm font-semibold text-gray-900">{tramite.appointment.code}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Hora</p>
-                    <p className="text-sm font-semibold text-gray-900">{activeTramite.appointment.time}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary-50 border border-primary-200 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Código de cita</p>
-                    <p className="text-sm font-semibold text-gray-900">{activeTramite.appointment.code}</p>
-                  </div>
+                <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Confirmada
+                  </span>
+                  <Link
+                    href="/portal/agendar"
+                    className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+                  >
+                    Ver detalles →
+                  </Link>
                 </div>
               </div>
-            </div>
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                <CheckCircle2 className="w-3 h-3" />
-                Confirmada
-              </span>
-              <Link
-                href="/portal/agendar"
-                className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
-              >
-                Ver detalles →
-              </Link>
-            </div>
+            ))}
           </div>
         </div>
       )}
