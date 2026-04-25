@@ -62,6 +62,46 @@ export interface PendingUpdate {
   error?: string
 }
 
+export interface PCCalibration {
+  deviceFingerprint?: string
+  reverseDone?: boolean
+  bindSteerAxis?: string
+  bindReverse?: string
+  bindDrive?: string
+  bindPaddleLeft?: string
+  bindPaddleRight?: string
+  steerCenter?: number
+  steerMax?: number
+  steerMin?: number
+  gasAxis?: string
+  gasRest?: number
+  gasPress?: number
+  brakeAxis?: string
+  brakeRest?: number
+  brakePress?: number
+  advSteerCurveA?: number
+  advSteerDeadzone?: number
+  advBrakeSoftEnd?: number
+  advBrakeSoftMaxOutput?: number
+  advGasCurveN?: number
+  transmisionManual?: boolean
+}
+
+export interface VersionHistoryEntry {
+  version: string
+  s3Key: string
+  sha256: string
+  size: number
+  releaseNotes: string
+  mandatory: boolean
+  status: PendingUpdate['status']
+  statusUpdatedAt: string
+  deployedAt: string
+  deployedBy: string
+  installedAt?: string
+  error?: string
+}
+
 export interface SimulatorPC {
   pcId: string
   name: string
@@ -72,8 +112,12 @@ export interface SimulatorPC {
   online: boolean
   simulatorId: string | null
   createdAt: string
+  lastUpdatedAt?: string | null
   pendingConfig?: { apiBaseUrl: string; environment: string } | null
   pendingUpdate?: PendingUpdate | null
+  versionHistory?: VersionHistoryEntry[] | null
+  calibration?: PCCalibration | null
+  calibrationUpdatedAt?: string | null
 }
 
 export interface UnityBuild {

@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft, FileText, Loader2, RefreshCw, Download } from 'lucide-react'
+import { FileText, Loader2, RefreshCw, Download } from 'lucide-react'
 import { simulatorApi } from '@/lib/simulator-api'
 import { usePCLogs } from '@/lib/simulator-queries'
 import { Button } from '@/components/ui/Button'
@@ -73,15 +72,7 @@ export default function PCLogsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Link
-            href="/admin/simuladores/pcs"
-            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-2"
-          >
-            <ArrowLeft className="h-4 w-4" /> PCs
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Logs — <span className="font-mono text-base">{pcId}</span>
-          </h1>
+          <h2 className="text-xl font-bold text-gray-900">Logs del simulador</h2>
           <p className="text-sm text-gray-500 mt-1">
             {logs.length} archivo{logs.length !== 1 ? 's' : ''} cargado{logs.length !== 1 ? 's' : ''}
           </p>

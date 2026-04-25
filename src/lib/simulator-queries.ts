@@ -59,6 +59,16 @@ export function useSimulatorPCs() {
   })
 }
 
+export function useSimulatorPC(pcId: string | undefined, options?: { refetchInterval?: number }) {
+  return useQuery({
+    queryKey: pcId ? simulatorKeys.pc(pcId) : ['simulator', 'pc', 'pending'],
+    queryFn: () => simulatorApi.getPC(pcId!).then(unwrap),
+    enabled: !!pcId,
+    staleTime: 10_000,
+    refetchInterval: options?.refetchInterval ?? 10_000,
+  })
+}
+
 export function useSimulatorSessions(
   simulatorId: string | undefined,
   params: { desde?: string; hasta?: string; resultado?: string } = {},

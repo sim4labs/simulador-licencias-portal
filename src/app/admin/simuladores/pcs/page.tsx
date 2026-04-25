@@ -93,7 +93,14 @@ export default function PCsPage() {
             <tbody className="divide-y divide-gray-100">
               {pcs.map(pc => (
                 <tr key={pc.pcId} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-900">{pc.name || '-'}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    <Link
+                      href={`/admin/simuladores/pcs/${encodeURIComponent(pc.pcId)}`}
+                      className="hover:text-primary hover:underline"
+                    >
+                      {pc.name || '-'}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-gray-500 font-mono text-xs">
                     {pc.pcId.slice(0, 8)}...{pc.pcId.slice(-4)}
                   </td>

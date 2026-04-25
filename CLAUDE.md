@@ -153,7 +153,7 @@ Rutas públicas y formularios del flujo ciudadano son **server components** con 
 - **Nunca** usar `useEffect(() => fetch())` en páginas admin. Siempre `useQuery` vía los hooks en:
   - `src/lib/admin-queries.ts` (endpoints `/admin/*`)
   - `src/lib/iot-queries.ts` (endpoints `/admin/iot/*`)
-  - `src/lib/simulator-queries.ts` (endpoints `/admin/simulators`, `/admin/pcs`, `/admin/unity-builds`)
+  - `src/lib/simulator-queries.ts` (endpoints `/admin/simulators`, `/admin/pcs`, `/admin/pcs/{pcId}/logs`, `/admin/unity-builds`)
 - Query keys centralizadas en cada archivo (`adminKeys`, `iotKeys`, `simulatorKeys`) — nunca hard-codear keys en una página.
 - Tras una mutation, invalidar con `queryClient.invalidateQueries({ queryKey: ... })`. Evitar `reload()` manual.
 - Listados paginados: `placeholderData: keepPreviousData` para no mostrar blank state al filtrar.
