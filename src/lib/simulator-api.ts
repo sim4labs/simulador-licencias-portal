@@ -85,6 +85,22 @@ export interface UnityBuild {
   isLatest: boolean
 }
 
+export interface PCLogObject {
+  key: string
+  size: number
+  lastModified: string
+}
+
+export interface PCLogsResponse {
+  logs: PCLogObject[]
+  nextContinuationToken?: string
+}
+
+export interface PCLogDownloadResponse {
+  downloadUrl: string
+  expiresIn: number
+}
+
 export interface StartUploadResponse {
   uploadId: string
   s3Key: string
@@ -159,6 +175,25 @@ export const simulatorApi = {
       body: { environment },
       pool: 'admin',
     })
+  },
+
+  listPCLogs(pcId: string, params?: { limit?: number; continuationToken?: string }) {
+    const qp = new URLSearchParams()
+    qp.set('limit', String(params?.limit ?? 50))
+    if (params?.continuationToken) qp.set('continuationToken', params.continuationToken)
+    return apiRequest<PCLogsResponse>(
+      `/admin/pcs/${encodeURIComponent(pcId)}/logs?${qp.toString()}`,
+      { pool: 'admin' }
+    )
+  },
+
+  getPCLogDownloadUrl(pcId: string, key: string) {
+    const qp = new URLSearchParams()
+    qp.set('key', key)
+    return apiRequest<PCLogDownloadResponse>(
+      `/admin/pcs/${encodeURIComponent(pcId)}/logs/download?${qp.toString()}`,
+      { pool: 'admin' }
+    )
   },
 
   getSimulatorSessions(simulatorId: string, params?: { desde?: string; hasta?: string; resultado?: string }) {

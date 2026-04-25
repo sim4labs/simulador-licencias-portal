@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation, useInfiniteQuery } from '@tanstack/react-query'
 import { simulatorApi } from './simulator-api'
 import type { ApiResponse } from './api'
 
@@ -7,6 +7,7 @@ export const simulatorKeys = {
   simulator: (id: string) => ['simulator', 'detail', id] as const,
   pcs: ['simulator', 'pcs'] as const,
   pc: (pcId: string) => ['simulator', 'pc', pcId] as const,
+  pcLogs: (pcId: string) => ['pc-logs', pcId] as const,
   simulatorSessions: (id: string, params: { desde?: string; hasta?: string; resultado?: string }) =>
     ['simulator', 'sessions', id, params] as const,
   simulatorStats: (id: string) => ['simulator', 'stats', id] as const,
@@ -78,6 +79,20 @@ export function useSimulatorStats(simulatorId: string | undefined) {
     queryFn: () => simulatorApi.getSimulatorStats(simulatorId!).then(unwrap),
     enabled: !!simulatorId,
     staleTime: 60_000,
+  })
+}
+
+export function usePCLogs(pcId: string | undefined) {
+  return useInfiniteQuery({
+    queryKey: pcId ? simulatorKeys.pcLogs(pcId) : ['pc-logs', 'pending'],
+    queryFn: ({ pageParam }) =>
+      simulatorApi
+        .listPCLogs(pcId!, { limit: 50, continuationToken: pageParam || undefined })
+        .then(unwrap),
+    initialPageParam: '' as string,
+    getNextPageParam: (lastPage) => lastPage.nextContinuationToken ?? undefined,
+    enabled: !!pcId,
+    staleTime: 30_000,
   })
 }
 

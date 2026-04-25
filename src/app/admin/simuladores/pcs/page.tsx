@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { RefreshCw, Loader2, Monitor, ArrowUpRight, Download } from 'lucide-react'
+import Link from 'next/link'
+import { RefreshCw, Loader2, Monitor, ArrowUpRight, Download, FileText } from 'lucide-react'
 import { simulatorApi } from '@/lib/simulator-api'
 import { simulatorKeys, useSimulatorPCs } from '@/lib/simulator-queries'
 import { Button } from '@/components/ui/Button'
@@ -86,6 +87,7 @@ export default function PCsPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Estado</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Actualizacion</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Ambiente</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Logs</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -146,6 +148,16 @@ export default function PCsPage() {
                         <option value="prod">Prod</option>
                       </select>
                     )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/admin/simuladores/pcs/${encodeURIComponent(pc.pcId)}/logs`}
+                      className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-primary border border-gray-200 hover:border-primary/40 rounded px-2 py-1 transition-colors"
+                      title="Ver logs"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Ver
+                    </Link>
                   </td>
                 </tr>
               ))}
