@@ -1,12 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { RefreshCw, Loader2, Monitor, ArrowUpRight, Download, FileText } from 'lucide-react'
+import { RefreshCw, Loader2, Monitor, ArrowUpRight, Download, FileText, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react'
 import { simulatorApi } from '@/lib/simulator-api'
 import { simulatorKeys, useSimulatorPCs } from '@/lib/simulator-queries'
 import { Button } from '@/components/ui/Button'
+
+type SortKey = 'name' | 'appVersion' | 'ip' | 'simulatorId' | 'online'
+type SortDir = 'asc' | 'desc'
 
 const ENV_LABEL: Record<string, string> = {
   dev: 'Dev',
@@ -19,12 +22,42 @@ const CURRENT_ENV = process.env.NEXT_PUBLIC_ENV || 'dev'
 export default function PCsPage() {
   const qc = useQueryClient()
   const pcsQuery = useSimulatorPCs()
-  const pcs = pcsQuery.data ?? []
+  const pcs = useMemo(() => pcsQuery.data ?? [], [pcsQuery.data])
   const loading = pcsQuery.isLoading
   const error = pcsQuery.error ? pcsQuery.error.message : null
   const [promoting, setPromoting] = useState<string | null>(null)
+  const [sortKey, setSortKey] = useState<SortKey>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   const loadData = () => qc.invalidateQueries({ queryKey: simulatorKeys.pcs })
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+  }
+
+  const sortedPcs = useMemo(() => {
+    const sorted = [...pcs].sort((a, b) => {
+      if (sortKey === 'online') {
+        return (a.online === b.online) ? 0 : a.online ? -1 : 1
+      }
+      const va = (a[sortKey] ?? '') as string
+      const vb = (b[sortKey] ?? '') as string
+      if (!va && !vb) return 0
+      if (!va) return 1
+      if (!vb) return -1
+      return va.localeCompare(vb, 'es', { numeric: true })
+    })
+    if (sortDir === 'desc') sorted.reverse()
+    return sorted
+  }, [pcs, sortKey, sortDir])
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return <ChevronsUpDown className="h-3.5 w-3.5 text-gray-300" />
+    return sortDir === 'asc'
+      ? <ArrowUp className="h-3.5 w-3.5 text-primary" />
+      : <ArrowDown className="h-3.5 w-3.5 text-primary" />
+  }
 
   const handleEnvironmentChange = async (pcId: string, environment: string) => {
     if (environment === CURRENT_ENV) return
@@ -79,19 +112,34 @@ export default function PCsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Nombre</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">UID</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Version</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">IP</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Simulador</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Estado</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Actualizacion</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Ambiente</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Logs</th>
+                {([
+                  ['name', 'Nombre'],
+                  [null, 'UID'],
+                  ['appVersion', 'Version'],
+                  ['ip', 'IP'],
+                  ['simulatorId', 'Simulador'],
+                  ['online', 'Estado'],
+                  [null, 'Actualizacion'],
+                  [null, 'Ambiente'],
+                  [null, 'Logs'],
+                ] as const).map(([key, label]) => (
+                  <th key={label} className="text-left px-4 py-3 font-medium text-gray-500">
+                    {key ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(key)}
+                        className="inline-flex items-center gap-1 hover:text-gray-900 transition-colors"
+                      >
+                        {label}
+                        <SortIcon col={key} />
+                      </button>
+                    ) : label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {pcs.map(pc => (
+              {sortedPcs.map(pc => (
                 <tr key={pc.pcId} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-900">
                     <Link
