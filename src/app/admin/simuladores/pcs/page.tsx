@@ -8,7 +8,7 @@ import { simulatorApi } from '@/lib/simulator-api'
 import { simulatorKeys, useSimulatorPCs } from '@/lib/simulator-queries'
 import { Button } from '@/components/ui/Button'
 
-type SortKey = 'name' | 'appVersion' | 'ip' | 'simulatorId' | 'online'
+type SortKey = 'name' | 'pcId' | 'appVersion' | 'ip' | 'simulatorId' | 'online' | 'pendingUpdate' | 'pendingConfig'
 type SortDir = 'asc' | 'desc'
 
 const ENV_LABEL: Record<string, string> = {
@@ -41,6 +41,22 @@ export default function PCsPage() {
       if (sortKey === 'online') {
         return (a.online === b.online) ? 0 : a.online ? -1 : 1
       }
+      if (sortKey === 'pendingUpdate') {
+        const va = a.pendingUpdate ? `${a.pendingUpdate.status}-${a.pendingUpdate.version}` : ''
+        const vb = b.pendingUpdate ? `${b.pendingUpdate.status}-${b.pendingUpdate.version}` : ''
+        if (!va && !vb) return 0
+        if (!va) return 1
+        if (!vb) return -1
+        return va.localeCompare(vb, 'es', { numeric: true })
+      }
+      if (sortKey === 'pendingConfig') {
+        const va = a.pendingConfig?.environment ?? ''
+        const vb = b.pendingConfig?.environment ?? ''
+        if (!va && !vb) return 0
+        if (!va) return 1
+        if (!vb) return -1
+        return va.localeCompare(vb, 'es', { numeric: true })
+      }
       const va = (a[sortKey] ?? '') as string
       const vb = (b[sortKey] ?? '') as string
       if (!va && !vb) return 0
@@ -53,7 +69,7 @@ export default function PCsPage() {
   }, [pcs, sortKey, sortDir])
 
   const SortIcon = ({ col }: { col: SortKey }) => {
-    if (sortKey !== col) return <ChevronsUpDown className="h-3.5 w-3.5 text-gray-300" />
+    if (sortKey !== col) return <ChevronsUpDown className="h-3.5 w-3.5 text-gray-400" />
     return sortDir === 'asc'
       ? <ArrowUp className="h-3.5 w-3.5 text-primary" />
       : <ArrowDown className="h-3.5 w-3.5 text-primary" />
@@ -114,13 +130,13 @@ export default function PCsPage() {
               <tr>
                 {([
                   ['name', 'Nombre'],
-                  [null, 'UID'],
+                  ['pcId', 'UID'],
                   ['appVersion', 'Version'],
                   ['ip', 'IP'],
                   ['simulatorId', 'Simulador'],
                   ['online', 'Estado'],
-                  [null, 'Actualizacion'],
-                  [null, 'Ambiente'],
+                  ['pendingUpdate', 'Actualizacion'],
+                  ['pendingConfig', 'Ambiente'],
                   [null, 'Logs'],
                 ] as const).map(([key, label]) => (
                   <th key={label} className="text-left px-4 py-3 font-medium text-gray-500">
