@@ -213,12 +213,15 @@ export const simulatorApi = {
     return apiRequest<SimulatorPC>(`/admin/pcs/${encodeURIComponent(pcId)}`, { pool: 'admin' })
   },
 
-  updatePCEnvironment(pcId: string, environment: string) {
-    return apiRequest<{ message: string }>(`/admin/pcs/${encodeURIComponent(pcId)}/environment`, {
-      method: 'PATCH',
-      body: { environment },
-      pool: 'admin',
-    })
+  updatePC(pcId: string, body: { name?: string; environment?: string }) {
+    return apiRequest<{ message: string; pcId: string; name?: string; targetEnvironment?: string; targetApiUrl?: string }>(
+      `/admin/pcs/${encodeURIComponent(pcId)}`,
+      {
+        method: 'PATCH',
+        body,
+        pool: 'admin',
+      }
+    )
   },
 
   listPCLogs(pcId: string, params?: { limit?: number; continuationToken?: string }) {

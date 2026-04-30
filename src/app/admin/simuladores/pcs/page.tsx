@@ -3,9 +3,9 @@
 import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { RefreshCw, Loader2, Monitor, ArrowUpRight, Download, FileText, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react'
-import { simulatorApi } from '@/lib/simulator-api'
-import { simulatorKeys, useSimulatorPCs } from '@/lib/simulator-queries'
+import { RefreshCw, Loader2, Monitor, ArrowUpRight, Download, FileText, ArrowUp, ArrowDown, ChevronsUpDown, Pencil } from 'lucide-react'
+import { simulatorKeys, useSimulatorPCs, useUpdatePC } from '@/lib/simulator-queries'
+import type { SimulatorPC } from '@/lib/simulator-api'
 import { Button } from '@/components/ui/Button'
 
 type SortKey = 'name' | 'pcId' | 'appVersion' | 'ip' | 'simulatorId' | 'online' | 'pendingUpdate' | 'pendingConfig'
@@ -26,8 +26,10 @@ export default function PCsPage() {
   const loading = pcsQuery.isLoading
   const error = pcsQuery.error ? pcsQuery.error.message : null
   const [promoting, setPromoting] = useState<string | null>(null)
+  const [renameTarget, setRenameTarget] = useState<SimulatorPC | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const updatePC = useUpdatePC()
 
   const loadData = () => qc.invalidateQueries({ queryKey: simulatorKeys.pcs })
 
@@ -80,9 +82,11 @@ export default function PCsPage() {
     if (!confirm(`Promover esta PC a ${ENV_LABEL[environment]}? Se moverá al próximo heartbeat (~3 min).`)) return
 
     setPromoting(pcId)
-    await simulatorApi.updatePCEnvironment(pcId, environment)
-    setPromoting(null)
-    loadData()
+    try {
+      await updatePC.mutateAsync({ pcId, body: { environment } })
+    } finally {
+      setPromoting(null)
+    }
   }
 
   const onlineCount = pcs.filter(pc => pc.online).length
@@ -158,12 +162,22 @@ export default function PCsPage() {
               {sortedPcs.map(pc => (
                 <tr key={pc.pcId} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-900">
-                    <Link
-                      href={`/admin/simuladores/pcs/${encodeURIComponent(pc.pcId)}`}
-                      className="hover:text-primary hover:underline"
-                    >
-                      {pc.name || '-'}
-                    </Link>
+                    <div className="inline-flex items-center gap-1.5 group">
+                      <Link
+                        href={`/admin/simuladores/pcs/${encodeURIComponent(pc.pcId)}`}
+                        className="hover:text-primary hover:underline"
+                      >
+                        {pc.name || '-'}
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setRenameTarget(pc)}
+                        title="Renombrar PC"
+                        className="text-gray-300 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-gray-500 font-mono text-xs">
                     {pc.pcId.slice(0, 8)}...{pc.pcId.slice(-4)}
@@ -236,6 +250,74 @@ export default function PCsPage() {
           </table>
         </div>
       )}
+
+      {renameTarget && (
+        <RenamePCModal
+          pc={renameTarget}
+          onClose={() => setRenameTarget(null)}
+          onSaved={() => setRenameTarget(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+function RenamePCModal({ pc, onClose, onSaved }: {
+  pc: SimulatorPC
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const [name, setName] = useState(pc.name || '')
+  const updatePC = useUpdatePC()
+  const trimmed = name.trim()
+  const unchanged = trimmed === (pc.name || '').trim()
+  const tooLong = trimmed.length > 40
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!trimmed || unchanged || tooLong) return
+    await updatePC.mutateAsync({ pcId: pc.pcId, body: { name: trimmed } })
+    onSaved()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+        <h2 className="text-lg font-bold text-gray-900 mb-1">Renombrar PC</h2>
+        <p className="text-xs text-gray-500 font-mono mb-4">{pc.pcId.slice(0, 8)}...{pc.pcId.slice(-4)}</p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              maxLength={40}
+              placeholder="Ej. Simulador Aramis"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+              autoFocus
+            />
+            {tooLong && (
+              <p className="text-xs text-red-600 mt-1">Máximo 40 caracteres</p>
+            )}
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-3 py-2 rounded-lg">
+            El nombre se aplicará en la PC en el próximo heartbeat (hasta ~3 min).
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" size="sm" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" size="sm" disabled={!trimmed || unchanged || tooLong || updatePC.isPending}>
+              {updatePC.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Guardar
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

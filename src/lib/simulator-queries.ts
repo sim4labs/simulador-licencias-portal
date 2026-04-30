@@ -40,6 +40,19 @@ export function useCancelSession() {
   })
 }
 
+export function useUpdatePC() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ pcId, body }: { pcId: string; body: { name?: string; environment?: string } }) =>
+      simulatorApi.updatePC(pcId, body).then(unwrap),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: simulatorKeys.pcs })
+      qc.invalidateQueries({ queryKey: simulatorKeys.pc(vars.pcId) })
+      qc.invalidateQueries({ queryKey: simulatorKeys.simulators })
+    },
+  })
+}
+
 export function useSimulator(id: string | undefined) {
   return useQuery({
     queryKey: id ? simulatorKeys.simulator(id) : ['simulator', 'detail', 'pending'],
