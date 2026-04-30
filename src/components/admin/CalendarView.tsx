@@ -136,6 +136,11 @@ export function CalendarView({ tramites }: CalendarViewProps) {
                             {t.personalData.nombre} {t.personalData.apellidoPaterno}
                           </span>
                           <span className="text-xs text-gray-500 ml-2">{t.id}</span>
+                          {t.appointment?.simulatorId && (
+                            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded bg-primary-100 text-primary-800 text-[10px] font-mono">
+                              {t.appointment.simulatorId}
+                            </span>
+                          )}
                           <Badge variant={statusVariant[t.status]} className="ml-2">
                             {statusLabel[t.status] || t.status}
                           </Badge>
@@ -211,6 +216,12 @@ export function CalendarView({ tramites }: CalendarViewProps) {
               <div><span className="text-gray-500">Hora:</span> {selectedTramite.appointment?.time || '—'}</div>
               <div><span className="text-gray-500">Fecha:</span> {selectedTramite.appointment?.date || '—'}</div>
               <div><span className="text-gray-500">Email:</span> {selectedTramite.personalData.email}</div>
+              {selectedTramite.appointment?.simulatorId && (
+                <div><span className="text-gray-500">Simulador:</span> <span className="font-mono font-medium">{selectedTramite.appointment.simulatorId}</span></div>
+              )}
+              {selectedTramite.appointment?.code && (
+                <div><span className="text-gray-500">Código:</span> <span className="font-mono">{selectedTramite.appointment.code}</span></div>
+              )}
             </div>
             {selectedTramite.examResult && (
               <div className="pt-2 border-t border-gray-200">

@@ -1,7 +1,7 @@
-import { useQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, keepPreviousData, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from './admin-api'
 import type { ApiResponse } from './api'
-import { adaptTramite } from './adapters'
+import { adaptTramite, type UpdateScheduleConfigBody } from './adapters'
 
 export const adminKeys = {
   stats: ['admin', 'stats'] as const,
@@ -19,6 +19,7 @@ export const adminKeys = {
   integrationTokens: ['admin', 'integration-tokens'] as const,
   integrationTokenCalls: (tokenId: string, limit: number) =>
     ['admin', 'integration-tokens', tokenId, 'calls', limit] as const,
+  scheduleConfig: ['admin', 'schedule-config'] as const,
 }
 
 function unwrap<T>(res: ApiResponse<T>): T {
@@ -120,6 +121,47 @@ export function useAdminIntegrationTokenCalls(tokenId: string, limit = 100) {
     queryFn: () => adminApi.getIntegrationTokenCalls(tokenId, limit).then(unwrap),
     staleTime: 30_000,
     enabled: !!tokenId,
+  })
+}
+
+// ─── Schedule config (calendario operativo) ───
+export function useScheduleConfig() {
+  return useQuery({
+    queryKey: adminKeys.scheduleConfig,
+    queryFn: () => adminApi.getScheduleConfig().then(unwrap),
+    staleTime: 30_000,
+  })
+}
+
+export function useUpdateScheduleWeekly() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ dayOfWeek, body }: { dayOfWeek: number; body: UpdateScheduleConfigBody }) =>
+      adminApi.updateScheduleWeekly(dayOfWeek, body).then(unwrap),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.scheduleConfig })
+    },
+  })
+}
+
+export function useUpsertScheduleException() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ date, body }: { date: string; body: UpdateScheduleConfigBody }) =>
+      adminApi.upsertScheduleException(date, body).then(unwrap),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.scheduleConfig })
+    },
+  })
+}
+
+export function useDeleteScheduleException() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (date: string) => adminApi.deleteScheduleException(date).then(unwrap),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.scheduleConfig })
+    },
   })
 }
 

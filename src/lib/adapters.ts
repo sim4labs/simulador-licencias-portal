@@ -34,6 +34,8 @@ export interface TramiteResponse {
   appointmentDate?: string
   appointmentTime?: string
   appointmentCode?: string
+  simulatorId?: string
+  appointmentVehicleType?: string
   simulatorPassed?: boolean
   simulatorScore?: number
   simulatorFeedback?: string[]
@@ -88,6 +90,8 @@ export function adaptTramite(r: TramiteResponse): Tramite {
       date: r.appointmentDate,
       time: r.appointmentTime || '',
       code: r.appointmentCode || '',
+      simulatorId: r.simulatorId,
+      vehicleType: r.appointmentVehicleType,
     }
   }
 
@@ -213,6 +217,37 @@ export interface DisponibilidadResponse {
   date: string
   availableSlots: string[]
   message?: string
+  capacity?: number
+}
+
+// Schedule config (admin)
+export interface ScheduleConfigItem {
+  configType: 'weekly' | 'exception'
+  key: string
+  isOpen: boolean
+  startTime?: string
+  endTime?: string
+  slotDurationMinutes?: number
+  note?: string
+  updatedAt?: string
+  updatedBy?: string
+}
+
+export interface ScheduleConfigResponse {
+  weekly: ScheduleConfigItem[]
+  exceptions: ScheduleConfigItem[]
+}
+
+export interface UpdateScheduleConfigBody {
+  isOpen: boolean
+  startTime?: string
+  endTime?: string
+  slotDurationMinutes?: number
+  note?: string
+}
+
+export interface UpdateScheduleConfigResponse extends ScheduleConfigItem {
+  conflictingAppointments: number
 }
 
 // Confirmación shape

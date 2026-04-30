@@ -8,6 +8,9 @@ import type {
   DashboardStatsResponse,
   TramitePublicResponse,
   MetricsResponse,
+  ScheduleConfigResponse,
+  UpdateScheduleConfigBody,
+  UpdateScheduleConfigResponse,
 } from './adapters'
 
 export interface ScoringConfig {
@@ -76,6 +79,32 @@ export const adminApi = {
     if (params.desde) qs.set('desde', params.desde)
     if (params.hasta) qs.set('hasta', params.hasta)
     return apiRequest<TramiteResponse[]>(`/admin/citas?${qs.toString()}`, { pool: 'admin' })
+  },
+
+  // ─── Schedule config (calendario operativo) ───
+  getScheduleConfig() {
+    return apiRequest<ScheduleConfigResponse>('/admin/schedule-config', { pool: 'admin' })
+  },
+
+  updateScheduleWeekly(dayOfWeek: number, body: UpdateScheduleConfigBody) {
+    return apiRequest<UpdateScheduleConfigResponse>(
+      `/admin/schedule-config/weekly/${dayOfWeek}`,
+      { method: 'PUT', body, pool: 'admin' },
+    )
+  },
+
+  upsertScheduleException(date: string, body: UpdateScheduleConfigBody) {
+    return apiRequest<UpdateScheduleConfigResponse>(
+      `/admin/schedule-config/exception/${date}`,
+      { method: 'PUT', body, pool: 'admin' },
+    )
+  },
+
+  deleteScheduleException(date: string) {
+    return apiRequest<{ deleted: boolean; date: string }>(
+      `/admin/schedule-config/exception/${date}`,
+      { method: 'DELETE', pool: 'admin' },
+    )
   },
 
   listarPreguntas(params?: { cat?: string; dif?: string }) {
@@ -265,8 +294,9 @@ export const publicApi = {
     })
   },
 
-  getDisponibilidad(fecha: string) {
-    return apiRequest<DisponibilidadResponse>(`/disponibilidad?fecha=${encodeURIComponent(fecha)}`)
+  getDisponibilidad(fecha: string, licenseType: string) {
+    const qs = new URLSearchParams({ fecha, licenseType })
+    return apiRequest<DisponibilidadResponse>(`/disponibilidad?${qs.toString()}`)
   },
 
   getConfirmacion(tramiteId: string) {
