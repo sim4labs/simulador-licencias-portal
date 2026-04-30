@@ -1,6 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
+import Link from 'next/link'
+import { Settings } from 'lucide-react'
 import { startOfMonth, endOfMonth, format } from 'date-fns'
 import { useAdminCitas } from '@/lib/admin-queries'
 import { adaptTramite } from '@/lib/adapters'
@@ -22,7 +24,16 @@ export default function CalendarioPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Calendario de Citas</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Calendario de Citas</h1>
+        <Link
+          href="/admin/calendario/configuracion"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          <Settings className="w-4 h-4" />
+          Horario operativo
+        </Link>
+      </div>
       <CalendarView tramites={tramites} />
     </div>
   )

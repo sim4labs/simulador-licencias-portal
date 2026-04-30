@@ -52,6 +52,13 @@ export const citizenApi = {
     })
   },
 
+  cancelarCita(tramiteId: string) {
+    return apiRequest<{ tramiteId: string; cancelled: boolean }>(
+      `/ciudadano/tramites/${tramiteId}/cita`,
+      { method: 'DELETE', pool: 'citizen' },
+    )
+  },
+
   getTramite(tramiteId: string) {
     return apiRequest<TramiteResponse>(`/ciudadano/tramites/${tramiteId}`, { pool: 'citizen' })
   },

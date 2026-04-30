@@ -35,6 +35,7 @@ export default function AgendarCitaPage({ params }: { params: { tramiteId: strin
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [slotsMessage, setSlotsMessage] = useState<string | null>(null)
 
   const today = new Date()
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
@@ -72,27 +73,30 @@ export default function AgendarCitaPage({ params }: { params: { tramiteId: strin
     return days
   }, [firstDayOfMonth, daysInMonth])
 
+  // Sólo bloquea fechas pasadas. La disponibilidad real (días cerrados, horarios)
+  // viene del backend al seleccionar la fecha.
   const isDateAvailable = (day: number) => {
     const date = new Date(currentYear, currentMonth, day)
-    const dayOfWeek = date.getDay()
-    if (dayOfWeek === 0 || dayOfWeek === 6) return false
     if (date < new Date(today.getFullYear(), today.getMonth(), today.getDate())) return false
     return true
   }
 
   const handleSelectDate = async (day: number) => {
     if (!isDateAvailable(day)) return
+    if (!tramite?.licenseType) return
     const date = new Date(currentYear, currentMonth, day)
     setSelectedDate(date)
     setSelectedTime(null)
     setAvailableSlots([])
     setSubmitError(null)
+    setSlotsMessage(null)
     setLoadingSlots(true)
     const fechaStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-    const { data } = await publicApi.getDisponibilidad(fechaStr)
+    const { data } = await publicApi.getDisponibilidad(fechaStr, tramite.licenseType)
     setLoadingSlots(false)
     if (data) {
       setAvailableSlots(data.availableSlots)
+      setSlotsMessage(data.message || null)
     }
   }
 
@@ -126,9 +130,14 @@ export default function AgendarCitaPage({ params }: { params: { tramiteId: strin
     if (error || !data) {
       setIsSubmitting(false)
       if (status === 409) {
-        setSubmitError('Este horario ya fue tomado. Selecciona otro.')
-        const { data: slotData } = await publicApi.getDisponibilidad(fechaStr)
-        if (slotData) setAvailableSlots(slotData.availableSlots)
+        setSubmitError(error || 'Este horario ya no está disponible. Selecciona otro.')
+        if (tramite.licenseType) {
+          const { data: slotData } = await publicApi.getDisponibilidad(fechaStr, tramite.licenseType)
+          if (slotData) {
+            setAvailableSlots(slotData.availableSlots)
+            setSlotsMessage(slotData.message || null)
+          }
+        }
         setSelectedTime(null)
       } else {
         setSubmitError(error || 'Error al agendar la cita')
@@ -269,7 +278,7 @@ export default function AgendarCitaPage({ params }: { params: { tramiteId: strin
                 </div>
               ) : (
                 <div className="text-center text-gray-500 py-12">
-                  <p>No hay horarios disponibles para esta fecha</p>
+                  <p>{slotsMessage || 'No hay horarios disponibles para esta fecha'}</p>
                 </div>
               )
             ) : (
