@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { usePrefetchAdmin } from '@/lib/admin-queries'
 import { usePrefetchIot } from '@/lib/iot-queries'
 import { usePrefetchSimulator } from '@/lib/simulator-queries'
-import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users, BarChart3, Download, ClipboardCheck, Monitor, Box, Upload, KeyRound, Activity } from 'lucide-react'
+import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Users, BarChart3, ClipboardCheck, Monitor, Box, Upload, KeyRound, Activity } from 'lucide-react'
 
 type AdminPrefetchKey = 'stats' | 'tramites' | 'licencias' | 'users' | 'preguntas' | 'scoringConfig'
 type IotPrefetchKey = 'devices' | 'firmware'
@@ -39,8 +39,6 @@ const navSections: Array<{ title: string; items: NavItem[] }> = [
       { href: '/admin/simuladores', label: 'Simuladores', icon: Box, prefetchSim: 'simulators' },
       { href: '/admin/simuladores/pcs', label: 'PCs', icon: Monitor, prefetchSim: 'pcs' },
       { href: '/admin/simuladores/builds', label: 'Builds Unity', icon: Upload, prefetchSim: 'unityBuilds' },
-      { href: '/admin/iot', label: 'Controladores', icon: Cpu, prefetchIot: 'devices' },
-      { href: '/admin/iot/firmware', label: 'Firmware', icon: Download, prefetchIot: 'firmware' },
     ],
   },
   {
