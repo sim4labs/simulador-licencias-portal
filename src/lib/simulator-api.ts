@@ -93,6 +93,8 @@ export interface VersionHistoryEntry {
   sha256: string
   size: number
   releaseNotes: string
+  /** Puntero al markdown completo (lazy load via getReleaseNotes). */
+  releaseNotesS3Key?: string
   mandatory: boolean
   status: PendingUpdate['status']
   statusUpdatedAt: string
@@ -274,6 +276,13 @@ export const simulatorApi = {
   listUnityBuilds() {
     return apiRequest<{ builds: UnityBuild[]; latestVersion: string | null }>(
       '/admin/unity-builds',
+      { pool: 'admin' }
+    )
+  },
+
+  getReleaseNotes(s3Key: string) {
+    return apiRequest<{ key: string; content: string }>(
+      `/admin/unity-builds/release-notes?key=${encodeURIComponent(s3Key)}`,
       { pool: 'admin' }
     )
   },

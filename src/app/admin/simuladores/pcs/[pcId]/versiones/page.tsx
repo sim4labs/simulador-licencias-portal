@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 import { Loader2, History, RefreshCw, Download, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react'
 import { useSimulatorPC } from '@/lib/simulator-queries'
 import { Button } from '@/components/ui/Button'
+import { ReleaseNotesDialog } from '@/components/admin/ReleaseNotesDialog'
 import type { VersionHistoryEntry } from '@/lib/simulator-api'
 
 function formatBytes(bytes: number): string {
@@ -142,8 +143,23 @@ export default function PCVersionesPage() {
                     <td className="px-4 py-3 text-gray-600">{formatDate(entry.deployedAt)}</td>
                     <td className="px-4 py-3 text-gray-600">{entry.installedAt ? formatDate(entry.installedAt) : <span className="text-gray-400">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{entry.size ? formatBytes(entry.size) : '-'}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-sm truncate" title={entry.releaseNotes}>
-                      {entry.releaseNotes || <span className="text-gray-400">—</span>}
+                    <td className="px-4 py-3 text-gray-600 max-w-sm">
+                      {entry.releaseNotes ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="truncate" title={entry.releaseNotes}>
+                            {entry.releaseNotes}
+                          </div>
+                          {entry.releaseNotesS3Key && (
+                            <ReleaseNotesDialog
+                              version={entry.version}
+                              s3Key={entry.releaseNotesS3Key}
+                              summary={entry.releaseNotes}
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
                     </td>
                   </tr>
                 )
