@@ -24,6 +24,7 @@ export interface ScoringConfig {
     redLight: number
     wrongWay: number
     dangerousGearChange: number
+    gearChangeWithoutClutch: number
   }
   passingScore: number
   gradeThresholds: {
