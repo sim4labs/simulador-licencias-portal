@@ -29,6 +29,7 @@ const vehicleTypeLabels: Record<string, string> = {
   cargo_truck: 'Camión Carga',
   car: 'Automóvil',
   motorcycle: 'Motocicleta',
+  emergency_vehicle: 'Vehículo de Emergencia',
 }
 
 export default function IoTDashboardPage() {

@@ -19,6 +19,7 @@ const vehicleOptions: { value: VehicleType; label: string; prefix: string }[] = 
   { value: 'cargo_truck', label: 'Camion Carga', prefix: 'CCAR' },
   { value: 'car', label: 'Automovil', prefix: 'AUTO' },
   { value: 'motorcycle', label: 'Motocicleta', prefix: 'MOTO' },
+  { value: 'emergency_vehicle', label: 'Vehiculo de Emergencia', prefix: 'CEMG' },
 ]
 
 function suggestSerial(type: VehicleType | null, nickname: string): string {

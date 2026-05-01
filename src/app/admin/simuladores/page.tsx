@@ -14,6 +14,7 @@ const vehicleTypeLabels: Record<string, string> = {
   cargo_truck: 'Camion Carga',
   car: 'Automovil',
   motorcycle: 'Motocicleta',
+  emergency_vehicle: 'Vehiculo de Emergencia',
 }
 
 export default function SimuladoresPage() {
@@ -218,6 +219,7 @@ function CreateSimulatorModal({ onClose, onCreated }: { onClose: () => void; onC
               <option value="motorcycle">Motocicleta</option>
               <option value="passenger_bus">Camion Pasajeros</option>
               <option value="cargo_truck">Camion Carga</option>
+              <option value="emergency_vehicle">Vehiculo de Emergencia</option>
             </select>
           </div>
           <div className="flex justify-end gap-2 pt-2">
