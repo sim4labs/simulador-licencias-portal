@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Bus, Truck, Car, Bike, CircleDashed, Settings, ArrowRight, ExternalLink } from 'lucide-react'
+import { Bus, Truck, Car, Bike, Ambulance, CircleDashed, Settings, ArrowRight, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Device } from '@/lib/iot-api'
 import { Button } from '@/components/ui/Button'
@@ -42,6 +42,13 @@ export const vehicleConfig: Record<string, VehicleConfig> = {
     color: 'border-l-violet-500',
     iconBg: 'bg-violet-100',
     iconColor: 'text-violet-600',
+  },
+  emergency_vehicle: {
+    icon: Ambulance,
+    label: 'Vehículo de Emergencia',
+    color: 'border-l-red-500',
+    iconBg: 'bg-red-100',
+    iconColor: 'text-red-600',
   },
 }
 

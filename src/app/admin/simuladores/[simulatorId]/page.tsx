@@ -17,6 +17,7 @@ const vehicleTypeLabels: Record<string, string> = {
   cargo_truck: 'Camion Carga',
   car: 'Automovil',
   motorcycle: 'Motocicleta',
+  emergency_vehicle: 'Vehiculo de Emergencia',
 }
 
 export default function SimulatorDetailPage() {
@@ -157,6 +158,7 @@ export default function SimulatorDetailPage() {
               <option value="motorcycle">Motocicleta</option>
               <option value="passenger_bus">Camion Pasajeros</option>
               <option value="cargo_truck">Camion Carga</option>
+              <option value="emergency_vehicle">Vehiculo de Emergencia</option>
             </select>
           </div>
         </div>

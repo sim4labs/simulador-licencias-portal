@@ -2,7 +2,7 @@ import { apiRequest } from './api'
 
 // ─── Interfaces para dispositivos IoT ───
 
-export type VehicleType = 'passenger_bus' | 'cargo_truck' | 'car' | 'motorcycle'
+export type VehicleType = 'passenger_bus' | 'cargo_truck' | 'car' | 'motorcycle' | 'emergency_vehicle'
 
 export interface Device {
   thingName: string
