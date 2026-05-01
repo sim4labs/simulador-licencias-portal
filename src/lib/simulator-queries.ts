@@ -12,6 +12,7 @@ export const simulatorKeys = {
     ['simulator', 'sessions', id, params] as const,
   simulatorStats: (id: string) => ['simulator', 'stats', id] as const,
   unityBuilds: ['simulator', 'unity-builds'] as const,
+  releaseNotes: (s3Key: string) => ['simulator', 'release-notes', s3Key] as const,
 }
 
 function unwrap<T>(res: ApiResponse<T>): T {
@@ -124,6 +125,21 @@ export function useUnityBuilds() {
     queryKey: simulatorKeys.unityBuilds,
     queryFn: () => simulatorApi.listUnityBuilds().then(unwrap),
     staleTime: 30_000,
+  })
+}
+
+/**
+ * Lazy load del markdown completo de release notes.
+ * `enabled` por default está en true cuando se pasa un s3Key — los call sites
+ * pueden controlar el fetch pasando `enabled: open` para que solo dispare
+ * cuando el modal está abierto.
+ */
+export function useReleaseNotes(s3Key: string | undefined, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: s3Key ? simulatorKeys.releaseNotes(s3Key) : ['simulator', 'release-notes', 'pending'],
+    queryFn: () => simulatorApi.getReleaseNotes(s3Key!).then(unwrap),
+    enabled: !!s3Key && options?.enabled !== false,
+    staleTime: 5 * 60_000, // 5 min — release notes son inmutables tras publicar
   })
 }
 
