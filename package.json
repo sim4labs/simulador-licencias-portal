@@ -10,7 +10,9 @@
     "dev:admin": "npx tsx scripts/create-admin.ts",
     "changelog:build": "node scripts/build-changelog.mjs",
     "prebuild": "node scripts/build-changelog.mjs",
-    "predev": "node scripts/build-changelog.mjs"
+    "predev": "node scripts/build-changelog.mjs",
+    "prelint": "node scripts/build-changelog.mjs",
+    "postinstall": "node scripts/build-changelog.mjs || true"
   },
   "dependencies": {
     "@aws-amplify/ui-react-liveness": "^3.6.0",
