@@ -90,9 +90,15 @@ export const citizenApi = {
 // ─── Kiosk API (público — sin auth) ───
 
 export const kioskApi = {
-  createSession() {
-    return apiRequest<{ sessionId: string; expiresAt: string }>('/kiosk/sessions', {
+  createSession(args?: { kioskId?: string }) {
+    return apiRequest<{
+      sessionId: string
+      expiresAt: string
+      verifyUrl?: string
+      reused?: boolean
+    }>('/kiosk/sessions', {
       method: 'POST',
+      body: args?.kioskId ? { kioskId: args.kioskId } : undefined,
     })
   },
 
