@@ -19,6 +19,7 @@ export interface ScoringConfig {
     pedestrianHit: number
     bicycleCollision: number
     vehicleCollision: number
+    passiveVehicleCollision: number
     signCollision: number
     obstacleCollision: number
     redLight: number

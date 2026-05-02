@@ -13,6 +13,41 @@ import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/admin/Textarea'
 import { Search, ClipboardEdit } from 'lucide-react'
 
+// Etiquetas legibles para cada tipo de fault registrado por el simulador.
+// `tone` controla el color del badge: rojo para activas que descuentan,
+// azul "info" para pasivas (lo impactaron a él), amarillo para faltas leves.
+const FAULT_LABELS: Record<string, { label: string; tone: 'red' | 'amber' | 'sky' | 'gray' }> = {
+  'pedestrian-hit': { label: 'Atropello', tone: 'red' },
+  'bicycle-collision': { label: 'Colisión con bicicleta', tone: 'red' },
+  'vehicle-collision': { label: 'Colisión vehicular', tone: 'red' },
+  'passive-vehicle-collision': { label: 'Lo impactaron', tone: 'sky' },
+  'sign-collision': { label: 'Señalamiento', tone: 'gray' },
+  'obstacle-collision': { label: 'Obstáculo', tone: 'gray' },
+  'red-light': { label: 'Semáforo en rojo', tone: 'red' },
+  'wrong-way': { label: 'Sentido contrario', tone: 'red' },
+  'speeding': { label: 'Exceso de velocidad', tone: 'amber' },
+  'dangerous-gear-change': { label: 'Cambio peligroso', tone: 'amber' },
+  'gear-change-without-clutch': { label: 'Sin clutch', tone: 'amber' },
+}
+
+const FAULT_TONE_CLASSES: Record<'red' | 'amber' | 'sky' | 'gray', string> = {
+  red: 'bg-red-50 text-red-700 border border-red-200',
+  amber: 'bg-amber-50 text-amber-700 border border-amber-200',
+  sky: 'bg-sky-50 text-sky-700 border border-sky-200',
+  gray: 'bg-gray-50 text-gray-600 border border-gray-200',
+}
+
+function titleCaseFromType(t: string): string {
+  return t.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+}
+
+function formatTimeFromSeconds(s: number): string {
+  if (!Number.isFinite(s) || s < 0) return '0:00'
+  const min = Math.floor(s / 60)
+  const sec = Math.floor(s % 60)
+  return `${min}:${sec.toString().padStart(2, '0')}`
+}
+
 export default function TramitesPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
@@ -177,13 +212,45 @@ export default function TramitesPage() {
                 <Badge variant={detailTramite.simulatorResult.passed ? 'success' : 'destructive'}>
                   {detailTramite.simulatorResult.passed ? 'Aprobado' : 'Reprobado'} — {detailTramite.simulatorResult.score}%
                 </Badge>
-                {detailTramite.simulatorResult.feedback.length > 0 && (
+                {detailTramite.simulatorResult.faults && detailTramite.simulatorResult.faults.length > 0 ? (
+                  <div className="mt-3 overflow-hidden rounded-md border border-gray-200">
+                    <table className="w-full text-xs">
+                      <thead className="bg-gray-50 text-gray-500">
+                        <tr>
+                          <th className="px-2 py-1.5 text-left font-medium w-16">Min</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Tipo</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Descripción</th>
+                          <th className="px-2 py-1.5 text-right font-medium w-16">Puntos</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {detailTramite.simulatorResult.faults.map((f, i) => {
+                          const meta = FAULT_LABELS[f.type] ?? { label: titleCaseFromType(f.type), tone: 'gray' as const }
+                          const ptsLabel = f.deduction === 0 ? '—' : `−${f.deduction}`
+                          return (
+                            <tr key={i} className="bg-white">
+                              <td className="px-2 py-1.5 font-mono text-gray-500">{formatTimeFromSeconds(f.secondsFromStart)}</td>
+                              <td className="px-2 py-1.5">
+                                <span className={`inline-block rounded px-1.5 py-0.5 text-[11px] ${FAULT_TONE_CLASSES[meta.tone]}`}>
+                                  {meta.label}
+                                </span>
+                              </td>
+                              <td className="px-2 py-1.5 text-gray-700">{f.description}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono ${f.deduction === 0 ? 'text-gray-400' : 'text-red-600'}`}>{ptsLabel}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : detailTramite.simulatorResult.feedback.length > 0 ? (
+                  // Fallback para trámites antiguos sin `faults` desglosados.
                   <ul className="mt-2 space-y-1 text-xs text-gray-600">
                     {detailTramite.simulatorResult.feedback.map((f, i) => (
                       <li key={i}>• {f}</li>
                     ))}
                   </ul>
-                )}
+                ) : null}
               </div>
             )}
           </div>

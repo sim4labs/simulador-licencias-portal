@@ -13,6 +13,7 @@ const DEFAULT_PENALTIES: ScoringConfig['penalties'] = {
   pedestrianHit: 25,
   bicycleCollision: 15,
   vehicleCollision: 10,
+  passiveVehicleCollision: 0,
   signCollision: 5,
   obstacleCollision: 5,
   redLight: 20,
@@ -38,6 +39,11 @@ const PENALTY_LABELS: Record<string, { label: string; severity: string; hint?: s
   pedestrianHit: { label: 'Atropello de peatón', severity: 'critical' },
   bicycleCollision: { label: 'Colisión con bicicleta', severity: 'major' },
   vehicleCollision: { label: 'Colisión vehicular', severity: 'major' },
+  passiveVehicleCollision: {
+    label: 'Colisión pasiva (lo impactaron)',
+    severity: 'info',
+    hint: 'Cuando un NPC embiste al alumno por atrás. Default 0: solo se registra para el examinador, no descuenta puntos.',
+  },
   redLight: { label: 'Semáforo en rojo', severity: 'major' },
   wrongWay: { label: 'Sentido contrario', severity: 'major' },
   dangerousGearChange: { label: 'Cambio de marcha peligroso', severity: 'major' },
@@ -55,6 +61,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   critical: 'bg-red-100 text-red-700 border-red-200',
   major: 'bg-amber-100 text-amber-700 border-amber-200',
   minor: 'bg-blue-100 text-blue-700 border-blue-200',
+  info: 'bg-sky-50 text-sky-700 border-sky-200',
 }
 
 export default function ScoringPage() {
