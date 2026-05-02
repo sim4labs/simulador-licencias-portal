@@ -53,6 +53,7 @@ export interface PendingUpdate {
   sha256: string
   size: number
   releaseNotes: string
+  releaseNotesS3Key?: string
   mandatory: boolean
   scheduledAfter: string
   status: 'PENDING' | 'DOWNLOADING' | 'DOWNLOADED' | 'INSTALLING' | 'INSTALLED' | 'FAILED'
@@ -316,7 +317,8 @@ export const simulatorApi = {
 
   deployUnityBuild(data: {
     version: string; s3Key: string; sha256?: string; size?: number;
-    releaseNotes?: string; mandatory?: boolean; scheduledAfter?: string; targetPcIds: string[]
+    releaseNotes?: string; releaseNotesS3Key?: string;
+    mandatory?: boolean; scheduledAfter?: string; targetPcIds: string[]
   }) {
     return apiRequest<{ success: boolean; deployedTo: number; scheduledAfter: string }>(
       '/admin/unity-builds/deploy',

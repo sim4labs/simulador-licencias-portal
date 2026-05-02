@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation'
 import { Loader2, Monitor } from 'lucide-react'
 import { useSimulatorPC } from '@/lib/simulator-queries'
+import { ReleaseNotesDialog } from '@/components/admin/ReleaseNotesDialog'
 
 function formatDate(iso?: string | null): string {
   if (!iso) return '-'
@@ -75,6 +76,15 @@ export default function PCDetailPage() {
             <div><span className="text-gray-500">Status:</span> <span className="font-medium">{pc.pendingUpdate.status}</span></div>
             <div><span className="text-gray-500">Actualizado:</span> {formatDate(pc.pendingUpdate.statusUpdatedAt)}</div>
           </div>
+          {pc.pendingUpdate.releaseNotesS3Key && (
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <ReleaseNotesDialog
+                version={pc.pendingUpdate.version}
+                s3Key={pc.pendingUpdate.releaseNotesS3Key}
+                summary={pc.pendingUpdate.releaseNotes}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

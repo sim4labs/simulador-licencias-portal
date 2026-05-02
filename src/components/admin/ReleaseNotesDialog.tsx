@@ -44,7 +44,7 @@ export function ReleaseNotesDialog({ version, s3Key, summary }: ReleaseNotesDial
         <DialogHeader>
           <DialogTitle>Release v{version}</DialogTitle>
           {summary && (
-            <DialogDescription className="mt-1 max-w-2xl truncate">
+            <DialogDescription className="mt-1 max-w-2xl truncate" title={summary}>
               {summary}
             </DialogDescription>
           )}
@@ -57,9 +57,19 @@ export function ReleaseNotesDialog({ version, s3Key, summary }: ReleaseNotesDial
         )}
 
         {isError && (
-          <div className="py-12 text-center text-sm text-red-600">
-            Error cargando release notes: {error instanceof Error ? error.message : 'desconocido'}
-          </div>
+          (() => {
+            const msg = error instanceof Error ? error.message : 'desconocido'
+            const isMissing = /\b404\b|not found|no encontrad/i.test(msg)
+            return isMissing ? (
+              <div className="py-12 text-center text-sm text-gray-500">
+                No hay release notes registradas para v{version}.
+              </div>
+            ) : (
+              <div className="py-12 text-center text-sm text-red-600">
+                Error cargando release notes: {msg}
+              </div>
+            )
+          })()
         )}
 
         {data?.content && (
