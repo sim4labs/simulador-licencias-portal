@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { currentVersion } from '@/data/changelog'
+import { useBackendVersion } from '@/lib/version-api'
 import {
   LayoutDashboard,
   FileText,
@@ -47,6 +48,10 @@ interface CitizenSidebarProps {
 
 export function CitizenSidebar({ mobileOpen, onMobileClose }: CitizenSidebarProps) {
   const pathname = usePathname()
+  const fe = currentVersion()
+  const { data: be } = useBackendVersion()
+  const feLabel = fe === 'unreleased' ? 'rc' : `v${fe}`
+  const beLabel = be ? (be.version === 'unreleased' ? 'rc' : `v${be.version}`) : '…'
 
   const nav = (
     <aside className={cn(
@@ -92,10 +97,13 @@ export function CitizenSidebar({ mobileOpen, onMobileClose }: CitizenSidebarProp
         href="/changelog"
         onClick={onMobileClose}
         className="px-4 py-3 border-t border-[#DCDCE0] text-xs text-[#4B5563] hover:bg-gray-200 flex items-center gap-2"
+        title={be ? `Backend ${be.tag ?? be.commit} · built ${new Date(be.builtAt).toLocaleString()}` : undefined}
       >
-        <Tag className="h-3 w-3" />
+        <Tag className="h-3 w-3 flex-shrink-0" />
         <span className="font-mono">
-          {currentVersion() === 'unreleased' ? 'sin release' : `v${currentVersion()}`}
+          FE <span className="text-[#3D1A50]">{feLabel}</span>
+          <span className="text-gray-400"> · </span>
+          BE <span className="text-[#3D1A50]">{beLabel}</span>
         </span>
         <span className="text-gray-400 ml-auto">Historial</span>
       </Link>

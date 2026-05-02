@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { GitCommit, Tag, ChevronDown, ChevronRight, Sparkles } from 'lucide-react'
 import { changelog, currentVersion, type ChangelogEntryDecorated } from '@/data/changelog'
+import { useBackendVersion } from '@/lib/version-api'
 import { cn } from '@/lib/utils'
 
 interface ChangelogListProps {
@@ -13,15 +14,21 @@ interface ChangelogListProps {
 export function ChangelogList({ showCommits = true }: ChangelogListProps) {
   const version = currentVersion()
   const totalCommits = changelog.reduce((n, e) => n + e.commits.length, 0)
+  const { data: be } = useBackendVersion()
+  const beLabel = be ? (be.version === 'unreleased' ? 'sin release' : `v${be.version}`) : '…'
 
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <h1 className="text-2xl font-bold text-gray-900">Historial de versiones</h1>
           <span className="inline-flex items-center gap-1 rounded-full bg-[#3D1A50] text-white text-xs font-semibold px-3 py-1">
             <Tag className="h-3 w-3" />
-            {version === 'unreleased' ? 'sin release' : `v${version}`}
+            FE {version === 'unreleased' ? 'sin release' : `v${version}`}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#582672] text-white text-xs font-semibold px-3 py-1">
+            <Tag className="h-3 w-3" />
+            BE {beLabel}
           </span>
         </div>
         <p className="text-sm text-gray-500 mt-1">
