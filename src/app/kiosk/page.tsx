@@ -9,7 +9,7 @@ import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 type DisplayState = 'loading' | 'qr' | 'verifying' | 'verified' | 'failed'
 
 const POLL_INTERVAL = 2000  // 2 segundos
-const SESSION_LIFETIME = 9 * 60 * 1000  // 9 min (renovar antes del TTL de 10 min)
+const SESSION_LIFETIME = 25 * 60 * 1000  // renovar a 25 min (TTL backend = 30 min)
 const RESET_DELAY = 10000  // 10 seg antes de reiniciar tras verified/failed
 
 export default function KioskPage() {
@@ -22,10 +22,30 @@ export default function KioskPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const renewRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Guard contra createSession concurrente (visibilitychange + setTimeout
+  // de renovación pueden dispararse a la vez tras un alt-tab largo).
+  const isCreatingRef = useRef(false)
+  // Sid actual para que el handler de visibilitychange pueda forzar un poll
+  // sin esperar al siguiente tick del setInterval.
+  const currentSidRef = useRef<string | null>(null)
 
   useEffect(() => {
     createSession()
-    return () => clearAll()
+
+    function onVisibility() {
+      if (document.visibilityState !== 'visible') return
+      const sid = currentSidRef.current
+      // setInterval se throttlea cuando la tab está hidden — al volver
+      // forzamos un poll inmediato. Si la sesión murió, pollSession
+      // detecta 404/410 y dispara createSession.
+      if (sid) pollSession(sid)
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      clearAll()
+    }
   }, [])
 
   function clearAll() {
@@ -35,38 +55,54 @@ export default function KioskPage() {
   }
 
   async function createSession() {
-    clearAll()
-    setDisplayState('loading')
-    setCitizenName('')
-    setFailReason('')
+    if (isCreatingRef.current) return
+    isCreatingRef.current = true
+    try {
+      clearAll()
+      currentSidRef.current = null
+      setDisplayState('loading')
+      setCitizenName('')
+      setFailReason('')
 
-    const { data, error } = await kioskApi.createSession()
-    if (!data || error) {
-      // Reintenta en 5 segundos si falla
-      renewRef.current = setTimeout(createSession, 5000)
-      return
+      const { data, error } = await kioskApi.createSession()
+      if (!data || error) {
+        // Reintenta en 5 segundos si falla
+        renewRef.current = setTimeout(createSession, 5000)
+        return
+      }
+
+      const sid = data.sessionId
+      currentSidRef.current = sid
+
+      const verifyUrl = `${window.location.origin}/verificar?session=${sid}`
+      const url = await QRCode.toDataURL(verifyUrl, {
+        width: 320,
+        margin: 2,
+        color: { dark: '#1e1b4b', light: '#ffffff' },
+      })
+      setQrUrl(url)
+      setDisplayState('qr')
+
+      // Renovar sesión antes de que expire
+      renewRef.current = setTimeout(createSession, SESSION_LIFETIME)
+
+      // Polling
+      pollRef.current = setInterval(() => pollSession(sid), POLL_INTERVAL)
+    } finally {
+      isCreatingRef.current = false
     }
-
-    const sid = data.sessionId
-
-    const verifyUrl = `${window.location.origin}/verificar?session=${sid}`
-    const url = await QRCode.toDataURL(verifyUrl, {
-      width: 320,
-      margin: 2,
-      color: { dark: '#1e1b4b', light: '#ffffff' },
-    })
-    setQrUrl(url)
-    setDisplayState('qr')
-
-    // Renovar sesión antes de que expire
-    renewRef.current = setTimeout(createSession, SESSION_LIFETIME)
-
-    // Polling
-    pollRef.current = setInterval(() => pollSession(sid), POLL_INTERVAL)
   }
 
   async function pollSession(sid: string) {
-    const { data } = await kioskApi.getSessionStatus(sid)
+    const { data, status } = await kioskApi.getSessionStatus(sid)
+
+    // 404 = row purgado por TTL, 410 = expiresAt < now (DDB aún no purga).
+    // Ambos significan QR muerto: regenerar. Otros errores (5xx, offline,
+    // status 0) los tratamos como transitorios y mantenemos el QR actual.
+    if (status === 404 || status === 410) {
+      createSession()
+      return
+    }
     if (!data) return
 
     if (data.status === 'verifying' && data.citizenName) {
