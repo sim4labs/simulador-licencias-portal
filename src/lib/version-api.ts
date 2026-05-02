@@ -13,9 +13,11 @@ export interface BackendVersion {
   env?: string
 }
 
-/** GET /version del backend (público, sin auth, cache 60s). */
+/** GET /version del backend (público, sin auth). El servidor manda
+ * cache-control: public, max-age=60 — usar 'default' para que el browser
+ * lo respete y revalide al expirar. */
 export async function fetchBackendVersion(): Promise<BackendVersion> {
-  const res = await fetch(`${API_BASE_URL}/version`, { cache: 'force-cache' })
+  const res = await fetch(`${API_BASE_URL}/version`, { cache: 'default' })
   if (!res.ok) throw new Error(`/version returned ${res.status}`)
   return res.json()
 }

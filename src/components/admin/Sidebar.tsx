@@ -120,16 +120,15 @@ export function Sidebar() {
       </nav>
       <Link
         href="/admin/changelog"
-        className="px-4 py-3 border-t border-[#DCDCE0] text-xs text-[#4B5563] hover:bg-gray-200 flex items-center gap-2"
-        title={be ? `Backend ${be.tag ?? be.commit} · built ${new Date(be.builtAt).toLocaleString()}` : undefined}
+        className="px-4 py-3 border-t border-[#DCDCE0] text-xs text-[#4B5563] hover:bg-gray-200 flex items-center justify-between gap-2"
+        title={be ? `Backend ${be.tag ?? be.commit} · built ${new Date(be.builtAt).toLocaleString()}` : 'Ver historial de versiones'}
       >
-        <Tag className="h-3 w-3 flex-shrink-0" />
-        <span className="font-mono">
+        <span className="font-mono whitespace-nowrap">
           FE <span className="text-[#3D1A50]">{feLabel}</span>
           <span className="text-gray-400"> · </span>
           BE <span className="text-[#3D1A50]">{beLabel}</span>
         </span>
-        <span className="text-gray-400 ml-auto">Historial</span>
+        <Tag className="h-3 w-3 flex-shrink-0 text-gray-400" />
       </Link>
     </aside>
   )
