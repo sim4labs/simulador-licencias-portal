@@ -99,7 +99,7 @@ export function useAdminScoringConfig() {
   })
 }
 
-export function useAdminMetrics(period: string = '24h') {
+export function useAdminMetrics(period: string = '7d') {
   return useQuery({
     queryKey: adminKeys.metrics(period),
     queryFn: () => adminApi.getMetrics(period).then(unwrap),

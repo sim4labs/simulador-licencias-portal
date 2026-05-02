@@ -54,9 +54,15 @@ export function TopCharts({ metrics: m, period }: { metrics: Metrics; period: Pe
     'Aprobados': m.examsPassed?.datapoints || [],
     'Reprobados': m.examsFailed?.datapoints || [],
   }, period)
-  const iotData = mergeDatapoints({
+  const buildsData = mergeDatapoints({
+    'Builds Unity desplegados': m.unityDeployed?.datapoints || [],
+    'Descargas Unity': m.unityDownloads?.datapoints || [],
+    'Jobs OTA (ESP32)': m.otaJobsCreated?.datapoints || [],
     'Comandos IoT': m.iotCommandsSent?.datapoints || [],
-    'Jobs OTA': m.otaJobsCreated?.datapoints || [],
+  }, period)
+  const alertsData = mergeDatapoints({
+    'Emails enviados': m.alertsEmailSent?.datapoints || [],
+    'SMS enviados': m.alertsSmsSent?.datapoints || [],
   }, period)
   const authColdData = mergeDatapoints({
     'Auth Failures': m.authFailures?.datapoints || [],
@@ -99,20 +105,39 @@ export function TopCharts({ metrics: m, period }: { metrics: Metrics; period: Pe
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">IoT & OTA</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Builds & Devices</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={iotData}>
+            <LineChart data={buildsData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="time" fontSize={12} />
               <YAxis fontSize={12} allowDecimals={false} />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="Comandos IoT" stroke={COLORS.primary} strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Jobs OTA" stroke={COLORS.info} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Builds Unity desplegados" stroke={COLORS.primary} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Descargas Unity" stroke={COLORS.info} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Jobs OTA (ESP32)" stroke={COLORS.success} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Comandos IoT" stroke={COLORS.warning} strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
+        <div className="bg-white rounded-lg shadow p-5">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Sistema de Alertas</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={alertsData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="time" fontSize={12} />
+              <YAxis fontSize={12} allowDecimals={false} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="Emails enviados" stackId="alerts" fill={COLORS.info} />
+              <Bar dataKey="SMS enviados" stackId="alerts" fill={COLORS.warning} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-5">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Auth Failures & Cold Starts</h2>
           <ResponsiveContainer width="100%" height={300}>
