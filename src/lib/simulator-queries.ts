@@ -13,6 +13,7 @@ export const simulatorKeys = {
   simulatorStats: (id: string) => ['simulator', 'stats', id] as const,
   unityBuilds: ['simulator', 'unity-builds'] as const,
   releaseNotes: (s3Key: string) => ['simulator', 'release-notes', s3Key] as const,
+  buildTestPlan: (version: string) => ['simulator', 'build-test-plan', version] as const,
 }
 
 function unwrap<T>(res: ApiResponse<T>): T {
@@ -140,6 +141,57 @@ export function useReleaseNotes(s3Key: string | undefined, options?: { enabled?:
     queryFn: () => simulatorApi.getReleaseNotes(s3Key!).then(unwrap),
     enabled: !!s3Key && options?.enabled !== false,
     staleTime: 5 * 60_000, // 5 min — release notes son inmutables tras publicar
+  })
+}
+
+/**
+ * Lazy load del test plan de un build (items + state DDB + compareUrl).
+ * 404 cuando el build no tiene `test-plan.json` en S3 — el modal degrada
+ * a no mostrar la sección. `enabled` controla el fetch (típicamente `open`
+ * del Dialog).
+ */
+export function useBuildTestPlan(version: string | undefined, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: version ? simulatorKeys.buildTestPlan(version) : ['simulator', 'build-test-plan', 'pending'],
+    queryFn: () => simulatorApi.getBuildTestPlan(version!).then(unwrap),
+    enabled: !!version && options?.enabled !== false,
+    staleTime: 30_000,
+    retry: (failureCount, err) => {
+      // No reintentar 404 — la versión genuinamente no tiene test plan registrado
+      if (err instanceof Error && /\b404\b|not found|no encontrad|no hay test plan/i.test(err.message)) return false
+      return failureCount < 2
+    },
+  })
+}
+
+/**
+ * Toggle de un test plan item con optimistic update.
+ * El backend valida que el itemId exista en `test-plan.json` (cache 5min en
+ * Lambda) y atribuye al usuario del JWT.
+ */
+export function useToggleTestPlanItem(version: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ itemId, checked }: { itemId: string; checked: boolean }) =>
+      simulatorApi.toggleTestPlanItem(version, itemId, checked).then(unwrap),
+    onMutate: async ({ itemId, checked }) => {
+      const key = simulatorKeys.buildTestPlan(version)
+      await qc.cancelQueries({ queryKey: key })
+      const prev = qc.getQueryData<{ items: { id: string; checked: boolean }[] }>(key)
+      if (prev) {
+        qc.setQueryData(key, {
+          ...prev,
+          items: prev.items.map(it => it.id === itemId ? { ...it, checked } : it),
+        })
+      }
+      return { prev }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(simulatorKeys.buildTestPlan(version), ctx.prev)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: simulatorKeys.buildTestPlan(version) })
+    },
   })
 }
 
