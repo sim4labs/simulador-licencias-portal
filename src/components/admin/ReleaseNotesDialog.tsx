@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { FileText } from 'lucide-react'
 import {
   Dialog,
@@ -73,8 +74,8 @@ export function ReleaseNotesDialog({ version, s3Key, summary }: ReleaseNotesDial
         )}
 
         {data?.content && (
-          <article className="prose prose-sm max-w-none mt-2">
-            <ReactMarkdown>{data.content}</ReactMarkdown>
+          <article className="prose prose-sm max-w-none mt-2 prose-headings:mt-4 prose-headings:mb-2 prose-h2:text-base prose-h2:font-semibold prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-1 prose-h3:text-sm prose-h3:font-semibold prose-p:my-2 prose-ul:my-2 prose-li:my-0.5 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:before:content-none prose-code:after:content-none prose-pre:bg-gray-900 prose-pre:text-gray-100">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{data.content}</ReactMarkdown>
           </article>
         )}
       </DialogContent>
