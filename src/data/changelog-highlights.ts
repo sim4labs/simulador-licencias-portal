@@ -12,8 +12,8 @@ interface HighlightOverlay {
 }
 
 export const highlights: Record<string, HighlightOverlay> = {
-  '1.0.0': {
-    title: 'Lanzamiento inicial — Portal de Licencias Tlaxcala',
+  '0.9.0': {
+    title: 'Release candidate — demo institucional',
     highlights: [
       'Portal ciudadano completo: examen teórico, agendado de citas, perfil obligatorio, costos dinámicos por tipo de licencia y QR de confirmación.',
       'Panel administrativo: trámites, calendario, métricas con gráficas, configuración de calificación, preguntas, licencias, usuarios e integraciones con tokens.',
@@ -23,6 +23,12 @@ export const highlights: Record<string, HighlightOverlay> = {
       'Migración a SSR-first del flujo público y a TanStack Query v5 en todo /admin/*.',
       'Integraciones externas: rotación de tokens, healthcheck en lista, probador de token y historial de llamadas.',
       'CI/CD: promoción automática main → stage vía GitHub Actions.',
+    ],
+  },
+  '1.0.0': {
+    title: 'Lanzamiento oficial a producción',
+    highlights: [
+      'Promoción del RC v0.9.0 a producción tras demo institucional aprobado.',
     ],
   },
 }
