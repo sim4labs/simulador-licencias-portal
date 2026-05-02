@@ -259,23 +259,36 @@ export default function PCsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {pc.pendingUpdate ? (
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                        pc.pendingUpdate.status === 'INSTALLED' ? 'text-green-700'
-                          : pc.pendingUpdate.status === 'FAILED' ? 'text-red-600'
-                          : pc.pendingUpdate.status === 'DOWNLOADING' || pc.pendingUpdate.status === 'INSTALLING' ? 'text-blue-600'
-                          : 'text-amber-600'
-                      }`}>
-                        <Download className="h-3 w-3" />
-                        v{pc.pendingUpdate.version} · {
-                          pc.pendingUpdate.status === 'INSTALLED' ? 'Instalado'
-                            : pc.pendingUpdate.status === 'FAILED' ? 'Fallido'
-                            : pc.pendingUpdate.status === 'DOWNLOADING' ? 'Descargando'
-                            : pc.pendingUpdate.status === 'INSTALLING' ? 'Instalando'
-                            : 'Pendiente'
-                        }
-                      </span>
-                    ) : (
+                    {pc.pendingUpdate ? (() => {
+                      const attempts = pc.pendingUpdate.attemptCount ?? 0
+                      const abandoned = pc.pendingUpdate.status === 'FAILED' && attempts >= 3
+                      const colorClass = abandoned ? 'text-gray-500'
+                        : pc.pendingUpdate.status === 'INSTALLED' ? 'text-green-700'
+                        : pc.pendingUpdate.status === 'FAILED' ? 'text-red-600'
+                        : pc.pendingUpdate.status === 'DOWNLOADING' || pc.pendingUpdate.status === 'INSTALLING' ? 'text-blue-600'
+                        : 'text-amber-600'
+                      const label = abandoned ? 'Abandonada'
+                        : pc.pendingUpdate.status === 'INSTALLED' ? 'Instalado'
+                        : pc.pendingUpdate.status === 'FAILED' ? 'Fallido'
+                        : pc.pendingUpdate.status === 'DOWNLOADING' ? 'Descargando'
+                        : pc.pendingUpdate.status === 'INSTALLING' ? 'Instalando'
+                        : 'Pendiente'
+                      const tooltip = abandoned
+                        ? `Abandonada tras ${attempts} intentos fallidos. Sube versión nueva para reintentar.`
+                        : pc.pendingUpdate.error || undefined
+                      return (
+                        <span
+                          className={`inline-flex items-center gap-1.5 text-xs font-medium ${colorClass}`}
+                          title={tooltip}
+                        >
+                          <Download className="h-3 w-3" />
+                          v{pc.pendingUpdate.version} · {label}
+                          {attempts > 0 && !abandoned && (
+                            <span className="text-gray-400 ml-0.5">× {attempts}</span>
+                          )}
+                        </span>
+                      )
+                    })() : (
                       <span className="text-xs text-gray-400">-</span>
                     )}
                   </td>

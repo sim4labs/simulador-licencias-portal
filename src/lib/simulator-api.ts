@@ -61,6 +61,10 @@ export interface PendingUpdate {
   createdAt: string
   createdBy: string
   error?: string
+  /** Contador de intentos de descarga/instalación. Cuando llega a 3 + status='FAILED',
+   * el backend deja de mandar pendingUpdate al kiosko (abandonada). Recovery via
+   * subir versión nueva. */
+  attemptCount?: number
 }
 
 export interface PCCalibration {
@@ -130,6 +134,22 @@ export interface UnityBuild {
   size: number
   lastModified: string
   isLatest: boolean
+}
+
+export interface TestPlanItem {
+  id: string
+  text: string
+  preCheckedInDoc: boolean
+  checked: boolean
+  checkedBy?: { userId: string; name: string }
+  checkedAt?: string
+}
+
+export interface BuildTestPlan {
+  version: string
+  items: TestPlanItem[]
+  compareUrl: string | null
+  extractedAt?: string
 }
 
 export interface PCLogObject {
@@ -323,6 +343,20 @@ export const simulatorApi = {
     return apiRequest<{ success: boolean; deployedTo: number; scheduledAfter: string }>(
       '/admin/unity-builds/deploy',
       { method: 'POST', body: data, pool: 'admin' }
+    )
+  },
+
+  getBuildTestPlan(version: string) {
+    return apiRequest<BuildTestPlan>(
+      `/admin/unity-builds/${encodeURIComponent(version)}/test-plan`,
+      { pool: 'admin' }
+    )
+  },
+
+  toggleTestPlanItem(version: string, itemId: string, checked: boolean) {
+    return apiRequest<{ id: string; checked: boolean; checkedBy: { userId: string; name: string }; checkedAt: string }>(
+      `/admin/unity-builds/${encodeURIComponent(version)}/test-plan/${encodeURIComponent(itemId)}`,
+      { method: 'PUT', body: { checked }, pool: 'admin' }
     )
   },
 }
