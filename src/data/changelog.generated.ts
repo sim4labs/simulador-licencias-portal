@@ -5,10 +5,20 @@ import type { ChangelogEntry } from './changelog-types'
 
 export const generatedChangelog: ChangelogEntry[] = [
   {
-    "version": "unreleased",
+    "version": "0.9.0",
     "date": "2026-05-02",
-    "tag": null,
+    "tag": "v0.9.0",
     "commits": [
+      {
+        "hash": "cbae6e3",
+        "date": "2026-05-02",
+        "subject": "feat(changelog): highlights para v0.9.0 RC y v1.0.0 placeholder"
+      },
+      {
+        "hash": "a552af8",
+        "date": "2026-05-02",
+        "subject": "feat(changelog): historial de versiones driveado por git tag"
+      },
       {
         "hash": "c533179",
         "date": "2026-05-02",
