@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { currentVersion } from '@/data/changelog'
 import {
   LayoutDashboard,
   FileText,
@@ -12,6 +13,7 @@ import {
   ClipboardList,
   UserCircle,
   X,
+  Tag,
 } from 'lucide-react'
 
 const navSections = [
@@ -86,6 +88,17 @@ export function CitizenSidebar({ mobileOpen, onMobileClose }: CitizenSidebarProp
           </div>
         ))}
       </nav>
+      <Link
+        href="/changelog"
+        onClick={onMobileClose}
+        className="px-4 py-3 border-t border-[#DCDCE0] text-xs text-[#4B5563] hover:bg-gray-200 flex items-center gap-2"
+      >
+        <Tag className="h-3 w-3" />
+        <span className="font-mono">
+          {currentVersion() === 'unreleased' ? 'sin release' : `v${currentVersion()}`}
+        </span>
+        <span className="text-gray-400 ml-auto">Historial</span>
+      </Link>
     </aside>
   )
 

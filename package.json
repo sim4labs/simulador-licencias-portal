@@ -1,13 +1,16 @@
 {
   "name": "simulador-licencias-portal",
-  "version": "0.1.0",
+  "version": "0.0.0-managed-by-git-tag",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "dev:admin": "npx tsx scripts/create-admin.ts"
+    "dev:admin": "npx tsx scripts/create-admin.ts",
+    "changelog:build": "node scripts/build-changelog.mjs",
+    "prebuild": "node scripts/build-changelog.mjs",
+    "predev": "node scripts/build-changelog.mjs"
   },
   "dependencies": {
     "@aws-amplify/ui-react-liveness": "^3.6.0",

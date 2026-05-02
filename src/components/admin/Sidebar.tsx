@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils'
 import { usePrefetchAdmin } from '@/lib/admin-queries'
 import { usePrefetchIot } from '@/lib/iot-queries'
 import { usePrefetchSimulator } from '@/lib/simulator-queries'
-import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Users, BarChart3, ClipboardCheck, Monitor, Box, Upload, KeyRound, Activity } from 'lucide-react'
+import { currentVersion } from '@/data/changelog'
+import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Users, BarChart3, ClipboardCheck, Monitor, Box, Upload, KeyRound, Activity, History, Tag } from 'lucide-react'
 
 type AdminPrefetchKey = 'stats' | 'tramites' | 'licencias' | 'users' | 'preguntas' | 'scoringConfig'
 type IotPrefetchKey = 'devices' | 'firmware'
@@ -49,6 +50,7 @@ const navSections: Array<{ title: string; items: NavItem[] }> = [
       { href: '/admin/licencias', label: 'Licencias', icon: CreditCard, prefetchAdmin: 'licencias' },
       { href: '/admin/usuarios', label: 'Usuarios', icon: Users, prefetchAdmin: 'users' },
       { href: '/admin/integraciones', label: 'Integraciones', icon: KeyRound },
+      { href: '/admin/changelog', label: 'Historial', icon: History },
     ],
   },
 ]
@@ -111,6 +113,16 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+      <Link
+        href="/admin/changelog"
+        className="px-4 py-3 border-t border-[#DCDCE0] text-xs text-[#4B5563] hover:bg-gray-200 flex items-center gap-2"
+      >
+        <Tag className="h-3 w-3" />
+        <span className="font-mono">
+          {currentVersion() === 'unreleased' ? 'sin release' : `v${currentVersion()}`}
+        </span>
+        <span className="text-gray-400 ml-auto">Historial</span>
+      </Link>
     </aside>
   )
 }
