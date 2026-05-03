@@ -1,17 +1,13 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 import { LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
-import { adminApi } from '@/lib/admin-api'
-import { adminKeys, useAdminLicencias, useAdminTramites } from '@/lib/admin-queries'
+import { useAdminLicencias, useAdminTramites } from '@/lib/admin-queries'
 import { DataTable } from '@/components/admin/DataTable'
 import { Badge, statusVariant, statusLabel } from '@/components/admin/Badge'
 import { Modal } from '@/components/admin/Modal'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Textarea } from '@/components/admin/Textarea'
-import { Search, ClipboardEdit } from 'lucide-react'
+import { Search } from 'lucide-react'
 
 // Etiquetas legibles para cada tipo de fault registrado por el simulador.
 // `tone` controla el color del badge: rojo para activas que descuentan,
@@ -49,17 +45,24 @@ function formatTimeFromSeconds(s: number): string {
 }
 
 export default function TramitesPage() {
-  const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [detailTramite, setDetailTramite] = useState<Tramite | null>(null)
-  const [simModal, setSimModal] = useState<Tramite | null>(null)
-  const [simScore, setSimScore] = useState('80')
-  const [simPassed, setSimPassed] = useState(true)
-  const [simFeedback, setSimFeedback] = useState('')
 
-  const tramitesQuery = useAdminTramites()
+  // Refetch cada 8s mientras haya algún trámite esperando resultado del simulador.
+  // Detecta el caso "ciudadano hace examen mientras admin tiene la pantalla abierta":
+  // sin esto, el resultado solo aparece tras F5.
+  const tramitesQuery = useAdminTramites(
+    {},
+    {
+      refetchInterval: (data) => {
+        const items = data?.items ?? []
+        const hasPending = items.some((t) => t.status === 'cita-agendada' && !t.simulatorResult)
+        return hasPending ? 8000 : false
+      },
+    },
+  )
   const licenciasQuery = useAdminLicencias()
   const tramites = tramitesQuery.data?.items ?? []
   const licenseTypes = licenciasQuery.data ?? []
@@ -76,24 +79,6 @@ export default function TramitesPage() {
       return true
     })
   }, [tramites, statusFilter, typeFilter, search])
-
-  const handleSimSubmit = async () => {
-    if (!simModal) return
-    const body = {
-      passed: simPassed,
-      score: parseInt(simScore) || 0,
-      feedback: simFeedback.split('\n').filter(Boolean),
-    }
-    const { error } = await adminApi.registrarSimulador(simModal.id, body)
-    if (!error) {
-      qc.invalidateQueries({ queryKey: ['admin', 'tramites'] })
-      qc.invalidateQueries({ queryKey: adminKeys.stats })
-    }
-    setSimModal(null)
-    setSimScore('80')
-    setSimPassed(true)
-    setSimFeedback('')
-  }
 
   const columns = [
     { key: 'id', header: 'ID', render: (t: Tramite) => <span className="font-mono text-xs">{t.id}</span> },
@@ -131,11 +116,6 @@ export default function TramitesPage() {
       key: 'acciones', header: 'Acciones', render: (t: Tramite) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" onClick={() => setDetailTramite(t)}>Ver</Button>
-          {t.status === 'cita-agendada' && !t.simulatorResult && (
-            <Button variant="outline" size="sm" onClick={() => setSimModal(t)}>
-              <ClipboardEdit className="h-3.5 w-3.5 mr-1" />Simulador
-            </Button>
-          )}
         </div>
       ),
     },
@@ -253,46 +233,6 @@ export default function TramitesPage() {
                 ) : null}
               </div>
             )}
-          </div>
-        )}
-      </Modal>
-
-      {/* Simulator result modal */}
-      <Modal open={!!simModal} onClose={() => setSimModal(null)} title="Registrar Resultado de Simulador">
-        {simModal && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Trámite <span className="font-mono font-medium">{simModal.id}</span> — {simModal.personalData.nombre} {simModal.personalData.apellidoPaterno}
-            </p>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" checked={simPassed} onChange={() => setSimPassed(true)} className="text-primary focus:ring-primary" />
-                <span className="text-sm font-medium text-green-700">Aprobado</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" checked={!simPassed} onChange={() => setSimPassed(false)} className="text-primary focus:ring-primary" />
-                <span className="text-sm font-medium text-red-700">Reprobado</span>
-              </label>
-            </div>
-            <Input
-              label="Puntuación (0-100)"
-              type="number"
-              min={0}
-              max={100}
-              value={simScore}
-              onChange={e => setSimScore(e.target.value)}
-            />
-            <Textarea
-              label="Retroalimentación (una línea por observación)"
-              placeholder="Ej: Buen control de velocidad&#10;Frenado tardío en curvas"
-              value={simFeedback}
-              onChange={e => setSimFeedback(e.target.value)}
-              rows={4}
-            />
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setSimModal(null)}>Cancelar</Button>
-              <Button onClick={handleSimSubmit}>Guardar Resultado</Button>
-            </div>
           </div>
         )}
       </Modal>

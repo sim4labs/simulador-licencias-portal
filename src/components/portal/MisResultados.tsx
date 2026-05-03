@@ -433,16 +433,39 @@ export function MisResultados() {
   const [tramites, setTramites] = useState<Tramite[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Refetch cada 8s mientras haya algún trámite esperando resultado del simulador.
+  // Sin esto, si el ciudadano abre `/portal/mis-tramites` antes o durante la prueba,
+  // no se entera del resultado hasta hacer F5.
+  const hasPending = tramites.some(
+    (t) => t.status === 'cita-agendada' || t.currentStep < 6,
+  )
+
   useEffect(() => {
+    let cancelled = false
+
     async function load() {
       const { data } = await citizenApi.listarTramites()
+      if (cancelled) return
       if (data) {
         setTramites(data.map(adaptTramite).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))
       }
       setLoading(false)
     }
+
     load()
-  }, [])
+
+    if (!hasPending) {
+      return () => {
+        cancelled = true
+      }
+    }
+
+    const intervalId = window.setInterval(load, 8000)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [hasPending])
 
   const activeTramites = tramites.filter(
     (t) => t.status !== 'simulador-completado' && t.status !== 'finalizado'

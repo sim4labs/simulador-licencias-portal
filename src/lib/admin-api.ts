@@ -69,13 +69,6 @@ export const adminApi = {
     return apiRequest<TramiteResponse>(`/admin/tramites/${tramiteId}`, { pool: 'admin' })
   },
 
-  registrarSimulador(tramiteId: string, result: { passed: boolean; score: number; feedback: string[] }) {
-    return apiRequest<{ message: string; tramiteId: string }>(
-      `/admin/tramites/${tramiteId}/simulador`,
-      { method: 'POST', body: result, pool: 'admin' }
-    )
-  },
-
   getCitas(params: { fecha?: string; desde?: string; hasta?: string }) {
     const qs = new URLSearchParams()
     if (params.fecha) qs.set('fecha', params.fecha)

@@ -38,16 +38,34 @@ export function useAdminStats() {
   })
 }
 
-export function useAdminTramites(params: {
-  status?: string
-  tipo?: string
-  search?: string
-  limit?: number
-  cursor?: string
-} = {}) {
+type TramitesQueryData = {
+  items: ReturnType<typeof adaptTramite>[]
+  nextCursor: string | null
+}
+
+export function useAdminTramites(
+  params: {
+    status?: string
+    tipo?: string
+    search?: string
+    limit?: number
+    cursor?: string
+  } = {},
+  options: {
+    /**
+     * Función o número que controla refetch automático.
+     *
+     * - `number`: ms entre refetches.
+     * - `(data) => number | false`: refetch dinámico según los datos actuales.
+     *   Útil para hacer polling sólo mientras hay candidatos (ej. trámites
+     *   en `cita-agendada` esperando resultado del simulador).
+     */
+    refetchInterval?: number | false | ((data: TramitesQueryData | undefined) => number | false)
+  } = {},
+) {
   return useQuery({
     queryKey: adminKeys.tramites(params),
-    queryFn: async () => {
+    queryFn: async (): Promise<TramitesQueryData> => {
       const res = unwrap(await adminApi.listarTramites(params))
       return {
         items: res.items.map(adaptTramite),
@@ -56,6 +74,9 @@ export function useAdminTramites(params: {
     },
     staleTime: 10_000,
     placeholderData: keepPreviousData,
+    refetchInterval: typeof options.refetchInterval === 'function'
+      ? (query) => (options.refetchInterval as (data: TramitesQueryData | undefined) => number | false)(query.state.data)
+      : options.refetchInterval,
   })
 }
 
