@@ -9,7 +9,7 @@ import { usePrefetchIot } from '@/lib/iot-queries'
 import { usePrefetchSimulator } from '@/lib/simulator-queries'
 import { currentVersion } from '@/data/changelog'
 import { useBackendVersion } from '@/lib/version-api'
-import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Users, BarChart3, ClipboardCheck, Monitor, Box, Upload, KeyRound, Activity, History, Tag } from 'lucide-react'
+import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Users, BarChart3, ClipboardCheck, Monitor, Box, Upload, KeyRound, Activity, History, Tag, Dumbbell } from 'lucide-react'
 
 type AdminPrefetchKey = 'stats' | 'tramites' | 'licencias' | 'users' | 'preguntas' | 'scoringConfig'
 type IotPrefetchKey = 'devices' | 'firmware'
@@ -41,6 +41,7 @@ const navSections: Array<{ title: string; items: NavItem[] }> = [
       { href: '/admin/simuladores', label: 'Simuladores', icon: Box, prefetchSim: 'simulators' },
       { href: '/admin/simuladores/pcs', label: 'PCs', icon: Monitor, prefetchSim: 'pcs' },
       { href: '/admin/simuladores/builds', label: 'Builds Unity', icon: Upload, prefetchSim: 'unityBuilds' },
+      { href: '/admin/simuladores/practicas', label: 'Prácticas', icon: Dumbbell },
     ],
   },
   {

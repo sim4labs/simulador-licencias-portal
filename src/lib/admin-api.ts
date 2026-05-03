@@ -243,6 +243,54 @@ export const adminApi = {
       { pool: 'admin' }
     )
   },
+
+  // ─── Practice results (Modo Práctica del simulador) ───
+  listPracticeResults(params?: {
+    pcId?: string
+    vehicleType?: string
+    dateFrom?: string
+    dateTo?: string
+    limit?: number
+    cursor?: string
+  }) {
+    const qs = new URLSearchParams()
+    if (params?.pcId) qs.set('pcId', params.pcId)
+    if (params?.vehicleType) qs.set('vehicleType', params.vehicleType)
+    if (params?.dateFrom) qs.set('dateFrom', params.dateFrom)
+    if (params?.dateTo) qs.set('dateTo', params.dateTo)
+    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.cursor) qs.set('cursor', params.cursor)
+    const query = qs.toString()
+    return apiRequest<{ items: PracticeResult[]; nextCursor: string | null }>(
+      `/admin/practice-results${query ? `?${query}` : ''}`,
+      { pool: 'admin' },
+    )
+  },
+}
+
+export interface PracticeFault {
+  type: string
+  description: string
+  secondsFromStart: number
+  severity: string
+  deduction: number
+}
+
+export interface PracticeResult {
+  practiceId: string
+  pcId: string
+  simulatorId: string | null
+  vehicleType: string
+  transmission: string | null
+  weather: string
+  spawnLocation: string
+  startedAt: string
+  completedAt: string
+  durationSeconds: number
+  score: number
+  faults: PracticeFault[]
+  completed: boolean
+  createdAt?: string
 }
 
 export interface IntegrationToken {

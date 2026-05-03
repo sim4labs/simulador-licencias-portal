@@ -20,6 +20,8 @@ export const adminKeys = {
   integrationTokenCalls: (tokenId: string, limit: number) =>
     ['admin', 'integration-tokens', tokenId, 'calls', limit] as const,
   scheduleConfig: ['admin', 'schedule-config'] as const,
+  practiceResults: (params: { pcId?: string; vehicleType?: string; dateFrom?: string; dateTo?: string; limit?: number; cursor?: string } = {}) =>
+    ['admin', 'practice-results', params] as const,
 }
 
 function unwrap<T>(res: ApiResponse<T>): T {
@@ -162,6 +164,22 @@ export function useDeleteScheduleException() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: adminKeys.scheduleConfig })
     },
+  })
+}
+
+export function usePracticeResults(params: {
+  pcId?: string
+  vehicleType?: string
+  dateFrom?: string
+  dateTo?: string
+  limit?: number
+  cursor?: string
+} = {}) {
+  return useQuery({
+    queryKey: adminKeys.practiceResults(params),
+    queryFn: () => adminApi.listPracticeResults(params).then(unwrap),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   })
 }
 
