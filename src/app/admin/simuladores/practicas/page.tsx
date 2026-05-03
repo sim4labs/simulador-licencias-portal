@@ -44,6 +44,12 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
+function formatDistance(meters: number | undefined): string {
+  if (meters === undefined || meters === null) return '—'
+  if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`
+  return `${meters} m`
+}
+
 export default function PracticasPage() {
   const [pcId, setPcId] = useState<string>('')
   const [vehicleType, setVehicleType] = useState<string>('')
@@ -204,6 +210,7 @@ export default function PracticasPage() {
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Escenario</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500">Score</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500">Faltas</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-500">Distancia</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500">Duración</th>
                 </tr>
               </thead>
@@ -239,6 +246,9 @@ export default function PracticasPage() {
                     </td>
                     <td className="px-4 py-2.5 text-right text-gray-700">
                       {p.faults.length}
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-gray-700 whitespace-nowrap">
+                      {formatDistance(p.distanceMeters)}
                     </td>
                     <td className="px-4 py-2.5 text-right text-gray-700">
                       {formatDuration(p.durationSeconds)}

@@ -33,6 +33,7 @@ const DEFAULTS: ScoringConfig = {
   passingScore: 70,
   gradeThresholds: DEFAULT_THRESHOLDS,
   examDurationSeconds: 300,
+  minValidDistanceMeters: 200,
 }
 
 const PENALTY_LABELS: Record<string, { label: string; severity: string; hint?: string }> = {
@@ -280,6 +281,31 @@ export default function ScoringPage() {
               />
               <span className="text-sm text-gray-500">
                 segundos ({Math.floor(config.examDurationSeconds / 60)}:{String(config.examDurationSeconds % 60).padStart(2, '0')} min)
+              </span>
+            </div>
+          </div>
+
+          {/* Distancia mínima válida */}
+          <div className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Distancia mínima válida</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              Si el alumno recorre menos que este umbral durante el examen, Unity reporta NO APTO sin
+              importar el score. Evita el caso de dejar el coche parado y aprobar con 100. Poner 0 desactiva el check.
+            </p>
+            <div className="flex items-center gap-4">
+              <input
+                type="number"
+                min={0}
+                max={5000}
+                step={50}
+                value={config.minValidDistanceMeters}
+                onChange={e => setConfig(prev => ({ ...prev, minValidDistanceMeters: parseInt(e.target.value) || 0 }))}
+                className="w-24 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+              <span className="text-sm text-gray-500">
+                metros{config.minValidDistanceMeters >= 1000
+                  ? ` (${(config.minValidDistanceMeters / 1000).toFixed(2)} km)`
+                  : ''}
               </span>
             </div>
           </div>

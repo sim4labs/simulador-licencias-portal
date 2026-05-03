@@ -34,6 +34,7 @@ export interface ScoringConfig {
     aptoReentrenamiento: number
   }
   examDurationSeconds: number
+  minValidDistanceMeters: number
   updatedAt?: string
 }
 
@@ -288,6 +289,10 @@ export interface PracticeResult {
   completedAt: string
   durationSeconds: number
   score: number
+  // Metros recorridos durante la práctica (Unity ≥1.3.8). 0 o ausente para
+  // builds anteriores. Si está bajo el umbral configurado, la sesión se marcó
+  // inválida por inactividad — bandera visible en el detalle.
+  distanceMeters?: number
   faults: PracticeFault[]
   completed: boolean
   createdAt?: string

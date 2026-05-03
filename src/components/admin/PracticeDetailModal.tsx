@@ -3,6 +3,7 @@
 import { Modal } from './Modal'
 import { Badge } from './Badge'
 import type { PracticeResult } from '@/lib/admin-api'
+import { useAdminScoringConfig } from '@/lib/admin-queries'
 
 interface PracticeDetailModalProps {
   practice: PracticeResult | null
@@ -36,10 +37,23 @@ function formatLocalDate(iso: string | undefined | null): string {
   }
 }
 
+function formatDistance(meters: number | undefined): string {
+  if (meters === undefined || meters === null) return '—'
+  if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`
+  return `${meters} m`
+}
+
 export function PracticeDetailModal({ practice, onClose }: PracticeDetailModalProps) {
+  const scoringQuery = useAdminScoringConfig()
   if (!practice) return null
 
   const totalDeducted = practice.faults.reduce((sum, f) => sum + f.deduction, 0)
+  // Si el build del PC reportó distancia (>=1.3.8), comparamos contra el umbral
+  // configurado para mostrar el flag "inválida por inactividad". Si distanceMeters
+  // es undefined (build viejo), no asumimos inactividad.
+  const minDistance = scoringQuery.data?.minValidDistanceMeters ?? 200
+  const insufficientMovement = typeof practice.distanceMeters === 'number'
+    && practice.distanceMeters < minDistance
 
   return (
     <Modal
@@ -116,6 +130,17 @@ export function PracticeDetailModal({ practice, onClose }: PracticeDetailModalPr
           <div>
             <dt className="text-gray-500">Fin</dt>
             <dd className="text-gray-900">{formatLocalDate(practice.completedAt)}</dd>
+          </div>
+          <div>
+            <dt className="text-gray-500">Distancia recorrida</dt>
+            <dd className={insufficientMovement ? 'font-semibold text-red-600' : 'text-gray-900'}>
+              {formatDistance(practice.distanceMeters)}
+              {insufficientMovement && (
+                <span className="block text-xs text-red-600 font-normal mt-0.5">
+                  Bajo el umbral mínimo ({minDistance} m) — sesión inválida por inactividad
+                </span>
+              )}
+            </dd>
           </div>
         </dl>
 
