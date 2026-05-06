@@ -11,7 +11,7 @@ import { simulatorKeys, useSimulatorPCs, useUpdatePC, useUnityBuilds } from '@/l
 import { simulatorApi, type SimulatorPC, type UnityBuild } from '@/lib/simulator-api'
 import { Button } from '@/components/ui/Button'
 
-type SortKey = 'name' | 'pcId' | 'appVersion' | 'ip' | 'simulatorId' | 'online' | 'pendingUpdate' | 'pendingConfig'
+type SortKey = 'name' | 'appVersion' | 'ip' | 'online' | 'pendingUpdate' | 'pendingConfig'
 type SortDir = 'asc' | 'desc'
 
 const ENV_LABEL: Record<string, string> = {
@@ -73,6 +73,8 @@ export default function PCsPage() {
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const updatePC = useUpdatePC()
+
+  const isRefreshing = pcsQuery.isFetching || buildsQuery.isFetching
 
   const loadData = () => {
     qc.invalidateQueries({ queryKey: simulatorKeys.pcs })
@@ -151,16 +153,23 @@ export default function PCsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">PCs Registradas</h1>
           <p className="text-sm text-gray-500 mt-1">
             {pcs.length} PC{pcs.length !== 1 ? 's' : ''} &middot; {onlineCount} online &middot; Ambiente: {ENV_LABEL[CURRENT_ENV]}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={loadData}>
-            <RefreshCw className="h-4 w-4 mr-1" /> Actualizar
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadData}
+            disabled={isRefreshing}
+            title="Refrescar lista de PCs"
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refrescando…' : 'Refrescar'}
           </Button>
           <Button
             size="sm"
@@ -172,7 +181,7 @@ export default function PCsPage() {
                 : `Desplegar build a ${bulkEligible.length} PC${bulkEligible.length !== 1 ? 's' : ''} online`
             }
           >
-            <Rocket className="h-4 w-4 mr-1" /> Actualizar todas
+            <Rocket className="h-4 w-4 mr-1" /> Instalar en todas
           </Button>
         </div>
       </div>
@@ -192,21 +201,18 @@ export default function PCsPage() {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+          <table className="w-full min-w-[860px] text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 {([
                   ['name', 'Nombre'],
-                  ['pcId', 'UID'],
                   ['appVersion', 'Version'],
                   ['ip', 'IP'],
-                  ['simulatorId', 'Simulador'],
                   ['online', 'Estado'],
                   ['pendingUpdate', 'Actualizacion'],
                   ['pendingConfig', 'Ambiente'],
-                  [null, 'Build'],
-                  [null, 'Logs'],
+                  [null, 'Acciones'],
                 ] as const).map(([key, label]) => (
                   <th key={label} className="text-left px-4 py-3 font-medium text-gray-500">
                     {key ? (
@@ -227,29 +233,18 @@ export default function PCsPage() {
               {sortedPcs.map(pc => (
                 <tr key={pc.pcId} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-900">
-                    <div className="inline-flex items-center gap-1.5 group">
-                      <Link
-                        href={`/admin/simuladores/pcs/${encodeURIComponent(pc.pcId)}`}
-                        className="hover:text-primary hover:underline"
-                      >
-                        {pc.name || '-'}
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setRenameTarget(pc)}
-                        title="Renombrar PC"
-                        className="text-gray-300 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 font-mono text-xs">
-                    {pc.pcId.slice(0, 8)}...{pc.pcId.slice(-4)}
+                    <Link
+                      href={`/admin/simuladores/pcs/${encodeURIComponent(pc.pcId)}`}
+                      className="block hover:text-primary"
+                    >
+                      <div className="hover:underline">{pc.name || '-'}</div>
+                      {pc.simulatorId && (
+                        <div className="text-xs font-normal text-gray-500 mt-0.5">{pc.simulatorId}</div>
+                      )}
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-gray-500">{pc.appVersion || '-'}</td>
                   <td className="px-4 py-3 text-gray-500 font-mono text-xs">{pc.ip || '-'}</td>
-                  <td className="px-4 py-3 text-gray-500">{pc.simulatorId || '-'}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${
                       pc.online ? 'text-green-700' : 'text-gray-400'
@@ -313,26 +308,32 @@ export default function PCsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => setInstallTarget({ kind: 'single', pc })}
-                      disabled={noBuilds}
-                      title={noBuilds ? 'Sin builds disponibles' : 'Instalar build específico'}
-                      className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-primary border border-gray-200 hover:border-primary/40 rounded px-2 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <Rocket className="h-3.5 w-3.5" />
-                      Instalar
-                    </button>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/simuladores/pcs/${encodeURIComponent(pc.pcId)}/logs`}
-                      className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-primary border border-gray-200 hover:border-primary/40 rounded px-2 py-1 transition-colors"
-                      title="Ver logs"
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                      Ver
-                    </Link>
+                    <div className="inline-flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setInstallTarget({ kind: 'single', pc })}
+                        disabled={noBuilds}
+                        title={noBuilds ? 'Sin builds disponibles' : 'Instalar build'}
+                        className="inline-flex items-center justify-center text-gray-500 hover:text-primary border border-gray-200 hover:border-primary/40 rounded p-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Rocket className="h-3.5 w-3.5" />
+                      </button>
+                      <Link
+                        href={`/admin/simuladores/pcs/${encodeURIComponent(pc.pcId)}/logs`}
+                        className="inline-flex items-center justify-center text-gray-500 hover:text-primary border border-gray-200 hover:border-primary/40 rounded p-1.5 transition-colors"
+                        title="Ver logs"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setRenameTarget(pc)}
+                        title="Renombrar PC"
+                        className="inline-flex items-center justify-center text-gray-500 hover:text-primary border border-gray-200 hover:border-primary/40 rounded p-1.5 transition-colors"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
