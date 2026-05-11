@@ -272,11 +272,8 @@ export default function ScoringPage() {
             <div className="flex items-center gap-4">
               <input
                 type="number"
-                min={60}
-                max={1800}
-                step={30}
                 value={config.examDurationSeconds}
-                onChange={e => setConfig(prev => ({ ...prev, examDurationSeconds: parseInt(e.target.value) || 300 }))}
+                onChange={e => setConfig(prev => ({ ...prev, examDurationSeconds: parseInt(e.target.value) || 0 }))}
                 className="w-24 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
               <span className="text-sm text-gray-500">
