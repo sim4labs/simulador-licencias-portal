@@ -125,6 +125,28 @@ export interface SimulatorPC {
   versionHistory?: VersionHistoryEntry[] | null
   calibration?: PCCalibration | null
   calibrationUpdatedAt?: string | null
+  /** v1.7.0: HORI mapping JSON-stringified (parseable a HoriMappingV1). */
+  controlMapping?: string | null
+  controlMappingUpdatedAt?: string | null
+}
+
+// v1.7.0 — parseado del JSON blob del heartbeat
+export interface HoriMappingV1 {
+  schemaVersion: number
+  deviceFingerprint: string
+  wheelVID?: string
+  wheelPID?: string
+  shifterVID?: string
+  shifterPID?: string
+  calibratedAt: string
+  calibratedBy: string
+  axes: {
+    steer: { path: string; center: number; leftMax: number; rightMax: number }
+    gas: { source: string; verifyThreshold: number }
+    brake: { path: string; rest: number; press: number; required?: boolean }
+    clutch: { path: string; rest: number; press: number; required?: boolean }
+  }
+  buttons: Record<string, { path: string; required?: boolean; kind?: string }>
 }
 
 export interface UnityBuild {
