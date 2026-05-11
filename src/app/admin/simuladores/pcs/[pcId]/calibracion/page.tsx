@@ -5,6 +5,7 @@ import { Loader2, Sliders, RefreshCw, Settings2, Gamepad2, GitBranch } from 'luc
 import { useSimulatorPC } from '@/lib/simulator-queries'
 import { Button } from '@/components/ui/Button'
 import type { PCCalibration } from '@/lib/simulator-api'
+import { HoriMappingTable } from '@/components/admin/HoriMappingTable'
 
 function formatDate(iso?: string | null): string {
   if (!iso) return '-'
@@ -143,6 +144,11 @@ export default function PCCalibracionPage() {
             <Row label="Paddle derecho" mono small value={fmtStr(cal.bindPaddleRight)} />
           </Section>
         </div>
+      )}
+
+      {/* v1.7.0: HORI mapping (independiente del legacy calibration) */}
+      {pc.controlMapping && (
+        <HoriMappingTable raw={pc.controlMapping} updatedAt={pc.controlMappingUpdatedAt} />
       )}
     </div>
   )
