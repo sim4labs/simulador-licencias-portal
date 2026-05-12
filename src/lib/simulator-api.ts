@@ -149,6 +149,25 @@ export interface HoriMappingV1 {
   buttons: Record<string, { path: string; required?: boolean; kind?: string }>
 }
 
+// v1.8.0 — G923 calibración immutable (variante PS o Xbox).
+// Discriminator: presencia de `variant` field. Gas/brake/clutch son pedales
+// regulares (no reader HID byte como HORI), por eso comparten shape.
+export interface G923MappingV1 {
+  schemaVersion: number
+  variant: 'PS' | 'Xbox'
+  deviceFingerprint: string
+  calibratedAt: string
+  calibratedBy: string
+  axes: {
+    steer: { path: string; center: number; leftMax: number; rightMax: number }
+    gas: { path: string; rest: number; press: number; required?: boolean }
+    brake: { path: string; rest: number; press: number; required?: boolean }
+    clutch: { path: string; rest: number; press: number; required?: boolean }
+  }
+  buttons: Record<string, { path: string; required?: boolean; kind?: string }>
+  ffb?: { available: boolean; constantForceMaxPct: number; bumpyRoadMaxPct: number }
+}
+
 export interface UnityBuild {
   version: string
   s3Key: string

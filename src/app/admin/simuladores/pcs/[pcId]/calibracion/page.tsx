@@ -5,7 +5,7 @@ import { Loader2, Sliders, RefreshCw, Settings2, Gamepad2, GitBranch } from 'luc
 import { useSimulatorPC } from '@/lib/simulator-queries'
 import { Button } from '@/components/ui/Button'
 import type { PCCalibration } from '@/lib/simulator-api'
-import { HoriMappingTable } from '@/components/admin/HoriMappingTable'
+import { WheelMappingTable } from '@/components/admin/WheelMappingTable'
 
 function formatDate(iso?: string | null): string {
   if (!iso) return '-'
@@ -146,9 +146,9 @@ export default function PCCalibracionPage() {
         </div>
       )}
 
-      {/* v1.7.0: HORI mapping (independiente del legacy calibration) */}
+      {/* v1.7.0/v1.8.0: wheel mapping (HORI o G923, autodetectado por discriminator) */}
       {pc.controlMapping && (
-        <HoriMappingTable raw={pc.controlMapping} updatedAt={pc.controlMappingUpdatedAt} />
+        <WheelMappingTable raw={pc.controlMapping} updatedAt={pc.controlMappingUpdatedAt} />
       )}
     </div>
   )
