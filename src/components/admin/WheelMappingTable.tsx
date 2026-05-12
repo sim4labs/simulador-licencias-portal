@@ -1,6 +1,6 @@
 'use client'
 
-import type { HoriMappingV1, G923MappingV1 } from '@/lib/simulator-api'
+import type { HoriMappingV1, G923MappingV1, MotoMappingV1 } from '@/lib/simulator-api'
 import { Gamepad2 } from 'lucide-react'
 
 interface Props {
@@ -8,10 +8,12 @@ interface Props {
   updatedAt?: string | null
 }
 
-type WheelKind = 'hori' | 'g923' | 'unknown'
+type WheelKind = 'hori' | 'g923' | 'moto' | 'unknown'
 
 function detectWheelKind(parsed: Record<string, unknown> | null): WheelKind {
   if (!parsed || typeof parsed !== 'object') return 'unknown'
+  // Moto mappings carry `vehicleType === 'motorcycle'` discriminator (v1.9.0).
+  if ((parsed as { vehicleType?: unknown }).vehicleType === 'motorcycle') return 'moto'
   // G923 mappings carry an explicit `variant` discriminator ('PS' | 'Xbox').
   if (typeof (parsed as { variant?: unknown }).variant === 'string') return 'g923'
   // HORI mappings expose wheelVID/shifterVID (no `variant`).
@@ -42,9 +44,10 @@ export function WheelMappingTable({ raw, updatedAt }: Props) {
   const kind = detectWheelKind(parsed)
   if (kind === 'hori') return <HoriBody parsed={parsed as unknown as HoriMappingV1} updatedAt={updatedAt} />
   if (kind === 'g923') return <G923Body parsed={parsed as unknown as G923MappingV1} updatedAt={updatedAt} />
+  if (kind === 'moto') return <MotoBody parsed={parsed as unknown as MotoMappingV1} updatedAt={updatedAt} />
   return (
     <div className="text-xs text-amber-500 italic">
-      controlMapping con tipo no reconocido (sin variant ni wheelVID).
+      controlMapping con tipo no reconocido (sin vehicleType, variant ni wheelVID).
     </div>
   )
 }
@@ -155,6 +158,45 @@ function G923Body({ parsed, updatedAt }: { parsed: G923MappingV1; updatedAt?: st
             <Row label="Bumpy road max" value={`${(parsed.ffb.bumpyRoadMaxPct * 100).toFixed(0)}%`} />
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function MotoBody({ parsed, updatedAt }: { parsed: MotoMappingV1; updatedAt?: string | null }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="flex items-center gap-2 px-5 py-3 bg-gray-50 border-b border-gray-200">
+        <Gamepad2 className="h-4 w-4 text-gray-500" />
+        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+          Calibración Moto Simulator (v1.9.0)
+        </h3>
+        {updatedAt && (
+          <span className="ml-auto text-xs text-gray-500">
+            Actualizada {new Date(updatedAt).toLocaleString('es-MX')}
+          </span>
+        )}
+      </div>
+      <div className="px-5 py-4 space-y-3 text-sm">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-primary font-medium mb-1">Identidad</div>
+          <Row label="Fingerprint" value={<span className="font-mono text-xs">{parsed.deviceFingerprint}</span>} />
+          <Row label="Calibrada por" value={parsed.calibratedBy} />
+          {parsed.vid && parsed.pid && (
+            <Row label="VID/PID" value={<span className="font-mono text-xs">{parsed.vid}/{parsed.pid}</span>} />
+          )}
+        </div>
+        <div>
+          <div className="text-xs uppercase tracking-wide text-primary font-medium mb-1">Axes</div>
+          <Row label="Lean" value={<span className="font-mono text-xs">{parsed.axes.lean.path} [{parsed.axes.lean.min.toFixed(2)}, {parsed.axes.lean.max.toFixed(2)}] center={parsed.axes.lean.center.toFixed(2)}</span>} />
+          <Row label="Manubrio" value={<span className="font-mono text-xs">{parsed.axes.handlebar.path} [{parsed.axes.handlebar.min.toFixed(2)}, {parsed.axes.handlebar.max.toFixed(2)}] center={parsed.axes.handlebar.center.toFixed(2)}</span>} />
+          <Row label="Acelerador" value={<span className="font-mono text-xs">{parsed.axes.gas.path} rest={parsed.axes.gas.rest.toFixed(2)} press={parsed.axes.gas.press.toFixed(2)}</span>} />
+        </div>
+        <div>
+          <div className="text-xs uppercase tracking-wide text-primary font-medium mb-1">Botones</div>
+          <Row label="Freno"  value={formatBtn(parsed.buttons.brake)} />
+          <Row label="Clutch" value={formatBtn(parsed.buttons.clutch)} />
+        </div>
       </div>
     </div>
   )

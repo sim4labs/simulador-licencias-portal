@@ -168,6 +168,28 @@ export interface G923MappingV1 {
   ffb?: { available: boolean; constantForceMaxPct: number; bumpyRoadMaxPct: number }
 }
 
+// v1.9.0 — Moto Simulator calibración immutable.
+// Discriminator: `vehicleType === 'motorcycle'`. Ejes lean/handlebar (no steer)
+// y acelerador analógico con rest/press; freno y clutch son botones digitales.
+export interface MotoMappingV1 {
+  schemaVersion: number
+  vehicleType: 'motorcycle'
+  deviceFingerprint: string
+  vid?: string
+  pid?: string
+  calibratedAt: string
+  calibratedBy: string
+  axes: {
+    lean: { path: string; min: number; max: number; center: number }
+    handlebar: { path: string; min: number; max: number; center: number }
+    gas: { path: string; rest: number; press: number }
+  }
+  buttons: {
+    brake: { path: string; required?: boolean; kind?: string }
+    clutch: { path: string; required?: boolean; kind?: string }
+  }
+}
+
 export interface UnityBuild {
   version: string
   s3Key: string
