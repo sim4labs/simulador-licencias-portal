@@ -20,11 +20,17 @@ import {
 import { simulatorKeys, useSimulatorPCs, useUnityBuilds } from '@/lib/simulator-queries'
 import { Badge } from '@/components/admin/Badge'
 import { Button } from '@/components/ui/Button'
+import { ReleaseNotesDialog } from '@/components/admin/ReleaseNotesDialog'
 
 const CHUNK_SIZE = 100 * 1024 * 1024 // 100 MB
 const MAX_CONCURRENT = 3
 
 // ─── Helpers ───
+
+function deriveReleaseNotesKey(s3Key: string): string | null {
+  if (!/\/[^/]+\.zip$/.test(s3Key)) return null
+  return s3Key.replace(/\/[^/]+\.zip$/, '/release-notes.md')
+}
 
 function formatSize(bytes: number): string {
   if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
@@ -300,6 +306,7 @@ export default function BuildsPage() {
     setDeploying(true)
     setDeployError(null)
 
+    const rnKey = deriveReleaseNotesKey(deployBuild.s3Key)
     const { error: err } = await simulatorApi.deployUnityBuild({
       version: deployBuild.version,
       s3Key: deployBuild.s3Key,
@@ -307,6 +314,7 @@ export default function BuildsPage() {
       size: deployBuild.size,
       scheduledAfter: getScheduleTimestamp(schedulePreset),
       targetPcIds: selectedPcIds,
+      ...(rnKey ? { releaseNotesS3Key: rnKey } : {}),
     })
 
     setDeploying(false)
@@ -368,24 +376,35 @@ export default function BuildsPage() {
           </div>
           <div className="divide-y divide-gray-50">
             {pcsWithUpdates.map(pc => (
-              <div key={pc.pcId} className="px-5 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className={`h-2 w-2 rounded-full ${pc.online ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <span className="text-sm font-medium text-gray-900">{pc.name || pc.pcId.slice(0, 12)}</span>
-                  <span className="text-xs text-gray-400">
-                    v{pc.appVersion || '?'} → v{pc.pendingUpdate!.version}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={updateStatusVariant(pc.pendingUpdate!.status)}>
-                    {updateStatusLabel(pc.pendingUpdate!.status)}
-                  </Badge>
-                  {pc.pendingUpdate!.error && (
-                    <span className="text-xs text-red-500" title={pc.pendingUpdate!.error}>
-                      <AlertCircle className="h-3.5 w-3.5" />
+              <div key={pc.pcId} className="px-5 py-3 flex flex-col gap-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`h-2 w-2 rounded-full flex-shrink-0 ${pc.online ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <span className="text-sm font-medium text-gray-900 truncate">{pc.name || pc.pcId.slice(0, 12)}</span>
+                    <span className="text-xs text-gray-400 flex-shrink-0">
+                      v{pc.appVersion || '?'} → v{pc.pendingUpdate!.version}
                     </span>
-                  )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Badge variant={updateStatusVariant(pc.pendingUpdate!.status)}>
+                      {updateStatusLabel(pc.pendingUpdate!.status)}
+                    </Badge>
+                    {pc.pendingUpdate!.error && (
+                      <span className="text-xs text-red-500" title={pc.pendingUpdate!.error}>
+                        <AlertCircle className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </div>
                 </div>
+                {pc.pendingUpdate!.releaseNotesS3Key && (
+                  <div className="pl-5">
+                    <ReleaseNotesDialog
+                      version={pc.pendingUpdate!.version}
+                      s3Key={pc.pendingUpdate!.releaseNotesS3Key}
+                      summary={pc.pendingUpdate!.releaseNotes}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -408,29 +427,35 @@ export default function BuildsPage() {
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {builds.map(build => (
-              <div key={build.s3Key} className="px-5 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Package className="h-4 w-4 text-gray-300 flex-shrink-0" />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-900">v{build.version}</span>
-                      {build.isLatest && <Badge variant="success">Ultima</Badge>}
-                      <span className="text-xs text-gray-400">{formatSize(build.size)}</span>
+            {builds.map(build => {
+              const rnKey = deriveReleaseNotesKey(build.s3Key)
+              return (
+                <div key={build.s3Key} className="px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <Package className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-gray-900">v{build.version}</span>
+                        {build.isLatest && <Badge variant="success">Ultima</Badge>}
+                        <span className="text-xs text-gray-400">{formatSize(build.size)}</span>
+                      </div>
+                      <p className="text-xs text-gray-400 truncate">
+                        {build.lastModified && formatDate(build.lastModified)}
+                        {' · '}
+                        {build.filename}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-400">
-                      {build.lastModified && formatDate(build.lastModified)}
-                      {' · '}
-                      {build.filename}
-                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 justify-end">
+                    {rnKey && <ReleaseNotesDialog version={build.version} s3Key={rnKey} />}
+                    <Button variant="outline" size="sm" onClick={() => openDeployModal(build)}>
+                      <Rocket className="h-3.5 w-3.5 mr-1.5" />
+                      Desplegar
+                    </Button>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => openDeployModal(build)}>
-                  <Rocket className="h-3.5 w-3.5 mr-1.5" />
-                  Desplegar
-                </Button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

@@ -112,6 +112,8 @@ export interface Appointment {
   date: string
   time: string
   code: string
+  simulatorId?: string
+  vehicleType?: string
 }
 
 export interface SimulatorFault {

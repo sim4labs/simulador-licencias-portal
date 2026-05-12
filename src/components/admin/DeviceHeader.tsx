@@ -19,6 +19,7 @@ const VEHICLE_TYPE_LABEL: Record<VehicleType, string> = {
   car: 'Automóvil',
   passenger_bus: 'Transporte Público',
   cargo_truck: 'Carga Pesada',
+  emergency_vehicle: 'Vehículo de Emergencia',
 }
 
 interface DeviceHeaderProps {

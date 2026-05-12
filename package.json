@@ -1,16 +1,22 @@
 {
   "name": "simulador-licencias-portal",
-  "version": "0.1.0",
+  "version": "0.0.0-managed-by-git-tag",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "dev:admin": "npx tsx scripts/create-admin.ts"
+    "dev:admin": "npx tsx scripts/create-admin.ts",
+    "changelog:build": "node scripts/build-changelog.mjs",
+    "prebuild": "node scripts/build-changelog.mjs",
+    "predev": "node scripts/build-changelog.mjs",
+    "prelint": "node scripts/build-changelog.mjs",
+    "postinstall": "node scripts/build-changelog.mjs || true"
   },
   "dependencies": {
     "@aws-amplify/ui-react-liveness": "^3.6.0",
+    "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
@@ -25,12 +31,14 @@
     "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.7.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.991.0",
     "@aws-sdk/credential-providers": "^3.991.0",
+    "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^20.0.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18.2.0",
@@ -40,6 +48,7 @@
     "eslint": "^8.0.0",
     "eslint-config-next": "14.2.0",
     "postcss": "^8.4.0",
+    "remark-gfm": "^4.0.1",
     "tailwindcss": "^3.4.0",
     "tsx": "^4.21.0",
     "typescript": "^5.0.0"

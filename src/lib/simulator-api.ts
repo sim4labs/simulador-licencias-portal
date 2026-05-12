@@ -53,12 +53,59 @@ export interface PendingUpdate {
   sha256: string
   size: number
   releaseNotes: string
+  releaseNotesS3Key?: string
   mandatory: boolean
   scheduledAfter: string
   status: 'PENDING' | 'DOWNLOADING' | 'DOWNLOADED' | 'INSTALLING' | 'INSTALLED' | 'FAILED'
   statusUpdatedAt: string
   createdAt: string
   createdBy: string
+  error?: string
+  /** Contador de intentos de descarga/instalación. Cuando llega a 3 + status='FAILED',
+   * el backend deja de mandar pendingUpdate al kiosko (abandonada). Recovery via
+   * subir versión nueva. */
+  attemptCount?: number
+}
+
+export interface PCCalibration {
+  deviceFingerprint?: string
+  reverseDone?: boolean
+  bindSteerAxis?: string
+  bindReverse?: string
+  bindDrive?: string
+  bindPaddleLeft?: string
+  bindPaddleRight?: string
+  steerCenter?: number
+  steerMax?: number
+  steerMin?: number
+  gasAxis?: string
+  gasRest?: number
+  gasPress?: number
+  brakeAxis?: string
+  brakeRest?: number
+  brakePress?: number
+  advSteerCurveA?: number
+  advSteerDeadzone?: number
+  advBrakeSoftEnd?: number
+  advBrakeSoftMaxOutput?: number
+  advGasCurveN?: number
+  transmisionManual?: boolean
+}
+
+export interface VersionHistoryEntry {
+  version: string
+  s3Key: string
+  sha256: string
+  size: number
+  releaseNotes: string
+  /** Puntero al markdown completo (lazy load via getReleaseNotes). */
+  releaseNotesS3Key?: string
+  mandatory: boolean
+  status: PendingUpdate['status']
+  statusUpdatedAt: string
+  deployedAt: string
+  deployedBy: string
+  installedAt?: string
   error?: string
 }
 
@@ -72,8 +119,75 @@ export interface SimulatorPC {
   online: boolean
   simulatorId: string | null
   createdAt: string
+  lastUpdatedAt?: string | null
   pendingConfig?: { apiBaseUrl: string; environment: string } | null
   pendingUpdate?: PendingUpdate | null
+  versionHistory?: VersionHistoryEntry[] | null
+  calibration?: PCCalibration | null
+  calibrationUpdatedAt?: string | null
+  /** v1.7.0: HORI mapping JSON-stringified (parseable a HoriMappingV1). */
+  controlMapping?: string | null
+  controlMappingUpdatedAt?: string | null
+}
+
+// v1.7.0 — parseado del JSON blob del heartbeat
+export interface HoriMappingV1 {
+  schemaVersion: number
+  deviceFingerprint: string
+  wheelVID?: string
+  wheelPID?: string
+  shifterVID?: string
+  shifterPID?: string
+  calibratedAt: string
+  calibratedBy: string
+  axes: {
+    steer: { path: string; center: number; leftMax: number; rightMax: number }
+    gas: { source: string; verifyThreshold: number }
+    brake: { path: string; rest: number; press: number; required?: boolean }
+    clutch: { path: string; rest: number; press: number; required?: boolean }
+  }
+  buttons: Record<string, { path: string; required?: boolean; kind?: string }>
+}
+
+// v1.8.0 — G923 calibración immutable (variante PS o Xbox).
+// Discriminator: presencia de `variant` field. Gas/brake/clutch son pedales
+// regulares (no reader HID byte como HORI), por eso comparten shape.
+export interface G923MappingV1 {
+  schemaVersion: number
+  variant: 'PS' | 'Xbox'
+  deviceFingerprint: string
+  calibratedAt: string
+  calibratedBy: string
+  axes: {
+    steer: { path: string; center: number; leftMax: number; rightMax: number }
+    gas: { path: string; rest: number; press: number; required?: boolean }
+    brake: { path: string; rest: number; press: number; required?: boolean }
+    clutch: { path: string; rest: number; press: number; required?: boolean }
+  }
+  buttons: Record<string, { path: string; required?: boolean; kind?: string }>
+  ffb?: { available: boolean; constantForceMaxPct: number; bumpyRoadMaxPct: number }
+}
+
+// v1.9.0 — Moto Simulator calibración immutable.
+// Discriminator: `vehicleType === 'motorcycle'`. Ejes lean/handlebar (no steer)
+// y acelerador analógico con rest/press; freno y clutch son botones digitales.
+export interface MotoMappingV1 {
+  schemaVersion: number
+  vehicleType: 'motorcycle'
+  deviceFingerprint: string
+  vid?: string
+  pid?: string
+  calibratedAt: string
+  calibratedBy: string
+  axes: {
+    lean: { path: string; min: number; max: number; center: number }
+    handlebar: { path: string; min: number; max: number; center: number }
+    gas: { path: string; rest: number; press: number }
+  }
+  buttons: {
+    brake: { path: string; required?: boolean; kind?: string }
+    clutch: { path: string; required?: boolean; kind?: string }
+  }
 }
 
 export interface UnityBuild {
@@ -83,6 +197,38 @@ export interface UnityBuild {
   size: number
   lastModified: string
   isLatest: boolean
+}
+
+export interface TestPlanItem {
+  id: string
+  text: string
+  preCheckedInDoc: boolean
+  checked: boolean
+  checkedBy?: { userId: string; name: string }
+  checkedAt?: string
+}
+
+export interface BuildTestPlan {
+  version: string
+  items: TestPlanItem[]
+  compareUrl: string | null
+  extractedAt?: string
+}
+
+export interface PCLogObject {
+  key: string
+  size: number
+  lastModified: string
+}
+
+export interface PCLogsResponse {
+  logs: PCLogObject[]
+  nextContinuationToken?: string
+}
+
+export interface PCLogDownloadResponse {
+  downloadUrl: string
+  expiresIn: number
 }
 
 export interface StartUploadResponse {
@@ -153,12 +299,34 @@ export const simulatorApi = {
     return apiRequest<SimulatorPC>(`/admin/pcs/${encodeURIComponent(pcId)}`, { pool: 'admin' })
   },
 
-  updatePCEnvironment(pcId: string, environment: string) {
-    return apiRequest<{ message: string }>(`/admin/pcs/${encodeURIComponent(pcId)}/environment`, {
-      method: 'PATCH',
-      body: { environment },
-      pool: 'admin',
-    })
+  updatePC(pcId: string, body: { name?: string; environment?: string }) {
+    return apiRequest<{ message: string; pcId: string; name?: string; targetEnvironment?: string; targetApiUrl?: string }>(
+      `/admin/pcs/${encodeURIComponent(pcId)}`,
+      {
+        method: 'PATCH',
+        body,
+        pool: 'admin',
+      }
+    )
+  },
+
+  listPCLogs(pcId: string, params?: { limit?: number; continuationToken?: string }) {
+    const qp = new URLSearchParams()
+    qp.set('limit', String(params?.limit ?? 50))
+    if (params?.continuationToken) qp.set('continuationToken', params.continuationToken)
+    return apiRequest<PCLogsResponse>(
+      `/admin/pcs/${encodeURIComponent(pcId)}/logs?${qp.toString()}`,
+      { pool: 'admin' }
+    )
+  },
+
+  getPCLogDownloadUrl(pcId: string, key: string) {
+    const qp = new URLSearchParams()
+    qp.set('key', key)
+    return apiRequest<PCLogDownloadResponse>(
+      `/admin/pcs/${encodeURIComponent(pcId)}/logs/download?${qp.toString()}`,
+      { pool: 'admin' }
+    )
   },
 
   getSimulatorSessions(simulatorId: string, params?: { desde?: string; hasta?: string; resultado?: string }) {
@@ -196,6 +364,13 @@ export const simulatorApi = {
     )
   },
 
+  getReleaseNotes(s3Key: string) {
+    return apiRequest<{ key: string; content: string }>(
+      `/admin/unity-builds/release-notes?key=${encodeURIComponent(s3Key)}`,
+      { pool: 'admin' }
+    )
+  },
+
   startUpload(data: { version: string; filename: string; sha256: string; size: number; releaseNotes?: string }) {
     return apiRequest<StartUploadResponse>('/admin/unity-builds/start-upload', {
       method: 'POST',
@@ -225,11 +400,26 @@ export const simulatorApi = {
 
   deployUnityBuild(data: {
     version: string; s3Key: string; sha256?: string; size?: number;
-    releaseNotes?: string; mandatory?: boolean; scheduledAfter?: string; targetPcIds: string[]
+    releaseNotes?: string; releaseNotesS3Key?: string;
+    mandatory?: boolean; scheduledAfter?: string; targetPcIds: string[]
   }) {
     return apiRequest<{ success: boolean; deployedTo: number; scheduledAfter: string }>(
       '/admin/unity-builds/deploy',
       { method: 'POST', body: data, pool: 'admin' }
+    )
+  },
+
+  getBuildTestPlan(version: string) {
+    return apiRequest<BuildTestPlan>(
+      `/admin/unity-builds/${encodeURIComponent(version)}/test-plan`,
+      { pool: 'admin' }
+    )
+  },
+
+  toggleTestPlanItem(version: string, itemId: string, checked: boolean) {
+    return apiRequest<{ id: string; checked: boolean; checkedBy: { userId: string; name: string }; checkedAt: string }>(
+      `/admin/unity-builds/${encodeURIComponent(version)}/test-plan/${encodeURIComponent(itemId)}`,
+      { method: 'PUT', body: { checked }, pool: 'admin' }
     )
   },
 }

@@ -7,7 +7,9 @@ import { cn } from '@/lib/utils'
 import { usePrefetchAdmin } from '@/lib/admin-queries'
 import { usePrefetchIot } from '@/lib/iot-queries'
 import { usePrefetchSimulator } from '@/lib/simulator-queries'
-import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Cpu, Users, BarChart3, Download, ClipboardCheck, Monitor, Box, Upload, KeyRound, Activity } from 'lucide-react'
+import { currentVersion } from '@/data/changelog'
+import { useBackendVersion } from '@/lib/version-api'
+import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Users, BarChart3, ClipboardCheck, Monitor, Box, Upload, KeyRound, Activity, History, Tag, Dumbbell } from 'lucide-react'
 
 type AdminPrefetchKey = 'stats' | 'tramites' | 'licencias' | 'users' | 'preguntas' | 'scoringConfig'
 type IotPrefetchKey = 'devices' | 'firmware'
@@ -39,8 +41,7 @@ const navSections: Array<{ title: string; items: NavItem[] }> = [
       { href: '/admin/simuladores', label: 'Simuladores', icon: Box, prefetchSim: 'simulators' },
       { href: '/admin/simuladores/pcs', label: 'PCs', icon: Monitor, prefetchSim: 'pcs' },
       { href: '/admin/simuladores/builds', label: 'Builds Unity', icon: Upload, prefetchSim: 'unityBuilds' },
-      { href: '/admin/iot', label: 'Controladores', icon: Cpu, prefetchIot: 'devices' },
-      { href: '/admin/iot/firmware', label: 'Firmware', icon: Download, prefetchIot: 'firmware' },
+      { href: '/admin/simuladores/practicas', label: 'Prácticas', icon: Dumbbell },
     ],
   },
   {
@@ -51,6 +52,7 @@ const navSections: Array<{ title: string; items: NavItem[] }> = [
       { href: '/admin/licencias', label: 'Licencias', icon: CreditCard, prefetchAdmin: 'licencias' },
       { href: '/admin/usuarios', label: 'Usuarios', icon: Users, prefetchAdmin: 'users' },
       { href: '/admin/integraciones', label: 'Integraciones', icon: KeyRound },
+      { href: '/admin/changelog', label: 'Historial', icon: History },
     ],
   },
 ]
@@ -70,6 +72,10 @@ export function Sidebar() {
   const prefetchAdmin = usePrefetchAdmin()
   const prefetchIot = usePrefetchIot()
   const prefetchSim = usePrefetchSimulator()
+  const fe = currentVersion()
+  const { data: be } = useBackendVersion()
+  const feLabel = fe === 'unreleased' ? 'rc' : `v${fe}`
+  const beLabel = be ? (be.version === 'unreleased' ? 'rc' : `v${be.version}`) : '…'
 
   return (
     <aside className="fixed top-16 bottom-0 left-0 w-64 bg-[#EBEBED] border-r border-[#DCDCE0] flex-col hidden lg:flex">
@@ -113,6 +119,18 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+      <Link
+        href="/admin/changelog"
+        className="px-4 py-3 border-t border-[#DCDCE0] text-xs text-[#4B5563] hover:bg-gray-200 flex items-center justify-between gap-2"
+        title={be ? `Backend ${be.tag ?? be.commit} · built ${new Date(be.builtAt).toLocaleString()}` : 'Ver historial de versiones'}
+      >
+        <span className="font-mono whitespace-nowrap">
+          FE <span className="text-[#3D1A50]">{feLabel}</span>
+          <span className="text-gray-400"> · </span>
+          BE <span className="text-[#3D1A50]">{beLabel}</span>
+        </span>
+        <Tag className="h-3 w-3 flex-shrink-0 text-gray-400" />
+      </Link>
     </aside>
   )
 }

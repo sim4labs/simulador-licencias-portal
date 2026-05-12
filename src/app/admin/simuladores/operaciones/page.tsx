@@ -40,10 +40,10 @@ const LICENSE_TYPE_COLORS: Record<string, string> = {
 }
 
 const DEMO_CODES = [
-  { code: '00000', nombre: 'Demo Automóvil', licenseType: 'particular' },
-  { code: '11111', nombre: 'Demo Pasajeros', licenseType: 'publico' },
-  { code: '22222', nombre: 'Demo Moto', licenseType: 'motocicleta' },
-  { code: '33333', nombre: 'Demo Carga', licenseType: 'carga' },
+  { code: '000000', nombre: 'Demo Automóvil', licenseType: 'particular' },
+  { code: '111111', nombre: 'Demo Pasajeros', licenseType: 'publico' },
+  { code: '222222', nombre: 'Demo Moto', licenseType: 'motocicleta' },
+  { code: '333333', nombre: 'Demo Carga', licenseType: 'carga' },
 ]
 
 export default function OperacionesPage() {

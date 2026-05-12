@@ -1,7 +1,7 @@
-import { useQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, keepPreviousData, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from './admin-api'
 import type { ApiResponse } from './api'
-import { adaptTramite } from './adapters'
+import { adaptTramite, type UpdateScheduleConfigBody } from './adapters'
 
 export const adminKeys = {
   stats: ['admin', 'stats'] as const,
@@ -19,6 +19,9 @@ export const adminKeys = {
   integrationTokens: ['admin', 'integration-tokens'] as const,
   integrationTokenCalls: (tokenId: string, limit: number) =>
     ['admin', 'integration-tokens', tokenId, 'calls', limit] as const,
+  scheduleConfig: ['admin', 'schedule-config'] as const,
+  practiceResults: (params: { pcId?: string; vehicleType?: string; dateFrom?: string; dateTo?: string; limit?: number; cursor?: string } = {}) =>
+    ['admin', 'practice-results', params] as const,
 }
 
 function unwrap<T>(res: ApiResponse<T>): T {
@@ -35,16 +38,34 @@ export function useAdminStats() {
   })
 }
 
-export function useAdminTramites(params: {
-  status?: string
-  tipo?: string
-  search?: string
-  limit?: number
-  cursor?: string
-} = {}) {
+type TramitesQueryData = {
+  items: ReturnType<typeof adaptTramite>[]
+  nextCursor: string | null
+}
+
+export function useAdminTramites(
+  params: {
+    status?: string
+    tipo?: string
+    search?: string
+    limit?: number
+    cursor?: string
+  } = {},
+  options: {
+    /**
+     * Función o número que controla refetch automático.
+     *
+     * - `number`: ms entre refetches.
+     * - `(data) => number | false`: refetch dinámico según los datos actuales.
+     *   Útil para hacer polling sólo mientras hay candidatos (ej. trámites
+     *   en `cita-agendada` esperando resultado del simulador).
+     */
+    refetchInterval?: number | false | ((data: TramitesQueryData | undefined) => number | false)
+  } = {},
+) {
   return useQuery({
     queryKey: adminKeys.tramites(params),
-    queryFn: async () => {
+    queryFn: async (): Promise<TramitesQueryData> => {
       const res = unwrap(await adminApi.listarTramites(params))
       return {
         items: res.items.map(adaptTramite),
@@ -53,6 +74,9 @@ export function useAdminTramites(params: {
     },
     staleTime: 10_000,
     placeholderData: keepPreviousData,
+    refetchInterval: typeof options.refetchInterval === 'function'
+      ? (query) => (options.refetchInterval as (data: TramitesQueryData | undefined) => number | false)(query.state.data)
+      : options.refetchInterval,
   })
 }
 
@@ -98,7 +122,7 @@ export function useAdminScoringConfig() {
   })
 }
 
-export function useAdminMetrics(period: string = '24h') {
+export function useAdminMetrics(period: string = '7d') {
   return useQuery({
     queryKey: adminKeys.metrics(period),
     queryFn: () => adminApi.getMetrics(period).then(unwrap),
@@ -120,6 +144,63 @@ export function useAdminIntegrationTokenCalls(tokenId: string, limit = 100) {
     queryFn: () => adminApi.getIntegrationTokenCalls(tokenId, limit).then(unwrap),
     staleTime: 30_000,
     enabled: !!tokenId,
+  })
+}
+
+// ─── Schedule config (calendario operativo) ───
+export function useScheduleConfig() {
+  return useQuery({
+    queryKey: adminKeys.scheduleConfig,
+    queryFn: () => adminApi.getScheduleConfig().then(unwrap),
+    staleTime: 30_000,
+  })
+}
+
+export function useUpdateScheduleWeekly() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ dayOfWeek, body }: { dayOfWeek: number; body: UpdateScheduleConfigBody }) =>
+      adminApi.updateScheduleWeekly(dayOfWeek, body).then(unwrap),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.scheduleConfig })
+    },
+  })
+}
+
+export function useUpsertScheduleException() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ date, body }: { date: string; body: UpdateScheduleConfigBody }) =>
+      adminApi.upsertScheduleException(date, body).then(unwrap),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.scheduleConfig })
+    },
+  })
+}
+
+export function useDeleteScheduleException() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (date: string) => adminApi.deleteScheduleException(date).then(unwrap),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.scheduleConfig })
+    },
+  })
+}
+
+export function usePracticeResults(params: {
+  pcId?: string
+  vehicleType?: string
+  dateFrom?: string
+  dateTo?: string
+  limit?: number
+  cursor?: string
+} = {}) {
+  return useQuery({
+    queryKey: adminKeys.practiceResults(params),
+    queryFn: () => adminApi.listPracticeResults(params).then(unwrap),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   })
 }
 

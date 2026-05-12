@@ -110,7 +110,37 @@ npm start
 
 # Linting
 npm run lint
+
+# Regenerar el changelog manualmente (ya corre como prebuild + predev)
+npm run changelog:build
 ```
+
+## Versionado y Releases (git tag → CI/CD)
+
+**Source of truth = git tags `vX.Y.Z`.** El campo `version` de `package.json` queda como `0.0.0-managed-by-git-tag` y se ignora; la versión visible en el portal viene del tag más reciente.
+
+### Cortar un release
+
+```bash
+# Patch: bug fixes (v1.0.0 → v1.0.1)
+git tag -a v1.0.1 -m "fix(admin): ..."
+
+# Minor: features compatibles (v1.0.0 → v1.1.0)
+git tag -a v1.1.0 -m "feat: ..."
+
+# Major: breaking changes (v1.0.0 → v2.0.0)
+git tag -a v2.0.0 -m "BREAKING: ..."
+
+git push origin v1.0.1   # CI/CD detecta el tag y deploya
+```
+
+### Cómo se construye el changelog
+
+- `scripts/build-changelog.mjs` corre como `prebuild` y `predev`. Lee `git tag` + `git log` y genera `src/data/changelog.generated.ts` (commiteado al repo).
+- Commits posteriores al tag más reciente aparecen como **"Próxima versión"** (sin tag) en `/admin/changelog`.
+- Para curar el título y los highlights de una versión, agregar la entrada en `src/data/changelog-highlights.ts` (manual, opcional, key = `"1.0.1"`).
+- La página vive en `/admin/changelog`; el sidebar muestra la versión actual abajo y enlaza a la página.
+- Sólo se incluyen commits sin merge (`--no-merges`) para evitar ruido de PRs.
 
 ## Paleta de Colores
 
@@ -153,7 +183,7 @@ Rutas públicas y formularios del flujo ciudadano son **server components** con 
 - **Nunca** usar `useEffect(() => fetch())` en páginas admin. Siempre `useQuery` vía los hooks en:
   - `src/lib/admin-queries.ts` (endpoints `/admin/*`)
   - `src/lib/iot-queries.ts` (endpoints `/admin/iot/*`)
-  - `src/lib/simulator-queries.ts` (endpoints `/admin/simulators`, `/admin/pcs`, `/admin/unity-builds`)
+  - `src/lib/simulator-queries.ts` (endpoints `/admin/simulators`, `/admin/pcs`, `/admin/pcs/{pcId}/logs`, `/admin/unity-builds`)
 - Query keys centralizadas en cada archivo (`adminKeys`, `iotKeys`, `simulatorKeys`) — nunca hard-codear keys en una página.
 - Tras una mutation, invalidar con `queryClient.invalidateQueries({ queryKey: ... })`. Evitar `reload()` manual.
 - Listados paginados: `placeholderData: keepPreviousData` para no mostrar blank state al filtrar.
@@ -182,7 +212,7 @@ Ubicado en `src/lib/examQuestions.ts`:
 - Fácil de extender agregando más preguntas al array correspondiente
 
 ### Códigos QR
-Generados con la librería `qrcode`. El código de cita sigue formato: `TLX-XXXXXX` (6 caracteres alfanuméricos).
+Generados con la librería `qrcode`. El código de cita sigue formato: `TLX-NNNNNN` (6 dígitos numéricos). El simulador Unity acepta los 6 dígitos directamente y reconstruye el `TLX-` en el backend (`simulator-lookup.ts` consulta por primary key).
 
 ### Calendario
 - Excluye fines de semana

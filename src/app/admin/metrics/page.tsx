@@ -64,7 +64,7 @@ function StatCard({ title, value, color, unit }: { title: string; value: number;
 
 export default function MetricsPage() {
   const qc = useQueryClient()
-  const [period, setPeriod] = useState<Period>('24h')
+  const [period, setPeriod] = useState<Period>('7d')
   const metricsQuery = useAdminMetrics(period)
   const data = metricsQuery.data ?? null
   const loading = metricsQuery.isFetching

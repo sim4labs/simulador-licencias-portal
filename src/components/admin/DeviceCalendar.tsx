@@ -23,10 +23,11 @@ const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie']
 
 /** Mapeo de vehicleType del dispositivo al licenseType oficial (ID numérico como string). */
 const VEHICLE_TO_LICENSE: Record<VehicleType, string> = {
-  motorcycle: '4',       // Motociclista
-  car: '3',              // Automovilista
-  passenger_bus: '1',    // Servicio Público
-  cargo_truck: '6',      // Servicio de Carga
+  motorcycle: '4',         // Motociclista
+  car: '3',                // Automovilista
+  passenger_bus: '1',      // Servicio Público
+  cargo_truck: '6',        // Servicio de Carga
+  emergency_vehicle: '18', // Emergencias
 }
 
 const STATUS_BG: Record<string, string> = {

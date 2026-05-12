@@ -40,8 +40,8 @@ const LICENSE_ICONS: Record<string, typeof Car> = {
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   'iniciado': { label: 'Iniciado', color: 'bg-gray-100 text-gray-700', icon: Clock },
   'tipo-seleccionado': { label: 'Tipo seleccionado', color: 'bg-blue-50 text-blue-700', icon: Clock },
-  'examen-aprobado': { label: 'Examen aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
-  'examen-reprobado': { label: 'Examen reprobado', color: 'bg-red-50 text-red-700', icon: XCircle },
+  'examen-aprobado': { label: 'Examen teórico aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
+  'examen-reprobado': { label: 'Examen teórico reprobado', color: 'bg-red-50 text-red-700', icon: XCircle },
   'cita-agendada': { label: 'Cita agendada', color: 'bg-amber-50 text-amber-700', icon: CalendarDays },
   'simulador-completado': { label: 'Simulador completado', color: 'bg-purple-50 text-purple-700', icon: CheckCircle2 },
   'finalizado': { label: 'Finalizado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
@@ -50,20 +50,34 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
 export default function AdministrarCitasPage() {
   const [tramites, setTramites] = useState<Tramite[]>([])
   const [loading, setLoading] = useState(true)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null)
+
+  async function load() {
+    const { data } = await citizenApi.listarTramites()
+    if (data) {
+      const all = data.map(adaptTramite)
+      const activos = all.filter((t) => t.status !== 'finalizado')
+      setTramites(activos.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))
+    }
+    setLoading(false)
+  }
 
   useEffect(() => {
-    async function load() {
-      const { data } = await citizenApi.listarTramites()
-      if (data) {
-        const all = data.map(adaptTramite)
-        // Mostrar todos los trámites que no están finalizados
-        const activos = all.filter((t) => t.status !== 'finalizado')
-        setTramites(activos.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))
-      }
-      setLoading(false)
-    }
     load()
   }, [])
+
+  async function handleCancel(tramiteId: string) {
+    setCancellingId(tramiteId)
+    const { error } = await citizenApi.cancelarCita(tramiteId)
+    setCancellingId(null)
+    setConfirmCancelId(null)
+    if (error) {
+      alert(`No se pudo cancelar: ${error}`)
+      return
+    }
+    await load()
+  }
 
   if (loading) {
     return (
@@ -176,7 +190,7 @@ export default function AdministrarCitasPage() {
                 </div>
 
                 {/* Action */}
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 space-y-2">
                   {isElegible ? (
                     <Link
                       href={`/portal/agendar/${t.id}`}
@@ -194,6 +208,42 @@ export default function AdministrarCitasPage() {
                       {missing.cta}
                     </Link>
                   ) : null}
+
+                  {hasCita && t.status === 'cita-agendada' && (
+                    confirmCancelId === t.id ? (
+                      <div className="flex flex-col gap-2 pt-2 border-t border-gray-200">
+                        <p className="text-xs text-gray-700 text-center">
+                          ¿Cancelar tu cita? El horario quedará disponible para otros ciudadanos.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setConfirmCancelId(null)}
+                            disabled={cancellingId === t.id}
+                            className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                          >
+                            Conservar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCancel(t.id)}
+                            disabled={cancellingId === t.id}
+                            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+                          >
+                            {cancellingId === t.id ? 'Cancelando...' : 'Sí, cancelar'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmCancelId(t.id)}
+                        className="inline-flex items-center gap-2 w-full justify-center px-5 py-2 bg-white border border-red-200 text-red-700 rounded-xl hover:bg-red-50 transition-colors text-sm font-medium"
+                      >
+                        Cancelar Cita
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
             )

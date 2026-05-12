@@ -14,6 +14,7 @@ const vehicleTypeLabels: Record<string, string> = {
   cargo_truck: 'Camion Carga',
   car: 'Automovil',
   motorcycle: 'Motocicleta',
+  emergency_vehicle: 'Vehiculo de Emergencia',
 }
 
 export default function SimuladoresPage() {
@@ -125,6 +126,7 @@ function SimulatorCard({ simulator: sim, onDelete }: { simulator: Simulator; onD
           name={sim.pcName}
           online={sim.pcOnline}
           unassigned={!sim.pcId}
+          version={sim.pcAppVersion ?? null}
         />
         <DeviceRow
           icon={<Cpu className="h-4 w-4" />}
@@ -138,12 +140,13 @@ function SimulatorCard({ simulator: sim, onDelete }: { simulator: Simulator; onD
   )
 }
 
-function DeviceRow({ icon, label, name, online, unassigned }: {
+function DeviceRow({ icon, label, name, online, unassigned, version }: {
   icon: React.ReactNode
   label: string
   name: string | null
   online: boolean
   unassigned: boolean
+  version?: string | null
 }) {
   return (
     <div className="flex items-center gap-2 text-sm">
@@ -155,6 +158,11 @@ function DeviceRow({ icon, label, name, online, unassigned }: {
         <>
           <span className={`h-2 w-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-300'}`} />
           <span className="text-gray-700 truncate">{name}</span>
+          {version && (
+            <span className="ml-auto text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded shrink-0">
+              v{version}
+            </span>
+          )}
         </>
       )}
     </div>
@@ -211,6 +219,7 @@ function CreateSimulatorModal({ onClose, onCreated }: { onClose: () => void; onC
               <option value="motorcycle">Motocicleta</option>
               <option value="passenger_bus">Camion Pasajeros</option>
               <option value="cargo_truck">Camion Carga</option>
+              <option value="emergency_vehicle">Vehiculo de Emergencia</option>
             </select>
           </div>
           <div className="flex justify-end gap-2 pt-2">

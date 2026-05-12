@@ -53,7 +53,7 @@ export function ProgressStepper({
                 </div>
                 <span
                   className={cn(
-                    'text-[11px] leading-tight text-center max-w-[80px]',
+                    'block text-[11px] leading-tight text-center max-w-[80px] min-h-[2.5em]',
                     isCurrent
                       ? 'font-semibold text-primary'
                       : isCompleted

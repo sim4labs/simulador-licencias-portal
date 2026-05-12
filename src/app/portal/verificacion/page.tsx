@@ -8,7 +8,7 @@ import { kioskApi } from '@/lib/citizen-api'
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import '@aws-amplify/ui-react/styles.css'
 
-type Step = 'loading' | 'liveness' | 'completing' | 'done' | 'error'
+type Step = 'loading' | 'liveness' | 'completing' | 'done' | 'error' | 'expired'
 
 function parseError(err: unknown): string {
   if (!err) return 'Error desconocido'
@@ -37,10 +37,17 @@ function VerificacionContent() {
   async function initLiveness() {
     setStep('loading')
     setDebugInfo('')
-    const { data, error } = await kioskApi.startVerify(sessionId)
+    const { data, error, status } = await kioskApi.startVerify(sessionId)
+    // 404 = sesión purgada por TTL, 410 = expiresAt < now. En ambos casos el
+    // sessionId del QR está muerto y no revive — el ciudadano debe re-escanear
+    // el QR nuevo que el kiosko ya proyectó.
+    if (status === 404 || status === 410) {
+      setStep('expired')
+      return
+    }
     if (!data || error) {
-      setErrorMsg(error || 'No se pudo iniciar la verificación. Escanea el QR de nuevo.')
-      setDebugInfo(`startVerify error | sessionId=${sessionId}`)
+      setErrorMsg(error || 'No se pudo iniciar la verificación.')
+      setDebugInfo(`startVerify error | status=${status} | sessionId=${sessionId.slice(0, 8)}…`)
       setStep('error')
       return
     }
@@ -115,6 +122,17 @@ function VerificacionContent() {
           <p className="text-2xl font-bold mb-2">¡Listo!</p>
           <p className="text-slate-500 text-sm text-center">
             Verificación exitosa. El simulador te dará la bienvenida.
+          </p>
+        </div>
+      )}
+
+      {step === 'expired' && (
+        <div className="flex flex-col items-center py-12">
+          <AlertCircle className="w-14 h-14 text-amber-500 mx-auto mb-4" />
+          <p className="text-lg font-semibold mb-2">El código QR ya expiró</p>
+          <p className="text-slate-500 text-sm text-center mb-4 max-w-xs">
+            El kiosko ya proyectó un código nuevo. Escanea el QR actual desde el
+            kiosko para continuar con la verificación.
           </p>
         </div>
       )}

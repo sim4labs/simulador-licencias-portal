@@ -52,6 +52,13 @@ export const citizenApi = {
     })
   },
 
+  cancelarCita(tramiteId: string) {
+    return apiRequest<{ tramiteId: string; cancelled: boolean }>(
+      `/ciudadano/tramites/${tramiteId}/cita`,
+      { method: 'DELETE', pool: 'citizen' },
+    )
+  },
+
   getTramite(tramiteId: string) {
     return apiRequest<TramiteResponse>(`/ciudadano/tramites/${tramiteId}`, { pool: 'citizen' })
   },
@@ -83,9 +90,15 @@ export const citizenApi = {
 // ─── Kiosk API (público — sin auth) ───
 
 export const kioskApi = {
-  createSession() {
-    return apiRequest<{ sessionId: string; expiresAt: string }>('/kiosk/sessions', {
+  createSession(args?: { kioskId?: string }) {
+    return apiRequest<{
+      sessionId: string
+      expiresAt: string
+      verifyUrl?: string
+      reused?: boolean
+    }>('/kiosk/sessions', {
       method: 'POST',
+      body: args?.kioskId ? { kioskId: args.kioskId } : undefined,
     })
   },
 

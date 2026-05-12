@@ -74,7 +74,7 @@ export function CitizenLayout({ children, citizenName, onLogout }: CitizenLayout
 
       <div className="flex">
         <CitizenSidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
-        <main className="flex-1 lg:pl-64 pt-0">
+        <main className="flex-1 min-w-0 lg:pl-64 pt-0">
           <div className="p-4 sm:p-6 lg:p-8">
             {children}
           </div>

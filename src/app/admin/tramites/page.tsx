@@ -1,30 +1,68 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 import { LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
-import { adminApi } from '@/lib/admin-api'
-import { adminKeys, useAdminLicencias, useAdminTramites } from '@/lib/admin-queries'
+import { useAdminLicencias, useAdminTramites } from '@/lib/admin-queries'
 import { DataTable } from '@/components/admin/DataTable'
 import { Badge, statusVariant, statusLabel } from '@/components/admin/Badge'
 import { Modal } from '@/components/admin/Modal'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Textarea } from '@/components/admin/Textarea'
-import { Search, ClipboardEdit } from 'lucide-react'
+import { Search } from 'lucide-react'
+
+// Etiquetas legibles para cada tipo de fault registrado por el simulador.
+// `tone` controla el color del badge: rojo para activas que descuentan,
+// azul "info" para pasivas (lo impactaron a él), amarillo para faltas leves.
+const FAULT_LABELS: Record<string, { label: string; tone: 'red' | 'amber' | 'sky' | 'gray' }> = {
+  'pedestrian-hit': { label: 'Atropello', tone: 'red' },
+  'bicycle-collision': { label: 'Colisión con bicicleta', tone: 'red' },
+  'vehicle-collision': { label: 'Colisión vehicular', tone: 'red' },
+  'passive-vehicle-collision': { label: 'Lo impactaron', tone: 'sky' },
+  'sign-collision': { label: 'Señalamiento', tone: 'gray' },
+  'obstacle-collision': { label: 'Obstáculo', tone: 'gray' },
+  'red-light': { label: 'Semáforo en rojo', tone: 'red' },
+  'wrong-way': { label: 'Sentido contrario', tone: 'red' },
+  'speeding': { label: 'Exceso de velocidad', tone: 'amber' },
+  'dangerous-gear-change': { label: 'Cambio peligroso', tone: 'amber' },
+  'gear-change-without-clutch': { label: 'Sin clutch', tone: 'amber' },
+}
+
+const FAULT_TONE_CLASSES: Record<'red' | 'amber' | 'sky' | 'gray', string> = {
+  red: 'bg-red-50 text-red-700 border border-red-200',
+  amber: 'bg-amber-50 text-amber-700 border border-amber-200',
+  sky: 'bg-sky-50 text-sky-700 border border-sky-200',
+  gray: 'bg-gray-50 text-gray-600 border border-gray-200',
+}
+
+function titleCaseFromType(t: string): string {
+  return t.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+}
+
+function formatTimeFromSeconds(s: number): string {
+  if (!Number.isFinite(s) || s < 0) return '0:00'
+  const min = Math.floor(s / 60)
+  const sec = Math.floor(s % 60)
+  return `${min}:${sec.toString().padStart(2, '0')}`
+}
 
 export default function TramitesPage() {
-  const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [detailTramite, setDetailTramite] = useState<Tramite | null>(null)
-  const [simModal, setSimModal] = useState<Tramite | null>(null)
-  const [simScore, setSimScore] = useState('80')
-  const [simPassed, setSimPassed] = useState(true)
-  const [simFeedback, setSimFeedback] = useState('')
 
-  const tramitesQuery = useAdminTramites()
+  // Refetch cada 8s mientras haya algún trámite esperando resultado del simulador.
+  // Detecta el caso "ciudadano hace examen mientras admin tiene la pantalla abierta":
+  // sin esto, el resultado solo aparece tras F5.
+  const tramitesQuery = useAdminTramites(
+    {},
+    {
+      refetchInterval: (data) => {
+        const items = data?.items ?? []
+        const hasPending = items.some((t) => t.status === 'cita-agendada' && !t.simulatorResult)
+        return hasPending ? 8000 : false
+      },
+    },
+  )
   const licenciasQuery = useAdminLicencias()
   const tramites = tramitesQuery.data?.items ?? []
   const licenseTypes = licenciasQuery.data ?? []
@@ -41,24 +79,6 @@ export default function TramitesPage() {
       return true
     })
   }, [tramites, statusFilter, typeFilter, search])
-
-  const handleSimSubmit = async () => {
-    if (!simModal) return
-    const body = {
-      passed: simPassed,
-      score: parseInt(simScore) || 0,
-      feedback: simFeedback.split('\n').filter(Boolean),
-    }
-    const { error } = await adminApi.registrarSimulador(simModal.id, body)
-    if (!error) {
-      qc.invalidateQueries({ queryKey: ['admin', 'tramites'] })
-      qc.invalidateQueries({ queryKey: adminKeys.stats })
-    }
-    setSimModal(null)
-    setSimScore('80')
-    setSimPassed(true)
-    setSimFeedback('')
-  }
 
   const columns = [
     { key: 'id', header: 'ID', render: (t: Tramite) => <span className="font-mono text-xs">{t.id}</span> },
@@ -96,11 +116,6 @@ export default function TramitesPage() {
       key: 'acciones', header: 'Acciones', render: (t: Tramite) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" onClick={() => setDetailTramite(t)}>Ver</Button>
-          {t.status === 'cita-agendada' && !t.simulatorResult && (
-            <Button variant="outline" size="sm" onClick={() => setSimModal(t)}>
-              <ClipboardEdit className="h-3.5 w-3.5 mr-1" />Simulador
-            </Button>
-          )}
         </div>
       ),
     },
@@ -177,55 +192,47 @@ export default function TramitesPage() {
                 <Badge variant={detailTramite.simulatorResult.passed ? 'success' : 'destructive'}>
                   {detailTramite.simulatorResult.passed ? 'Aprobado' : 'Reprobado'} — {detailTramite.simulatorResult.score}%
                 </Badge>
-                {detailTramite.simulatorResult.feedback.length > 0 && (
+                {detailTramite.simulatorResult.faults && detailTramite.simulatorResult.faults.length > 0 ? (
+                  <div className="mt-3 overflow-hidden rounded-md border border-gray-200">
+                    <table className="w-full text-xs">
+                      <thead className="bg-gray-50 text-gray-500">
+                        <tr>
+                          <th className="px-2 py-1.5 text-left font-medium w-16">Min</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Tipo</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Descripción</th>
+                          <th className="px-2 py-1.5 text-right font-medium w-16">Puntos</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {detailTramite.simulatorResult.faults.map((f, i) => {
+                          const meta = FAULT_LABELS[f.type] ?? { label: titleCaseFromType(f.type), tone: 'gray' as const }
+                          const ptsLabel = f.deduction === 0 ? '—' : `−${f.deduction}`
+                          return (
+                            <tr key={i} className="bg-white">
+                              <td className="px-2 py-1.5 font-mono text-gray-500">{formatTimeFromSeconds(f.secondsFromStart)}</td>
+                              <td className="px-2 py-1.5">
+                                <span className={`inline-block rounded px-1.5 py-0.5 text-[11px] ${FAULT_TONE_CLASSES[meta.tone]}`}>
+                                  {meta.label}
+                                </span>
+                              </td>
+                              <td className="px-2 py-1.5 text-gray-700">{f.description}</td>
+                              <td className={`px-2 py-1.5 text-right font-mono ${f.deduction === 0 ? 'text-gray-400' : 'text-red-600'}`}>{ptsLabel}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : detailTramite.simulatorResult.feedback.length > 0 ? (
+                  // Fallback para trámites antiguos sin `faults` desglosados.
                   <ul className="mt-2 space-y-1 text-xs text-gray-600">
                     {detailTramite.simulatorResult.feedback.map((f, i) => (
                       <li key={i}>• {f}</li>
                     ))}
                   </ul>
-                )}
+                ) : null}
               </div>
             )}
-          </div>
-        )}
-      </Modal>
-
-      {/* Simulator result modal */}
-      <Modal open={!!simModal} onClose={() => setSimModal(null)} title="Registrar Resultado de Simulador">
-        {simModal && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Trámite <span className="font-mono font-medium">{simModal.id}</span> — {simModal.personalData.nombre} {simModal.personalData.apellidoPaterno}
-            </p>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" checked={simPassed} onChange={() => setSimPassed(true)} className="text-primary focus:ring-primary" />
-                <span className="text-sm font-medium text-green-700">Aprobado</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" checked={!simPassed} onChange={() => setSimPassed(false)} className="text-primary focus:ring-primary" />
-                <span className="text-sm font-medium text-red-700">Reprobado</span>
-              </label>
-            </div>
-            <Input
-              label="Puntuación (0-100)"
-              type="number"
-              min={0}
-              max={100}
-              value={simScore}
-              onChange={e => setSimScore(e.target.value)}
-            />
-            <Textarea
-              label="Retroalimentación (una línea por observación)"
-              placeholder="Ej: Buen control de velocidad&#10;Frenado tardío en curvas"
-              value={simFeedback}
-              onChange={e => setSimFeedback(e.target.value)}
-              rows={4}
-            />
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setSimModal(null)}>Cancelar</Button>
-              <Button onClick={handleSimSubmit}>Guardar Resultado</Button>
-            </div>
           </div>
         )}
       </Modal>

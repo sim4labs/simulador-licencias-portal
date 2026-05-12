@@ -8,6 +8,9 @@ import type {
   DashboardStatsResponse,
   TramitePublicResponse,
   MetricsResponse,
+  ScheduleConfigResponse,
+  UpdateScheduleConfigBody,
+  UpdateScheduleConfigResponse,
 } from './adapters'
 
 export interface ScoringConfig {
@@ -16,11 +19,13 @@ export interface ScoringConfig {
     pedestrianHit: number
     bicycleCollision: number
     vehicleCollision: number
+    passiveVehicleCollision: number
     signCollision: number
     obstacleCollision: number
     redLight: number
     wrongWay: number
     dangerousGearChange: number
+    gearChangeWithoutClutch: number
   }
   passingScore: number
   gradeThresholds: {
@@ -29,6 +34,7 @@ export interface ScoringConfig {
     aptoReentrenamiento: number
   }
   examDurationSeconds: number
+  minValidDistanceMeters: number
   updatedAt?: string
 }
 
@@ -63,19 +69,38 @@ export const adminApi = {
     return apiRequest<TramiteResponse>(`/admin/tramites/${tramiteId}`, { pool: 'admin' })
   },
 
-  registrarSimulador(tramiteId: string, result: { passed: boolean; score: number; feedback: string[] }) {
-    return apiRequest<{ message: string; tramiteId: string }>(
-      `/admin/tramites/${tramiteId}/simulador`,
-      { method: 'POST', body: result, pool: 'admin' }
-    )
-  },
-
   getCitas(params: { fecha?: string; desde?: string; hasta?: string }) {
     const qs = new URLSearchParams()
     if (params.fecha) qs.set('fecha', params.fecha)
     if (params.desde) qs.set('desde', params.desde)
     if (params.hasta) qs.set('hasta', params.hasta)
     return apiRequest<TramiteResponse[]>(`/admin/citas?${qs.toString()}`, { pool: 'admin' })
+  },
+
+  // ─── Schedule config (calendario operativo) ───
+  getScheduleConfig() {
+    return apiRequest<ScheduleConfigResponse>('/admin/schedule-config', { pool: 'admin' })
+  },
+
+  updateScheduleWeekly(dayOfWeek: number, body: UpdateScheduleConfigBody) {
+    return apiRequest<UpdateScheduleConfigResponse>(
+      `/admin/schedule-config/weekly/${dayOfWeek}`,
+      { method: 'PUT', body, pool: 'admin' },
+    )
+  },
+
+  upsertScheduleException(date: string, body: UpdateScheduleConfigBody) {
+    return apiRequest<UpdateScheduleConfigResponse>(
+      `/admin/schedule-config/exception/${date}`,
+      { method: 'PUT', body, pool: 'admin' },
+    )
+  },
+
+  deleteScheduleException(date: string) {
+    return apiRequest<{ deleted: boolean; date: string }>(
+      `/admin/schedule-config/exception/${date}`,
+      { method: 'DELETE', pool: 'admin' },
+    )
   },
 
   listarPreguntas(params?: { cat?: string; dif?: string }) {
@@ -212,6 +237,58 @@ export const adminApi = {
       { pool: 'admin' }
     )
   },
+
+  // ─── Practice results (Modo Práctica del simulador) ───
+  listPracticeResults(params?: {
+    pcId?: string
+    vehicleType?: string
+    dateFrom?: string
+    dateTo?: string
+    limit?: number
+    cursor?: string
+  }) {
+    const qs = new URLSearchParams()
+    if (params?.pcId) qs.set('pcId', params.pcId)
+    if (params?.vehicleType) qs.set('vehicleType', params.vehicleType)
+    if (params?.dateFrom) qs.set('dateFrom', params.dateFrom)
+    if (params?.dateTo) qs.set('dateTo', params.dateTo)
+    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.cursor) qs.set('cursor', params.cursor)
+    const query = qs.toString()
+    return apiRequest<{ items: PracticeResult[]; nextCursor: string | null }>(
+      `/admin/practice-results${query ? `?${query}` : ''}`,
+      { pool: 'admin' },
+    )
+  },
+}
+
+export interface PracticeFault {
+  type: string
+  description: string
+  secondsFromStart: number
+  severity: string
+  deduction: number
+}
+
+export interface PracticeResult {
+  practiceId: string
+  pcId: string
+  simulatorId: string | null
+  vehicleType: string
+  transmission: string | null
+  weather: string
+  spawnLocation: string
+  startedAt: string
+  completedAt: string
+  durationSeconds: number
+  score: number
+  // Metros recorridos durante la práctica (Unity ≥1.3.8). 0 o ausente para
+  // builds anteriores. Si está bajo el umbral configurado, la sesión se marcó
+  // inválida por inactividad — bandera visible en el detalle.
+  distanceMeters?: number
+  faults: PracticeFault[]
+  completed: boolean
+  createdAt?: string
 }
 
 export interface IntegrationToken {
@@ -265,8 +342,9 @@ export const publicApi = {
     })
   },
 
-  getDisponibilidad(fecha: string) {
-    return apiRequest<DisponibilidadResponse>(`/disponibilidad?fecha=${encodeURIComponent(fecha)}`)
+  getDisponibilidad(fecha: string, licenseType: string) {
+    const qs = new URLSearchParams({ fecha, licenseType })
+    return apiRequest<DisponibilidadResponse>(`/disponibilidad?${qs.toString()}`)
   },
 
   getConfirmacion(tramiteId: string) {

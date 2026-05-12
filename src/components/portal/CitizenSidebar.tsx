@@ -4,6 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { currentVersion } from '@/data/changelog'
+import { useBackendVersion } from '@/lib/version-api'
 import {
   LayoutDashboard,
   FileText,
@@ -12,6 +14,7 @@ import {
   ClipboardList,
   UserCircle,
   X,
+  Tag,
 } from 'lucide-react'
 
 const navSections = [
@@ -45,6 +48,10 @@ interface CitizenSidebarProps {
 
 export function CitizenSidebar({ mobileOpen, onMobileClose }: CitizenSidebarProps) {
   const pathname = usePathname()
+  const fe = currentVersion()
+  const { data: be } = useBackendVersion()
+  const feLabel = fe === 'unreleased' ? 'rc' : `v${fe}`
+  const beLabel = be ? (be.version === 'unreleased' ? 'rc' : `v${be.version}`) : '…'
 
   const nav = (
     <aside className={cn(
@@ -86,6 +93,19 @@ export function CitizenSidebar({ mobileOpen, onMobileClose }: CitizenSidebarProp
           </div>
         ))}
       </nav>
+      <Link
+        href="/changelog"
+        onClick={onMobileClose}
+        className="px-4 py-3 border-t border-[#DCDCE0] text-xs text-[#4B5563] hover:bg-gray-200 flex items-center justify-between gap-2"
+        title={be ? `Backend ${be.tag ?? be.commit} · built ${new Date(be.builtAt).toLocaleString()}` : 'Ver historial de versiones'}
+      >
+        <span className="font-mono whitespace-nowrap">
+          FE <span className="text-[#3D1A50]">{feLabel}</span>
+          <span className="text-gray-400"> · </span>
+          BE <span className="text-[#3D1A50]">{beLabel}</span>
+        </span>
+        <Tag className="h-3 w-3 flex-shrink-0 text-gray-400" />
+      </Link>
     </aside>
   )
 

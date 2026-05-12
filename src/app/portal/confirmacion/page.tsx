@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ProgressStepper } from '@/components/ProgressStepper'
@@ -17,10 +17,14 @@ import QRCode from 'qrcode'
 const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
 
 function ConfirmacionContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const tramiteId = searchParams.get('id')
   const [tramite, setTramite] = useState<Tramite | null>(null)
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('')
+  const [confirmingCancel, setConfirmingCancel] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!tramiteId) return
@@ -56,6 +60,19 @@ function ConfirmacionContent() {
     link.download = `cita-simulador-${tramite.id}.png`
     link.href = qrCodeUrl
     link.click()
+  }
+
+  const handleCancel = async () => {
+    if (!tramite) return
+    setCancelling(true)
+    setCancelError(null)
+    const { error } = await citizenApi.cancelarCita(tramite.id)
+    setCancelling(false)
+    if (error) {
+      setCancelError(error)
+      return
+    }
+    router.push('/portal/agendar')
   }
 
   if (!tramite) {
@@ -197,6 +214,49 @@ function ConfirmacionContent() {
             <Link href="/portal/resultados">Consultar resultados</Link>
           </Button>
         </div>
+
+        {/* Cancelar cita */}
+        {tramite.status === 'cita-agendada' && (
+          <Card padding="lg" className="mt-6 border-red-100">
+            {confirmingCancel ? (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-700">
+                  ¿Seguro que deseas cancelar tu cita? El horario quedará disponible para otros ciudadanos
+                  y tendrás que agendar de nuevo.
+                </p>
+                {cancelError && (
+                  <p className="text-sm text-red-600">{cancelError}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setConfirmingCancel(false); setCancelError(null) }}
+                    disabled={cancelling}
+                    className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Conservar cita
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={cancelling}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {cancelling ? 'Cancelando...' : 'Sí, cancelar'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingCancel(true)}
+                className="w-full px-4 py-2 bg-white border border-red-200 text-red-700 rounded-xl text-sm font-medium hover:bg-red-50"
+              >
+                Cancelar cita
+              </button>
+            )}
+          </Card>
+        )}
       </div>
     </div>
   )

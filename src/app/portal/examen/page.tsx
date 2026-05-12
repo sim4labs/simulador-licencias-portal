@@ -41,10 +41,10 @@ const LICENSE_ICONS: Record<string, typeof Car> = {
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   'iniciado': { label: 'Iniciado', color: 'bg-gray-100 text-gray-700', icon: Clock },
   'tipo-seleccionado': { label: 'Listo para examen', color: 'bg-blue-50 text-blue-700', icon: BookOpen },
-  'examen-aprobado': { label: 'Examen aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
-  'examen-reprobado': { label: 'Examen reprobado', color: 'bg-red-50 text-red-700', icon: XCircle },
-  'cita-agendada': { label: 'Examen aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
-  'simulador-completado': { label: 'Examen aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
+  'examen-aprobado': { label: 'Examen teórico aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
+  'examen-reprobado': { label: 'Examen teórico reprobado', color: 'bg-red-50 text-red-700', icon: XCircle },
+  'cita-agendada': { label: 'Examen teórico aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
+  'simulador-completado': { label: 'Examen teórico aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
   'finalizado': { label: 'Finalizado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
 }
 
@@ -152,12 +152,12 @@ export default function ExamenTeoricoPage() {
                   </p>
                   <p className="text-xs font-mono text-gray-400 mb-4">{t.id}</p>
 
-                  {/* Estado: Examen aprobado */}
+                  {/* Estado: Examen teórico aprobado */}
                   {examPassed && t.examResult && (
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4">
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <span className="text-xs font-semibold text-emerald-700">Examen aprobado con {t.examResult.score}%</span>
+                        <span className="text-xs font-semibold text-emerald-700">Examen teórico aprobado con {t.examResult.score}%</span>
                       </div>
                       <p className="text-xs text-emerald-600">
                         Tu siguiente paso es agendar tu cita en el simulador.
@@ -165,7 +165,7 @@ export default function ExamenTeoricoPage() {
                     </div>
                   )}
 
-                  {/* Estado: Examen reprobado */}
+                  {/* Estado: Examen teórico reprobado */}
                   {examFailed && t.examResult && (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
                       <div className="flex items-center gap-2 mb-2">
@@ -222,7 +222,7 @@ export default function ExamenTeoricoPage() {
                     </Link>
                   )}
 
-                  {/* Examen aprobado: ir a agendar */}
+                  {/* Examen teórico aprobado: ir a agendar */}
                   {examPassed && (
                     <Link
                       href="/portal/agendar"

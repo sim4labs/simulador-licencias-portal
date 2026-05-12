@@ -8,43 +8,61 @@ import type { ScoringConfig } from '@/lib/admin-api'
 import { Button } from '@/components/ui/Button'
 import { Save, RefreshCw, AlertTriangle } from 'lucide-react'
 
-const DEFAULTS: ScoringConfig = {
-  penalties: {
-    speeding: 5,
-    pedestrianHit: 25,
-    bicycleCollision: 15,
-    vehicleCollision: 10,
-    signCollision: 5,
-    obstacleCollision: 5,
-    redLight: 20,
-    wrongWay: 15,
-    dangerousGearChange: 20,
-  },
-  passingScore: 70,
-  gradeThresholds: {
-    apto: 90,
-    aptoCondicionado: 80,
-    aptoReentrenamiento: 70,
-  },
-  examDurationSeconds: 300,
+const DEFAULT_PENALTIES: ScoringConfig['penalties'] = {
+  speeding: 5,
+  pedestrianHit: 25,
+  bicycleCollision: 15,
+  vehicleCollision: 10,
+  passiveVehicleCollision: 0,
+  signCollision: 5,
+  obstacleCollision: 5,
+  redLight: 20,
+  wrongWay: 15,
+  dangerousGearChange: 20,
+  gearChangeWithoutClutch: 5,
 }
 
-const PENALTY_LABELS: Record<string, { label: string; severity: string }> = {
+const DEFAULT_THRESHOLDS: ScoringConfig['gradeThresholds'] = {
+  apto: 90,
+  aptoCondicionado: 80,
+  aptoReentrenamiento: 70,
+}
+
+const DEFAULTS: ScoringConfig = {
+  penalties: DEFAULT_PENALTIES,
+  passingScore: 70,
+  gradeThresholds: DEFAULT_THRESHOLDS,
+  examDurationSeconds: 300,
+  minValidDistanceMeters: 200,
+}
+
+const PENALTY_LABELS: Record<string, { label: string; severity: string; hint?: string }> = {
   pedestrianHit: { label: 'Atropello de peatón', severity: 'critical' },
   bicycleCollision: { label: 'Colisión con bicicleta', severity: 'major' },
   vehicleCollision: { label: 'Colisión vehicular', severity: 'major' },
+  passiveVehicleCollision: {
+    label: 'Colisión pasiva (lo impactaron)',
+    severity: 'info',
+    hint: 'Cuando un NPC embiste al alumno por atrás. Default 0: solo se registra para el examinador, no descuenta puntos.',
+  },
   redLight: { label: 'Semáforo en rojo', severity: 'major' },
   wrongWay: { label: 'Sentido contrario', severity: 'major' },
   dangerousGearChange: { label: 'Cambio de marcha peligroso', severity: 'major' },
   speeding: { label: 'Exceso de velocidad', severity: 'minor' },
   signCollision: { label: 'Colisión con señalamiento', severity: 'minor' },
   obstacleCollision: { label: 'Colisión con obstáculo', severity: 'minor' },
+  gearChangeWithoutClutch: {
+    label: 'Cambio de marcha sin clutch (rechino)',
+    severity: 'minor',
+    hint: 'Solo aplica en exámenes de transmisión manual con volante G923 PS.',
+  },
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
   critical: 'bg-red-100 text-red-700 border-red-200',
   major: 'bg-amber-100 text-amber-700 border-amber-200',
   minor: 'bg-blue-100 text-blue-700 border-blue-200',
+  info: 'bg-sky-50 text-sky-700 border-sky-200',
 }
 
 export default function ScoringPage() {
@@ -60,8 +78,14 @@ export default function ScoringPage() {
 
   useEffect(() => {
     if (scoringQuery.data) {
-      setConfig({ ...DEFAULTS, ...scoringQuery.data })
-      setLastSync(scoringQuery.data.updatedAt ?? null)
+      const item = scoringQuery.data
+      setConfig({
+        ...DEFAULTS,
+        ...item,
+        penalties: { ...DEFAULT_PENALTIES, ...(item.penalties ?? {}) },
+        gradeThresholds: { ...DEFAULT_THRESHOLDS, ...(item.gradeThresholds ?? {}) },
+      })
+      setLastSync(item.updatedAt ?? null)
     }
   }, [scoringQuery.data])
 
@@ -143,8 +167,8 @@ export default function ScoringPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Penalizaciones por infracción</h2>
           <p className="text-xs text-gray-500 mb-4">Puntos que se restan por cada tipo de infracción durante el examen.</p>
           <div className="space-y-3">
-            {Object.entries(PENALTY_LABELS).map(([key, { label, severity }]) => (
-              <div key={key} className="flex items-center gap-3">
+            {Object.entries(PENALTY_LABELS).map(([key, { label, severity, hint }]) => (
+              <div key={key} className="flex items-center gap-3" title={hint}>
                 <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border ${SEVERITY_COLORS[severity]}`}>
                   {severity === 'critical' ? 'CRIT' : severity === 'major' ? 'MAJ' : 'MIN'}
                 </span>
@@ -248,15 +272,37 @@ export default function ScoringPage() {
             <div className="flex items-center gap-4">
               <input
                 type="number"
-                min={60}
-                max={1800}
-                step={30}
                 value={config.examDurationSeconds}
-                onChange={e => setConfig(prev => ({ ...prev, examDurationSeconds: parseInt(e.target.value) || 300 }))}
+                onChange={e => setConfig(prev => ({ ...prev, examDurationSeconds: parseInt(e.target.value) || 0 }))}
                 className="w-24 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
               <span className="text-sm text-gray-500">
                 segundos ({Math.floor(config.examDurationSeconds / 60)}:{String(config.examDurationSeconds % 60).padStart(2, '0')} min)
+              </span>
+            </div>
+          </div>
+
+          {/* Distancia mínima válida */}
+          <div className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Distancia mínima válida</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              Si el alumno recorre menos que este umbral durante el examen, Unity reporta NO APTO sin
+              importar el score. Evita el caso de dejar el coche parado y aprobar con 100. Poner 0 desactiva el check.
+            </p>
+            <div className="flex items-center gap-4">
+              <input
+                type="number"
+                min={0}
+                max={5000}
+                step={50}
+                value={config.minValidDistanceMeters}
+                onChange={e => setConfig(prev => ({ ...prev, minValidDistanceMeters: parseInt(e.target.value) || 0 }))}
+                className="w-24 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+              <span className="text-sm text-gray-500">
+                metros{config.minValidDistanceMeters >= 1000
+                  ? ` (${(config.minValidDistanceMeters / 1000).toFixed(2)} km)`
+                  : ''}
               </span>
             </div>
           </div>
