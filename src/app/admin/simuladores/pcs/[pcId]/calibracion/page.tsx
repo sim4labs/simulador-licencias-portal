@@ -6,6 +6,7 @@ import { useSimulatorPC } from '@/lib/simulator-queries'
 import { Button } from '@/components/ui/Button'
 import type { PCCalibration } from '@/lib/simulator-api'
 import { HoriMappingTable } from '@/components/admin/HoriMappingTable'
+import { MotoSensitivityCard } from '@/components/admin/MotoSensitivityCard'
 
 function formatDate(iso?: string | null): string {
   if (!iso) return '-'
@@ -150,6 +151,8 @@ export default function PCCalibracionPage() {
       {pc.controlMapping && (
         <HoriMappingTable raw={pc.controlMapping} updatedAt={pc.controlMappingUpdatedAt} />
       )}
+
+      <MotoSensitivityCard payload={pc.motoSensitivity} />
     </div>
   )
 }

@@ -128,6 +128,8 @@ export interface SimulatorPC {
   /** v1.7.0: HORI mapping JSON-stringified (parseable a HoriMappingV1). */
   controlMapping?: string | null
   controlMappingUpdatedAt?: string | null
+  /** v1.9.0: resumen de sensibilidad de moto JSON-stringified (MotoSensitivitySummary). */
+  motoSensitivity?: string | null
 }
 
 // v1.7.0 — parseado del JSON blob del heartbeat
