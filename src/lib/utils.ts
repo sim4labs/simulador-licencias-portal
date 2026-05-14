@@ -24,6 +24,20 @@ export function formatTime(date: Date): string {
   })
 }
 
+/**
+ * Fecha de hoy (YYYY-MM-DD) en la zona de Tlaxcala (America/Mexico_City).
+ * Para comparar contra fechas de cita `YYYY-MM-DD` sin que el parseo de
+ * `new Date('2026-05-14')` (medianoche UTC) corra el día en zonas UTC-negativas.
+ */
+export function todayInTlaxcala(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Mexico_City',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
 export function formatMXN(value?: number | null): string {
   if (value == null || !Number.isFinite(value)) return '—'
   return new Intl.NumberFormat('es-MX', {

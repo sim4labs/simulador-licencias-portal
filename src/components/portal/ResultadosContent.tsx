@@ -22,7 +22,7 @@ import {
   FileText,
   ClipboardList,
 } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { formatDate, todayInTlaxcala } from '@/lib/utils'
 
 const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
 
@@ -360,7 +360,7 @@ export function ResultadosContent({ basePath = '' }: ResultadosContentProps) {
           {/* Pending Message */}
           {searchResult.appointment &&
             !searchResult.simulatorResult &&
-            new Date(searchResult.appointment.date) >= new Date() && (
+            searchResult.appointment.date >= todayInTlaxcala() && (
               <Card padding="lg" className="bg-primary-50 border border-primary-200">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">

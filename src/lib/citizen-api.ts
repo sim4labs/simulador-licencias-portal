@@ -109,10 +109,10 @@ export const kioskApi = {
     )
   },
 
-  completeVerify(sessionId: string) {
+  completeVerify(sessionId: string, tramiteId: string) {
     return apiRequest<{ verified: boolean; confidence: number }>(
       `/kiosk/sessions/${sessionId}/complete`,
-      { method: 'POST' }
+      { method: 'POST', body: { tramiteId } }
     )
   },
 
