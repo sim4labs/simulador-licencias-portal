@@ -193,7 +193,7 @@ export default function AdministrarCitasPage() {
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 space-y-2">
                   {isElegible ? (
                     <Link
-                      href={`/portal/agendar/${t.id}`}
+                      href={hasCita ? `/portal/confirmacion?id=${t.id}` : `/portal/agendar/${t.id}`}
                       className="inline-flex items-center gap-2 w-full justify-center px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all text-sm font-medium group"
                     >
                       {hasCita ? 'Ver Cita' : 'Agendar Cita'}
