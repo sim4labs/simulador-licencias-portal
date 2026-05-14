@@ -9,7 +9,7 @@ import { usePrefetchIot } from '@/lib/iot-queries'
 import { usePrefetchSimulator } from '@/lib/simulator-queries'
 import { currentVersion } from '@/data/changelog'
 import { useBackendVersion } from '@/lib/version-api'
-import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Users, BarChart3, ClipboardCheck, Monitor, Box, Upload, KeyRound, Activity, History, Tag, Dumbbell } from 'lucide-react'
+import { LayoutDashboard, Calendar, FileText, HelpCircle, CreditCard, Users, BarChart3, ClipboardCheck, Monitor, Box, Upload, KeyRound, Activity, History, Tag, Dumbbell, Library } from 'lucide-react'
 
 type AdminPrefetchKey = 'stats' | 'tramites' | 'licencias' | 'users' | 'preguntas' | 'scoringConfig'
 type IotPrefetchKey = 'devices' | 'firmware'
@@ -52,6 +52,7 @@ const navSections: Array<{ title: string; items: NavItem[] }> = [
       { href: '/admin/licencias', label: 'Licencias', icon: CreditCard, prefetchAdmin: 'licencias' },
       { href: '/admin/usuarios', label: 'Usuarios', icon: Users, prefetchAdmin: 'users' },
       { href: '/admin/integraciones', label: 'Integraciones', icon: KeyRound },
+      { href: '/admin/documentos', label: 'Documentos', icon: Library },
       { href: '/admin/changelog', label: 'Historial', icon: History },
     ],
   },
