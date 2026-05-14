@@ -2,7 +2,6 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,9 +9,8 @@ import { ProgressStepper } from '@/components/ProgressStepper'
 import { LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
 import { citizenApi } from '@/lib/citizen-api'
 import { adaptTramite } from '@/lib/adapters'
-import { CheckCircle, Calendar, Clock, Car, Download, Home, User, Mail, Phone } from 'lucide-react'
+import { CheckCircle, Calendar, Clock, Car, Home, User, Mail, Phone } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
-import QRCode from 'qrcode'
 
 const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
 
@@ -21,7 +19,6 @@ function ConfirmacionContent() {
   const searchParams = useSearchParams()
   const tramiteId = searchParams.get('id')
   const [tramite, setTramite] = useState<Tramite | null>(null)
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('')
   const [confirmingCancel, setConfirmingCancel] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState<string | null>(null)
@@ -32,35 +29,10 @@ function ConfirmacionContent() {
     async function load() {
       const { data } = await citizenApi.getTramite(tramiteId!)
       if (!data) return
-      const t = adaptTramite(data)
-      setTramite(t)
-
-      const qrData = JSON.stringify({
-        tramiteId: t.id,
-        code: t.appointment?.code,
-        type: t.licenseType,
-        date: t.appointment?.date,
-        time: t.appointment?.time,
-        name: `${t.personalData.nombre} ${t.personalData.apellidoPaterno}`,
-      })
-
-      const url = await QRCode.toDataURL(qrData, {
-        width: 256,
-        margin: 2,
-        color: { dark: '#582672', light: '#ffffff' },
-      })
-      setQrCodeUrl(url)
+      setTramite(adaptTramite(data))
     }
     load()
   }, [tramiteId])
-
-  const handleDownloadQR = () => {
-    if (!qrCodeUrl || !tramite) return
-    const link = document.createElement('a')
-    link.download = `cita-simulador-${tramite.id}.png`
-    link.href = qrCodeUrl
-    link.click()
-  }
 
   const handleCancel = async () => {
     if (!tramite) return
@@ -102,22 +74,19 @@ function ConfirmacionContent() {
           <p className="text-gray-600">Tu cita ha sido registrada exitosamente</p>
         </div>
 
-        {/* QR Code Card */}
+        {/* Número de trámite */}
         <Card padding="lg" className="mb-6">
           <div className="text-center">
-            <h2 className="text-lg font-semibold mb-4">Tu código QR</h2>
-            {qrCodeUrl && (
-              <div className="inline-block p-4 bg-white border-2 border-gray-100 rounded-lg mb-4">
-                <Image src={qrCodeUrl} alt="Código QR de tu cita" width={200} height={200} />
-              </div>
-            )}
-            <p className="text-2xl font-bold text-primary-600 mb-1">{tramite.id}</p>
-            <p className="text-sm text-gray-500 mb-1">Código de cita: {tramite.appointment?.code}</p>
-            <p className="text-sm text-gray-500 mb-4">Presenta este código QR el día de tu cita</p>
-            <Button onClick={handleDownloadQR} variant="outline" className="gap-2">
-              <Download className="w-4 h-4" />
-              Descargar QR
-            </Button>
+            <h2 className="text-lg font-semibold mb-2">Tu número de trámite</h2>
+            <p className="text-3xl font-bold text-primary-600 tracking-wide mb-1">{tramite.id}</p>
+            <p className="text-sm text-gray-500 mb-4">Código de cita: {tramite.appointment?.code}</p>
+            <div className="text-sm text-gray-600 text-left bg-gray-50 rounded-lg p-4">
+              <p className="font-medium text-gray-900 mb-2">El día de tu cita, en el simulador:</p>
+              <ul className="space-y-1.5 list-disc list-inside">
+                <li>Escanea con tu celular el código QR que aparece en la pantalla del simulador, o</li>
+                <li>Ingresa tu número de trámite directamente en el simulador.</li>
+              </ul>
+            </div>
           </div>
         </Card>
 
@@ -197,7 +166,7 @@ function ConfirmacionContent() {
           <h3 className="font-semibold text-gold-foreground mb-2">Recuerda traer:</h3>
           <ul className="text-sm text-gold-foreground space-y-1">
             <li>Identificación oficial vigente</li>
-            <li>Este código QR (impreso o en tu celular)</li>
+            <li>Tu número de trámite ({tramite.id})</li>
             <li>Comprobante de pago de derechos</li>
           </ul>
         </Card>
