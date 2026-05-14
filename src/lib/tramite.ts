@@ -147,6 +147,7 @@ export interface Tramite {
     | 'examen-reprobado'
     | 'cita-agendada'
     | 'simulador-completado'
+    | 'simulador-reprobado'
     | 'finalizado'
   createdAt: string
   updatedAt: string

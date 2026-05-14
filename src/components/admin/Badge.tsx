@@ -37,6 +37,7 @@ export const statusVariant: Record<string, VariantProps<typeof badgeVariants>['v
   'examen-aprobado': 'primary',
   'cita-agendada': 'warning',
   'simulador-completado': 'success',
+  'simulador-reprobado': 'destructive',
   'finalizado': 'success',
 }
 
@@ -46,6 +47,7 @@ export const statusLabel: Record<string, string> = {
   'examen-aprobado': 'Examen Aprobado',
   'cita-agendada': 'Cita Agendada',
   'simulador-completado': 'Simulador Completado',
+  'simulador-reprobado': 'Simulador Reprobado',
   'finalizado': 'Finalizado',
 }
 

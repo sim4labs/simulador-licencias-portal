@@ -14,6 +14,7 @@ const STATUS_COLORS: Record<string, string> = {
   'examen-aprobado': 'bg-purple-500',
   'cita-agendada': 'bg-yellow-400',
   'simulador-completado': 'bg-green-500',
+  'simulador-reprobado': 'bg-red-500',
   'finalizado': 'bg-green-600',
 }
 

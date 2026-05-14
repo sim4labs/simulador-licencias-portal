@@ -36,6 +36,11 @@ export function ResultadosContent({ basePath = '' }: ResultadosContentProps) {
   const [isSearching, setIsSearching] = useState(false)
 
   const solicitudHref = basePath ? `${basePath}/solicitud` : '/solicitud'
+  // Reagendar requiere sesión del ciudadano dueño del trámite. En la página
+  // pública (basePath='') el link cae en el auth gate y redirige a login —
+  // mismo patrón que solicitudHref.
+  const agendarHref = (tramiteId: string) =>
+    basePath ? `${basePath}/agendar/${tramiteId}` : `/portal/agendar/${tramiteId}`
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -124,23 +129,27 @@ export function ResultadosContent({ basePath = '' }: ResultadosContentProps) {
                 <p className="text-xs text-gray-500">Estado</p>
                 <span
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
-                    searchResult.status === 'finalizado'
+                    searchResult.status === 'finalizado' || searchResult.status === 'simulador-completado'
                       ? 'bg-green-100 text-green-700'
-                      : searchResult.status === 'simulador-completado'
+                      : searchResult.status === 'simulador-reprobado'
                         ? 'bg-red-100 text-red-700'
                         : 'bg-amber-100 text-amber-700'
                   }`}
                 >
-                  {searchResult.status === 'finalizado' && <CheckCircle className="w-4 h-4" />}
-                  {searchResult.status === 'simulador-completado' && <XCircle className="w-4 h-4" />}
-                  {!['finalizado', 'simulador-completado'].includes(searchResult.status) && (
+                  {(searchResult.status === 'finalizado' || searchResult.status === 'simulador-completado') && (
+                    <CheckCircle className="w-4 h-4" />
+                  )}
+                  {searchResult.status === 'simulador-reprobado' && <XCircle className="w-4 h-4" />}
+                  {!['finalizado', 'simulador-completado', 'simulador-reprobado'].includes(searchResult.status) && (
                     <Clock className="w-4 h-4" />
                   )}
                   {searchResult.status === 'finalizado'
                     ? 'Aprobado'
                     : searchResult.status === 'simulador-completado'
-                      ? 'No Aprobado'
-                      : 'En proceso'}
+                      ? 'Práctico aprobado'
+                      : searchResult.status === 'simulador-reprobado'
+                        ? 'No Aprobado'
+                        : 'En proceso'}
                 </span>
               </div>
             </div>
@@ -347,10 +356,11 @@ export function ResultadosContent({ basePath = '' }: ResultadosContentProps) {
               ) : (
                 <div className="mt-6 p-4 bg-warning/10 rounded-lg">
                   <p className="text-sm text-warning-foreground font-medium mb-2">
-                    No te desanimes. Puedes volver a agendar una nueva cita para intentar de nuevo.
+                    No te desanimes. Puedes reagendar tu cita en el simulador para intentar de nuevo — no necesitas
+                    repetir el examen teórico.
                   </p>
                   <Button asChild size="sm">
-                    <Link href={solicitudHref}>Iniciar nuevo trámite</Link>
+                    <Link href={agendarHref(searchResult.id)}>Reagendar cita</Link>
                   </Button>
                 </div>
               )}

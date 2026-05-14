@@ -175,6 +175,9 @@ function mapTramiteToAppointmentStatus(
   tramite: Record<string, unknown>
 ): DeviceAppointment['status'] {
   const status = tramite.status as string
+  if (status === 'simulador-reprobado') {
+    return 'reprobado'
+  }
   if (status === 'simulador-completado') {
     return tramite.simulatorPassed ? 'aprobado' : 'reprobado'
   }

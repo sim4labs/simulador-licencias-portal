@@ -37,13 +37,25 @@ export function SolicitudForm({ licenseType }: { licenseType: LicenseTypeId }) {
     setSubmitError(null)
 
     // Evitar duplicación: si ya existe un trámite activo con este tipo, reutilizarlo.
+    // Se enruta al paso real del trámite (según currentStep) en vez de mandar
+    // siempre al examen — un trámite que ya pasó el teórico no debe caer en la
+    // pantalla de examen, que saltaría a "Aprobado" sin que el ciudadano lo presente.
     const { data: existingList } = await citizenApi.listarTramites()
     const existing = existingList?.find(
       (t) => t.licenseType === licenseType && t.status !== 'finalizado'
     )
     if (existing) {
       sessionStorage.setItem('currentTramiteId', existing.tramiteId)
-      router.push(`/portal/examen/${existing.tramiteId}`)
+      const step = existing.currentStep
+      const dest =
+        step >= 6
+          ? '/portal/resultados'
+          : step === 5
+            ? `/portal/confirmacion?id=${existing.tramiteId}`
+            : step === 4
+              ? `/portal/agendar/${existing.tramiteId}`
+              : `/portal/examen/${existing.tramiteId}`
+      router.push(dest)
       return
     }
 

@@ -44,6 +44,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
   'examen-reprobado': { label: 'Examen teórico reprobado', color: 'bg-red-50 text-red-700', icon: XCircle },
   'cita-agendada': { label: 'Cita agendada', color: 'bg-amber-50 text-amber-700', icon: CalendarDays },
   'simulador-completado': { label: 'Simulador completado', color: 'bg-purple-50 text-purple-700', icon: CheckCircle2 },
+  'simulador-reprobado': { label: 'Reprobaste el simulador — reagenda', color: 'bg-red-50 text-red-700', icon: XCircle },
   'finalizado': { label: 'Finalizado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
 }
 
@@ -164,8 +165,8 @@ export default function AdministrarCitasPage() {
                   </p>
                   <p className="text-xs font-mono text-gray-400 mb-4">{t.id}</p>
 
-                  {/* Cita info (si ya tiene) */}
-                  {hasCita && t.appointment && (
+                  {/* Cita info (si ya tiene y no es una cita ya consumida que reprobó) */}
+                  {hasCita && t.appointment && t.status !== 'simulador-reprobado' && (
                     <div className="bg-gray-50 rounded-xl p-3 mb-4 space-y-2">
                       <div className="flex items-center gap-2 text-xs text-gray-700">
                         <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
@@ -196,7 +197,11 @@ export default function AdministrarCitasPage() {
                       href={hasCita ? `/portal/confirmacion?id=${t.id}` : `/portal/agendar/${t.id}`}
                       className="inline-flex items-center gap-2 w-full justify-center px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all text-sm font-medium group"
                     >
-                      {hasCita ? 'Ver Cita' : 'Agendar Cita'}
+                      {t.status === 'simulador-reprobado'
+                        ? 'Reagendar Cita'
+                        : hasCita
+                          ? 'Ver Cita'
+                          : 'Agendar Cita'}
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                     </Link>
                   ) : missing ? (
