@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { FaceLivenessDetector } from '@aws-amplify/ui-react-liveness'
-import { kioskApi } from '@/lib/citizen-api'
+import { kioskApi, citizenApi } from '@/lib/citizen-api'
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import '@aws-amplify/ui-react/styles.css'
 
@@ -57,7 +57,16 @@ function VerificacionContent() {
 
   async function handleLivenessComplete() {
     setStep('completing')
-    const { data, error } = await kioskApi.completeVerify(sessionId)
+    // El ciudadano ya está autenticado en /portal — resolvemos SU trámite activo
+    // y lo vinculamos a la sesión del kiosko. Sin este vínculo el simulador
+    // recibe un tramiteId nulo y los resultados del examen nunca se registran.
+    const { data: tramite, error: tramiteError } = await citizenApi.getTramiteActivo()
+    if (tramiteError || !tramite) {
+      setErrorMsg('No encontramos un trámite activo en tu cuenta. Verifica que iniciaste sesión con la cuenta donde agendaste tu cita.')
+      setStep('error')
+      return
+    }
+    const { data, error } = await kioskApi.completeVerify(sessionId, tramite.tramiteId)
     if (!data || error) {
       setErrorMsg(error || 'Verificación fallida. Pide asistencia al operador.')
       setStep('error')
