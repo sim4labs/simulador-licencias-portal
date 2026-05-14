@@ -21,7 +21,7 @@ import type { Tramite } from '@/lib/tramite'
 function getContinueUrl(t: Tramite): string {
   // confirmacion/page.tsx lee el id de ?id= (query), no de un segmento [id].
   if (t.appointment) return `/portal/confirmacion?id=${t.id}`
-  if (t.examResult?.passed) return '/portal/agendar'
+  if (t.examResult?.passed) return `/portal/agendar/${t.id}`
   if (t.licenseType) return `/portal/examen/${t.id}`
   return '/portal/tipo-licencia'
 }
