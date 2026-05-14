@@ -139,11 +139,11 @@ export default function AdministrarCitasPage() {
             return (
               <div
                 key={t.id}
-                className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow ${
+                className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow flex flex-col ${
                   isElegible ? 'border-gray-200 hover:shadow-md' : 'border-gray-200 opacity-90'
                 }`}
               >
-                <div className="p-6">
+                <div className="p-6 flex-1">
                   {/* Header: ícono + badge */}
                   <div className="flex items-start justify-between mb-4">
                     <div className={`w-12 h-12 rounded-xl border flex items-center justify-center flex-shrink-0 ${
