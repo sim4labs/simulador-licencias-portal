@@ -264,7 +264,13 @@ export default function PortalPage() {
                     Siguiente: <span className="font-medium">{STEP_LABELS[tramite.currentStep]}</span>
                   </p>
                   <Link
-                    href={STEP_ROUTES[tramite.currentStep] || '/solicitud'}
+                    href={
+                      // Paso 5 (Simulador) -> confirmacion necesita ?id=; el
+                      // resto del STEP_ROUTES no lleva trámite específico.
+                      Number(tramite.currentStep) === 5
+                        ? `/portal/confirmacion?id=${tramite.id}`
+                        : STEP_ROUTES[tramite.currentStep] || '/solicitud'
+                    }
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-200 text-sm font-medium group shadow-sm"
                   >
                     Continuar
