@@ -154,7 +154,7 @@ function ConfirmacionContent() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Fecha</p>
-                <p className="font-medium">{formatDate(new Date(tramite.appointment!.date))}</p>
+                <p className="font-medium">{formatDate(tramite.appointment!.date)}</p>
               </div>
             </div>
             <div className="flex items-center">

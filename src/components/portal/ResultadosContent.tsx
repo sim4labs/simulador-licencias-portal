@@ -183,7 +183,7 @@ export function ResultadosContent({ basePath = '' }: ResultadosContentProps) {
                   <div>
                     <p className="text-xs text-gray-500">Cita</p>
                     <p className="font-medium text-sm">
-                      {formatDate(new Date(searchResult.appointment.date))} - {searchResult.appointment.time}
+                      {formatDate(searchResult.appointment.date)} - {searchResult.appointment.time}
                     </p>
                   </div>
                 </div>
@@ -380,7 +380,7 @@ export function ResultadosContent({ basePath = '' }: ResultadosContentProps) {
                     <h3 className="font-semibold text-primary-900 mb-1">Cita pendiente</h3>
                     <p className="text-sm text-primary-700">
                       Tu cita está programada para el{' '}
-                      <span className="font-medium">{formatDate(new Date(searchResult.appointment.date))}</span> a
+                      <span className="font-medium">{formatDate(searchResult.appointment.date)}</span> a
                       las <span className="font-medium">{searchResult.appointment.time}</span>. Los resultados del
                       simulador estarán disponibles después de realizar la prueba.
                     </p>

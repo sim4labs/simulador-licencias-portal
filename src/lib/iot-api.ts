@@ -1,4 +1,5 @@
 import { apiRequest } from './api'
+import { dateInTlaxcala } from './utils'
 
 // ─── Interfaces para dispositivos IoT ───
 
@@ -188,15 +189,17 @@ export async function getDeviceAppointments(
   _thingName: string,
   params?: { desde?: string; hasta?: string }
 ): Promise<DeviceAppointment[]> {
-  // Default range: 7 days back + 14 days forward
+  // Default range: 7 days back + 14 days forward, en TZ de Mexico para alinear
+  // con las fechas de cita guardadas en backend (toISOString().slice(0,10)
+  // devolvía el día siguiente en la tarde-noche de Tlaxcala).
   const now = new Date()
   const back = new Date(now)
   back.setDate(back.getDate() - 7)
   const forward = new Date(now)
   forward.setDate(forward.getDate() + 14)
 
-  const desde = params?.desde || back.toISOString().slice(0, 10)
-  const hasta = params?.hasta || forward.toISOString().slice(0, 10)
+  const desde = params?.desde || dateInTlaxcala(back)
+  const hasta = params?.hasta || dateInTlaxcala(forward)
 
   const { data, error } = await apiRequest<Record<string, unknown>[]>(
     `/admin/citas?desde=${desde}&hasta=${hasta}`,

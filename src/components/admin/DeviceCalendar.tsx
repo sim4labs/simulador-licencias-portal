@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from './Badge'
 import { Modal } from './Modal'
-import { cn } from '@/lib/utils'
+import { cn, dateInLocalTZ } from '@/lib/utils'
 import {
   getDeviceAppointments,
   type DeviceAppointment,
@@ -52,7 +52,11 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 function formatDateISO(d: Date) {
-  return d.toISOString().slice(0, 10)
+  // toISOString() devuelve UTC: en la tarde-noche de Tlaxcala (UTC-6)
+  // se corre al día siguiente. Usamos los componentes locales para que
+  // display (formatDateDisplay con toLocaleDateString) y filtro queden
+  // alineados sin importar la TZ del navegador del admin.
+  return dateInLocalTZ(d)
 }
 
 function formatDateDisplay(d: Date) {

@@ -10,6 +10,7 @@ import {
   useDeleteScheduleException,
 } from '@/lib/admin-queries'
 import type { ScheduleConfigItem, UpdateScheduleConfigBody } from '@/lib/adapters'
+import { dateInTlaxcala } from '@/lib/utils'
 
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
@@ -64,7 +65,9 @@ export default function ConfiguracionCalendarioPage() {
     setDrafts(next)
   }, [configQuery.data])
 
-  const today = new Date().toISOString().slice(0, 10)
+  // Hoy en TZ Mexico (no UTC) — el rango de excepciones de calendario
+  // se aplica sobre fechas de cita que viven en TZ de México.
+  const today = dateInTlaxcala()
 
   async function handleSaveDay(dayOfWeek: number) {
     const draft = drafts[dayOfWeek]
