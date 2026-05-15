@@ -95,14 +95,15 @@ const FAQ_ITEMS = [
   },
 ]
 
+// PDFs servidos desde public/leyes/ — el dominio congresotlaxcala.gob.mx no responde.
 const ENLACES_OFICIALES = [
   {
-    label: 'Reglamento de Tránsito de Tlaxcala',
-    url: 'https://www.congresotlaxcala.gob.mx/archivo/leyes/L063.pdf',
+    label: 'Reglamento de la Ley de Movilidad y Seguridad Vial (2025)',
+    url: '/leyes/reglamento-movilidad-tlaxcala-2025.pdf',
   },
   {
-    label: 'Ley de Movilidad y Seguridad Vial',
-    url: 'https://www.congresotlaxcala.gob.mx/archivo/leyes/',
+    label: 'Ley de Movilidad y Seguridad Vial del Estado de Tlaxcala (2024)',
+    url: '/leyes/ley-movilidad-tlaxcala-2024.pdf',
   },
   {
     label: 'Secretaría de Movilidad y Transporte',
