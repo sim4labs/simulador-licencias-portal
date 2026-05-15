@@ -8,7 +8,6 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  AlertCircle,
   Bike,
   Car,
   Bus,
@@ -19,6 +18,9 @@ import { adaptTramite } from '@/lib/adapters'
 import type { Tramite } from '@/lib/tramite'
 
 function getContinueUrl(t: Tramite): string {
+  // Reprobó el práctico: el siguiente paso es reagendar, no ver la cita ya consumida.
+  // Va al scheduler específico del trámite (mismo patrón que `examResult.passed`).
+  if (t.status === 'simulador-reprobado') return `/portal/agendar/${t.id}`
   // confirmacion/page.tsx lee el id de ?id= (query), no de un segmento [id].
   if (t.appointment) return `/portal/confirmacion?id=${t.id}`
   if (t.examResult?.passed) return `/portal/agendar/${t.id}`
@@ -123,7 +125,7 @@ export default function HistorialPage() {
                           {t.licenseType && (
                             <span className="capitalize">{t.licenseType}</span>
                           )}
-                          <span>Paso {t.currentStep} de 5</span>
+                          <span>Paso {Math.min(t.currentStep, 5)} de 5</span>
                           <span>
                             {new Date(t.updatedAt).toLocaleDateString('es-MX', {
                               day: 'numeric',
@@ -136,11 +138,24 @@ export default function HistorialPage() {
                           <div className="mt-2 flex items-center gap-2 text-xs">
                             {t.examResult.passed ? (
                               <span className="text-emerald-600 flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Examen: {t.examResult.score}%
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Teórico: {t.examResult.score}%
                               </span>
                             ) : (
                               <span className="text-red-600 flex items-center gap-1">
-                                <XCircle className="w-3.5 h-3.5" /> Examen: {t.examResult.score}%
+                                <XCircle className="w-3.5 h-3.5" /> Teórico: {t.examResult.score}%
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {t.simulatorResult && (
+                          <div className="mt-1 flex items-center gap-2 text-xs">
+                            {t.simulatorResult.passed ? (
+                              <span className="text-emerald-600 flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Simulador: {t.simulatorResult.score}/100
+                              </span>
+                            ) : (
+                              <span className="text-red-600 flex items-center gap-1">
+                                <XCircle className="w-3.5 h-3.5" /> Simulador: {t.simulatorResult.score}/100
                               </span>
                             )}
                           </div>

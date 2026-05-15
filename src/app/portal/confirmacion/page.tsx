@@ -29,10 +29,18 @@ function ConfirmacionContent() {
     async function load() {
       const { data } = await citizenApi.getTramite(tramiteId!)
       if (!data) return
-      setTramite(adaptTramite(data))
+      const t = adaptTramite(data)
+      // Esta página confirma una cita vigente. Si el trámite ya pasó del simulador
+      // (aprobado o reprobado) o aún no se agendó, mandamos al historial — desde
+      // ahí ve resultados o llega al flujo de reagendar. Defensa contra URLs viejos.
+      if (t.status !== 'cita-agendada') {
+        router.replace('/portal/historial')
+        return
+      }
+      setTramite(t)
     }
     load()
-  }, [tramiteId])
+  }, [tramiteId, router])
 
   const handleCancel = async () => {
     if (!tramite) return

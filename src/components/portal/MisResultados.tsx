@@ -442,10 +442,10 @@ export function MisResultados() {
 
   // Refetch cada 8s mientras haya algún trámite esperando resultado del simulador.
   // Sin esto, si el ciudadano abre `/portal/mis-tramites` antes o durante la prueba,
-  // no se entera del resultado hasta hacer F5.
-  const hasPending = tramites.some(
-    (t) => t.status === 'cita-agendada' || t.currentStep < 6,
-  )
+  // no se entera del resultado hasta hacer F5. `cita-agendada` es el único estado
+  // con una transición asíncrona pendiente (el simulador publica el resultado); los
+  // demás —incluido `simulador-reprobado`— esperan acción del ciudadano, no del backend.
+  const hasPending = tramites.some((t) => t.status === 'cita-agendada')
 
   useEffect(() => {
     let cancelled = false

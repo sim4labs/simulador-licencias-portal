@@ -147,7 +147,10 @@ export default function PortalPage() {
   const selectedLicencia = primaryTramite?.licenseType
     ? licencias.find(l => l.licenseId === primaryTramite.licenseType) ?? null
     : null
-  const tramitesConCita = activeTramites.filter((t) => t.appointment)
+  // Solo consideramos "Cita Próxima" la que está realmente vigente. Un trámite
+  // `simulador-reprobado` conserva el `appointment` de la cita ya consumida — no
+  // debe aparecer aquí (el ciudadano debe reagendar, no presentarse).
+  const tramitesConCita = activeTramites.filter((t) => t.status === 'cita-agendada')
 
   const firstName = citizenName.split(' ')[0]
 
