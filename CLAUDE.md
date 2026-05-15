@@ -204,6 +204,21 @@ Rutas públicas y formularios del flujo ciudadano son **server components** con 
 - Estado transitorio UI entre páginas (p.ej. tipo de licencia seleccionado): **URL query params**, no `sessionStorage` (ver Estrategia de renderizado).
 - `sessionStorage.currentTramiteId` es el único uso de session storage activo (puente post-solicitud → examen); migrable a query param si se necesita SSR en `/portal/examen`.
 
+### Ciclo de vida del trámite y reutilización en `SolicitudForm`
+
+Status union de `Tramite` (en `src/lib/tramite.ts`, **mantener sincronizado con backend**): `iniciado | tipo-seleccionado | examen-aprobado | examen-reprobado | cita-agendada | simulador-completado | simulador-reprobado | finalizado`. Para entender qué escribe cada estado ver `portal-backend/CLAUDE.md` "Ciclo de vida del trámite".
+
+**Reutilización (dedup):** `SolicitudForm.handleConfirm` busca un trámite previo del mismo `licenseType` con `status !== 'finalizado'`. Si existe, **enruta según `currentStep`**, no siempre al examen:
+
+- `currentStep ≤ 3` → `/portal/examen/{id}`
+- `currentStep === 4` → `/portal/agendar/{id}` (cubre `examen-aprobado` y `simulador-reprobado`)
+- `currentStep === 5` → `/portal/confirmacion?id={id}` (`cita-agendada`)
+- `currentStep === 6` → `/portal/resultados` (`simulador-completado` aprobado)
+
+Mandar siempre al examen (comportamiento original) producía un bug: `examen/[tramiteId]/page.tsx` salta a results si `examResult?.passed`, así que un trámite con teórico ya aprobado caía en "Aprobado 95%" sin que el ciudadano lo presentara.
+
+**Surfaces que mapean status → label/color** (todas requieren entrada al agregar un status nuevo): `STATUS_CONFIG` en `agendar/page.tsx`, `historial/page.tsx`, `examen/page.tsx`, `MisResultados.tsx`; `statusVariant` + `statusLabel` en `admin/Badge.tsx`; `STATUS_COLORS` en `admin/page.tsx`. Vista pública `ResultadosContent.tsx` tiene su propio pill inline.
+
 ### Pool de Preguntas
 Ubicado en `src/lib/examQuestions.ts`:
 - ~75 preguntas totales divididas en categorías
