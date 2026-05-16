@@ -25,8 +25,8 @@ const ORIGIN_OPTIONS: Array<{ value: BugOrigin | 'all'; label: string }> = [
 const STATUS_OPTIONS: Array<{ value: BugStatus | 'all'; label: string }> = [
   { value: 'all', label: 'Cualquier estado' },
   { value: 'open', label: 'Abierto' },
-  { value: 'awaiting-verification', label: 'Esperando verificación' },
-  { value: 'verified', label: 'Verificado' },
+  { value: 'awaiting-verification', label: 'Verificar' },
+  { value: 'verified', label: 'Cerrado' },
 ]
 
 function formatRelative(iso: string) {

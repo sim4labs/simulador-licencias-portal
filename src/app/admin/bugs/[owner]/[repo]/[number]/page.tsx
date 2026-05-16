@@ -150,7 +150,7 @@ export default function BugDetailPage() {
               Abrir en GitHub <ExternalLink className="h-3 w-3" />
             </a>
             {data.state === 'open' && (
-              <Button size="sm" variant="success" onClick={() => setShowVerify(true)}>
+              <Button size="sm" variant="secondary" onClick={() => setShowVerify(true)}>
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 Verificar y cerrar
               </Button>
@@ -243,7 +243,7 @@ export default function BugDetailPage() {
             />
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowVerify(false)} disabled={verifyBug.isPending}>Cancelar</Button>
-              <Button variant="success" onClick={handleVerify} isLoading={verifyBug.isPending}>
+              <Button variant="secondary" onClick={handleVerify} isLoading={verifyBug.isPending}>
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 Cerrar como verificado
               </Button>

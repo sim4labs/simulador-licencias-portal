@@ -5,8 +5,8 @@ import type { BugStatus, BugOrigin } from '@/lib/bugs-api'
 
 const STATUS_LABEL: Record<BugStatus, string> = {
   'open': 'Abierto',
-  'awaiting-verification': 'Esperando verificación',
-  'verified': 'Verificado',
+  'awaiting-verification': 'Verificar',
+  'verified': 'Cerrado',
 }
 
 export function BugStatusPill({ status }: { status: BugStatus }) {
