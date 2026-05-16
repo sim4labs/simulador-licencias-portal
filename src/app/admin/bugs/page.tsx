@@ -50,9 +50,11 @@ export default function BugsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const { data, isLoading, error, refetch } = useBugsList(state)
+  const bugs = data?.bugs ?? []
+  const failures = data?.failures ?? []
 
   const filtered = useMemo<BugListItem[]>(() => {
-    let items = data ?? []
+    let items = bugs
     if (originFilter !== 'all') items = items.filter((i) => i.origin === originFilter)
     if (statusFilter !== 'all') items = items.filter((i) => i.status === statusFilter)
     if (search.trim()) {
@@ -60,7 +62,7 @@ export default function BugsPage() {
       items = items.filter((i) => i.title.toLowerCase().includes(q) || String(i.number).includes(q))
     }
     return items
-  }, [data, originFilter, statusFilter, search])
+  }, [bugs, originFilter, statusFilter, search])
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -128,9 +130,22 @@ export default function BugsPage() {
         </div>
       )}
 
+      {failures.length > 0 && (
+        <div className="rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 mb-3">
+          <p className="font-medium">Algunos repos no respondieron — listado parcial:</p>
+          <ul className="mt-1 list-disc list-inside text-xs">
+            {failures.map((f) => (
+              <li key={f.repo}>
+                <code className="font-mono">{f.repo}</code> {f.status ? `(${f.status})` : ''} — {f.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {!isLoading && !error && filtered.length === 0 && (
         <div className="text-sm text-gray-500 py-12 text-center">
-          {(data?.length ?? 0) === 0 ? 'No hay bugs reportados todavía.' : 'Ningún bug coincide con los filtros.'}
+          {bugs.length === 0 ? 'No hay bugs reportados todavía.' : 'Ningún bug coincide con los filtros.'}
         </div>
       )}
 

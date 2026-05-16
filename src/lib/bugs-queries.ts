@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { bugsApi, type BugListItem, type BugDetail, type BugOrigin } from './bugs-api'
+import { bugsApi, type BugListItem, type BugListFailure, type BugDetail, type BugOrigin } from './bugs-api'
 import type { ApiResponse } from './api'
 
 export const bugsKeys = {
@@ -17,9 +17,9 @@ function unwrap<T>(res: ApiResponse<T>): T {
 export function useBugsList(state: 'open' | 'closed' | 'all' = 'all') {
   return useQuery({
     queryKey: bugsKeys.list(state),
-    queryFn: async (): Promise<BugListItem[]> => {
+    queryFn: async (): Promise<{ bugs: BugListItem[]; failures: BugListFailure[] }> => {
       const res = unwrap(await bugsApi.list(state))
-      return res.bugs
+      return { bugs: res.bugs, failures: res.failures ?? [] }
     },
     staleTime: 30_000,
   })

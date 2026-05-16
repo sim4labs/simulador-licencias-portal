@@ -75,9 +75,18 @@ export interface UploadUrlResponse {
   expiresIn: number
 }
 
+export interface BugListFailure {
+  repo: string
+  status?: number
+  message: string
+}
+
 export const bugsApi = {
   list(state: 'open' | 'closed' | 'all' = 'all') {
-    return apiRequest<{ bugs: BugListItem[] }>(`/admin/bugs?state=${state}`, { pool: 'admin' })
+    return apiRequest<{ bugs: BugListItem[]; failures?: BugListFailure[] }>(
+      `/admin/bugs?state=${state}`,
+      { pool: 'admin' },
+    )
   },
 
   detail(owner: string, repo: string, number: number) {
