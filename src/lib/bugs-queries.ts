@@ -60,6 +60,18 @@ export function useAddBugComment(owner: string, repo: string, number: number) {
   })
 }
 
+export function useMarkBugForVerification(owner: string, repo: string, number: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (note?: string) =>
+      unwrap(await bugsApi.markForVerification(owner, repo, number, note)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: bugsKeys.detail(owner, repo, number) })
+      qc.invalidateQueries({ queryKey: ['bugs', 'list'] })
+    },
+  })
+}
+
 export function useVerifyBug(owner: string, repo: string, number: number) {
   const qc = useQueryClient()
   return useMutation({

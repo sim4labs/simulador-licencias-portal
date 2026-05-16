@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ExternalLink, CheckCircle2, MessageSquare, Tag as TagIcon, GitMerge, RefreshCw } from 'lucide-react'
-import { useBugDetail, useAddBugComment, useVerifyBug } from '@/lib/bugs-queries'
+import { ArrowLeft, ExternalLink, CheckCircle2, MessageSquare, Tag as TagIcon, GitMerge, RefreshCw, ClipboardCheck } from 'lucide-react'
+import { useBugDetail, useAddBugComment, useVerifyBug, useMarkBugForVerification } from '@/lib/bugs-queries'
 import { BugStatusPill, BugOriginPill } from '@/components/admin/BugStatusPill'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/admin/Textarea'
@@ -66,10 +66,14 @@ export default function BugDetailPage() {
   const number = Number(params.number)
   const { data, isLoading, error, refetch, isRefetching } = useBugDetail(owner, repo, number)
   const addComment = useAddBugComment(owner, repo, number)
+  const markForVerification = useMarkBugForVerification(owner, repo, number)
   const verifyBug = useVerifyBug(owner, repo, number)
   const [comment, setComment] = useState('')
+  const [markNote, setMarkNote] = useState('')
+  const [showMark, setShowMark] = useState(false)
   const [verifyNote, setVerifyNote] = useState('')
   const [showVerify, setShowVerify] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   if (isLoading) {
     return <div className="p-6 text-sm text-gray-500">Cargando…</div>
@@ -104,13 +108,25 @@ export default function BugDetailPage() {
     }
   }
 
+  const handleMarkForVerification = async () => {
+    setActionError(null)
+    try {
+      await markForVerification.mutateAsync(markNote.trim() || undefined)
+      setMarkNote('')
+      setShowMark(false)
+    } catch (err: any) {
+      setActionError(err?.message ?? 'No se pudo marcar para verificar')
+    }
+  }
+
   const handleVerify = async () => {
+    setActionError(null)
     try {
       await verifyBug.mutateAsync(verifyNote.trim() || undefined)
       setVerifyNote('')
       setShowVerify(false)
-    } catch (err) {
-      console.error(err)
+    } catch (err: any) {
+      setActionError(err?.message ?? 'No se pudo cerrar el bug')
     }
   }
 
@@ -149,11 +165,20 @@ export default function BugDetailPage() {
             >
               Abrir en GitHub <ExternalLink className="h-3 w-3" />
             </a>
-            {data.state === 'open' && (
+            {data.status === 'open' && (
+              <Button size="sm" variant="secondary" onClick={() => setShowMark(true)}>
+                <ClipboardCheck className="h-4 w-4 mr-1" />
+                Marcar para verificar
+              </Button>
+            )}
+            {data.status === 'awaiting-verification' && (
               <Button size="sm" variant="secondary" onClick={() => setShowVerify(true)}>
                 <CheckCircle2 className="h-4 w-4 mr-1" />
-                Verificar y cerrar
+                Cerrar como verificado
               </Button>
+            )}
+            {actionError && (
+              <p className="text-xs text-red-600 max-w-xs text-right">{actionError}</p>
             )}
           </div>
         </div>
@@ -230,11 +255,33 @@ export default function BugDetailPage() {
         </div>
       )}
 
+      {showMark && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={(e) => { if (e.target === e.currentTarget) setShowMark(false) }}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 className="text-lg font-semibold mb-2">Marcar para verificar</h3>
+            <p className="text-sm text-gray-600 mb-4">El bug pasa a estado <span className="font-medium">Verificar</span>. Después alguien con acceso valida y lo cierra.</p>
+            <Textarea
+              placeholder="Notas del trabajo realizado (opcional)"
+              rows={3}
+              value={markNote}
+              onChange={(e) => setMarkNote(e.target.value)}
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowMark(false)} disabled={markForVerification.isPending}>Cancelar</Button>
+              <Button variant="secondary" onClick={handleMarkForVerification} isLoading={markForVerification.isPending}>
+                <ClipboardCheck className="h-4 w-4 mr-1" />
+                Marcar para verificar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showVerify && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={(e) => { if (e.target === e.currentTarget) setShowVerify(false) }}>
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
-            <h3 className="text-lg font-semibold mb-2">Verificar y cerrar bug</h3>
-            <p className="text-sm text-gray-600 mb-4">El issue queda cerrado como verificado. Opcionalmente dejá un comentario explicando qué validaste.</p>
+            <h3 className="text-lg font-semibold mb-2">Cerrar como verificado</h3>
+            <p className="text-sm text-gray-600 mb-4">El issue queda cerrado. Opcionalmente dejá un comentario explicando qué validaste.</p>
             <Textarea
               placeholder="Notas de verificación (opcional)"
               rows={3}

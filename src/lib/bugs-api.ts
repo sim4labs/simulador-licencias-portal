@@ -104,6 +104,13 @@ export const bugsApi = {
     )
   },
 
+  markForVerification(owner: string, repo: string, number: number, note?: string) {
+    return apiRequest<{ owner: string; repo: string; number: number; state: string; status: BugStatus }>(
+      `/admin/bugs/${owner}/${repo}/${number}/mark-for-verification`,
+      { method: 'POST', body: note ? { note } : {}, pool: 'admin' },
+    )
+  },
+
   verify(owner: string, repo: string, number: number, note?: string) {
     return apiRequest<{ owner: string; repo: string; number: number; state: string; status: BugStatus; closedAt: string }>(
       `/admin/bugs/${owner}/${repo}/${number}/verify`,
