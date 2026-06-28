@@ -201,6 +201,7 @@ export interface QuestionResponse {
 // Licencia shape from DynamoDB
 export interface LicenciaResponse {
   licenseId: string
+  letter?: string
   name: string
   icon: string
   description: string
@@ -210,6 +211,21 @@ export interface LicenciaResponse {
   questionCount?: number
   generalQuestionCount?: number
   updatedAt?: string
+}
+
+// La descripción oficial guarda el token `{vigencia}`; se sustituye por el valor
+// configurable del campo `vigencia` al renderizar. Si no hay vigencia, se elide
+// la frase para no dejar un placeholder visible.
+export function renderLicenciaDescription(lic: Pick<LicenciaResponse, 'description' | 'vigencia'>): string {
+  const desc = lic.description ?? ''
+  if (lic.vigencia && lic.vigencia.trim()) {
+    return desc.replace(/\{vigencia\}/g, lic.vigencia.trim())
+  }
+  // Sin vigencia: quita la frase "Cuenta con una vigencia de {vigencia} y "
+  // dejando el resto de la oración legible.
+  return desc
+    .replace(/Cuenta con una vigencia de \{vigencia\} y /g, '')
+    .replace(/\{vigencia\}/g, '')
 }
 
 // Disponibilidad shape

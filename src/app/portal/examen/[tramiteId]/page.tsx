@@ -28,14 +28,14 @@ import {
   ExternalLink,
 } from 'lucide-react'
 
-const LICENSE_TYPE_INFO: Record<string, { name: string; icon: typeof Bike }> = {
-  '1': { name: 'Servicio Público', icon: Bus },
-  '2': { name: 'Chofer Particular', icon: Car },
-  '3': { name: 'Automovilista', icon: Car },
-  '4': { name: 'Motociclista', icon: Bike },
-  '6': { name: 'Servicio de Carga', icon: Truck },
-  '9': { name: 'Permiso para Menores', icon: Car },
-  '18': { name: 'Emergencias', icon: Car },
+const LICENSE_TYPE_INFO: Record<string, { name: string; letter?: string; icon: typeof Bike }> = {
+  '1': { name: 'Transporte de Personas', letter: 'A', icon: Bus },
+  '2': { name: 'Chofer Particular', letter: 'B', icon: Car },
+  '3': { name: 'Automovilista', letter: 'C', icon: Car },
+  '4': { name: 'Motociclista', letter: 'D', icon: Bike },
+  '6': { name: 'Mercantil', letter: 'F', icon: Truck },
+  '9': { name: 'Permiso de Menor', letter: 'P', icon: Car },
+  '18': { name: 'Emergencia', letter: 'E', icon: Car },
   // Legacy IDs previos al catálogo oficial.
   motocicleta: { name: 'Motocicleta', icon: Bike },
   particular: { name: 'Vehículo Particular', icon: Car },
@@ -254,7 +254,7 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
                   {typeInfo && <typeInfo.icon className="w-8 h-8 text-primary-600" />}
                 </div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  Examen para Licencia de {typeInfo?.name}
+                  Examen para Licencia {typeInfo?.letter ? `Tipo ${typeInfo.letter} – ` : 'de '}{typeInfo?.name}
                 </h1>
               </div>
 

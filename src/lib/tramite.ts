@@ -2,13 +2,26 @@ export const LICENSE_TYPE_IDS = ['1', '2', '3', '4', '6', '9', '18'] as const
 export type LicenseTypeId = typeof LICENSE_TYPE_IDS[number]
 
 export const LICENSE_TYPE_NAMES: Record<LicenseTypeId, string> = {
-  '1': 'Servicio Público',
+  '1': 'Transporte de Personas',
   '2': 'Chofer Particular',
   '3': 'Automovilista',
   '4': 'Motociclista',
-  '6': 'Servicio de Carga',
-  '9': 'Permiso para Menores de Edad',
-  '18': 'Emergencias',
+  '6': 'Mercantil',
+  '9': 'Permiso de Menor',
+  '18': 'Emergencia',
+}
+
+// Letra oficial del tipo de licencia (documento "Descripción licencias APP",
+// Gobierno del Estado de Tlaxcala). El ID numérico interno lo dicta el sistema
+// externo de cobros; la letra es lo que ve el ciudadano.
+export const LICENSE_TYPE_LETTERS: Record<LicenseTypeId, string> = {
+  '1': 'A',
+  '2': 'B',
+  '3': 'C',
+  '4': 'D',
+  '6': 'F',
+  '9': 'P',
+  '18': 'E',
 }
 
 export const TIPOS_SANGRE = ['S/I', 'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'] as const

@@ -25,9 +25,9 @@ const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie']
 const VEHICLE_TO_LICENSE: Record<VehicleType, string> = {
   motorcycle: '4',         // Motociclista
   car: '3',                // Automovilista
-  passenger_bus: '1',      // Servicio Público
-  cargo_truck: '6',        // Servicio de Carga
-  emergency_vehicle: '18', // Emergencias
+  passenger_bus: '1',      // Tipo A — Transporte de Personas
+  cargo_truck: '6',        // Tipo F — Mercantil
+  emergency_vehicle: '18', // Tipo E — Emergencia
 }
 
 const STATUS_BG: Record<string, string> = {
