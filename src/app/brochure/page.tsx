@@ -191,7 +191,7 @@ export default function BrochurePage() {
                       Realiza el examen de conocimientos sobre leyes de tránsito.
                     </p>
                     <div className="flex gap-2">
-                      <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">20 preguntas</span>
+                      <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">30 preguntas</span>
                       <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">30 minutos</span>
                       <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">80% para aprobar</span>
                     </div>

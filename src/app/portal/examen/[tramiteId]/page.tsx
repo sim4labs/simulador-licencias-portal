@@ -44,7 +44,7 @@ const LICENSE_TYPE_INFO: Record<string, { name: string; icon: typeof Bike }> = {
 }
 
 const EXAM_CONFIG = {
-  questionsCount: 20,
+  questionsCount: 30,
   timeLimit: 30 * 60,
   passingScore: 80,
 }
@@ -166,9 +166,27 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
   const submitExam = async () => {
     if (!tramite || submitting) return
     setSubmitting(true)
-    const { data: result } = await citizenApi.enviarExamen(tramite.id, answers)
+    // Enviar una respuesta por CADA pregunta emitida (no solo las contestadas):
+    // las no contestadas van con selectedAnswer = -1 para que el grading server-side
+    // las cuente como incorrectas sobre el total del examen.
+    const fullAnswers = questions.map((q) => {
+      const a = answers.find((x) => x.questionId === q.questionId)
+      return { questionId: q.questionId, selectedAnswer: a ? a.selectedAnswer : -1 }
+    })
+    const { data: result } = await citizenApi.enviarExamen(tramite.id, fullAnswers)
     setSubmitting(false)
     if (result) {
+      // El examen se cargó sin correctAnswer/explanation; los rellenamos desde
+      // los `details` de la respuesta para la pantalla de revisión.
+      if (result.details) {
+        const byId = new Map(result.details.map((d) => [d.questionId, d]))
+        setQuestions((prev) =>
+          prev.map((q) => {
+            const d = byId.get(q.questionId)
+            return d ? { ...q, correctAnswer: d.correctAnswer, explanation: d.explanation } : q
+          }),
+        )
+      }
       setExamResult(result)
       setStep('results')
     }
@@ -274,7 +292,7 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
                         Necesitas <strong>{EXAM_CONFIG.passingScore}% de aciertos</strong> para aprobar.
                       </li>
                       <li>
-                        Las preguntas incluyen temas generales y específicos para {typeInfo?.name.toLowerCase()}.
+                        Las preguntas evalúan seguridad vial y normativa específica para {typeInfo?.name.toLowerCase()}.
                       </li>
                       <li>Puedes navegar entre preguntas y cambiar tus respuestas antes de finalizar.</li>
                       <li>
@@ -561,7 +579,7 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
                         <p className={isCorrect ? 'text-green-700' : 'text-red-700'}>
                           <strong>Tu respuesta:</strong> {answer ? q.options[answer.selectedAnswer] : 'Sin respuesta'}
                         </p>
-                        {!isCorrect && (
+                        {!isCorrect && q.correctAnswer !== undefined && (
                           <p className="text-green-700">
                             <strong>Respuesta correcta:</strong> {q.options[q.correctAnswer]}
                           </p>

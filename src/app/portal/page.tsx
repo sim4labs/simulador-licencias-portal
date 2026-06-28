@@ -91,7 +91,7 @@ const FAQ_ITEMS = [
   },
   {
     q: '¿Cuál es la calificación mínima para aprobar?',
-    a: 'Para el examen teórico necesitas un mínimo de 80% de aciertos (16 de 20 preguntas). Para la prueba en el simulador, la calificación mínima aprobatoria es de 70 puntos sobre 100.',
+    a: 'Para el examen teórico necesitas un mínimo de 80% de aciertos (24 de 30 preguntas). Para la prueba en el simulador, la calificación mínima aprobatoria es de 70 puntos sobre 100.',
   },
 ]
 
@@ -470,10 +470,10 @@ export default function PortalPage() {
               <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
                 <h4 className="text-sm font-semibold text-purple-900 mb-2">Tips de Estudio</h4>
                 <ul className="space-y-1.5 text-xs text-purple-800">
-                  <li>El examen tiene 20 preguntas de opción múltiple</li>
+                  <li>El examen tiene 30 preguntas de opción múltiple</li>
                   <li>Tienes 30 minutos para completarlo</li>
-                  <li>Necesitas mínimo 80% para aprobar (16/20)</li>
-                  <li>60% preguntas generales + 40% de tu tipo de licencia</li>
+                  <li>Necesitas mínimo 80% para aprobar (24/30)</li>
+                  <li>Preguntas oficiales específicas de tu tipo de licencia</li>
                   <li>Puedes practicar desde &quot;Examen Teórico&quot;</li>
                   <li>Revisa el reglamento de tránsito antes de presentar</li>
                 </ul>

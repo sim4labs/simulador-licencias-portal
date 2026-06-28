@@ -190,7 +190,10 @@ export interface QuestionResponse {
   questionId: string
   question: string
   options: string[]
-  correctAnswer: number
+  // El examen NO incluye correctAnswer/explanation al cargar (no se filtran al
+  // cliente); se rellenan tras enviar el examen con los `details` de la respuesta
+  // para la pantalla de revisión.
+  correctAnswer?: number
   explanation?: string
   category: string
   difficulty: string
@@ -287,12 +290,21 @@ export interface MetricsResponse {
 }
 
 // Exam submission result
+export interface ExamAnswerDetail {
+  questionId: string
+  selectedAnswer: number
+  correctAnswer: number
+  explanation: string
+  isCorrect: boolean
+}
+
 export interface ExamSubmitResponse {
   totalQuestions: number
   correctAnswers: number
   incorrectAnswers: number
   score: number
   passed: boolean
+  details?: ExamAnswerDetail[]
 }
 
 // Appointment creation result
