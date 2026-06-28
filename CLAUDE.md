@@ -39,8 +39,8 @@ src/
 public/
 ├── Flower-logo.svg        # Logo flor Tlaxcala
 ├── Flower-pattern.png     # Patrón decorativo
-├── Tlaxcala-logo.svg      # Logo gobierno
-└── Segob-logo.svg         # Logo SEGOB
+├── Tlaxcala-logo.svg      # Logo gobierno (nueva cromática vino/dorado)
+└── SMyT-logo.svg          # Logo Secretaría de Movilidad y Transporte
 ```
 
 ## Funcionalidades
