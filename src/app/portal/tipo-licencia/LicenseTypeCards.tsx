@@ -11,17 +11,18 @@ type LucideIcon = typeof Bike
 
 const LICENSE_TYPES: Array<{
   id: LicenseTypeId
+  letter: string
   name: string
   icon: LucideIcon
   description: string
 }> = [
-  { id: '3', name: 'Automovilista', icon: Car, description: 'Automóviles y camionetas particulares' },
-  { id: '4', name: 'Motociclista', icon: Bike, description: 'Motocicletas y motonetas' },
-  { id: '2', name: 'Chofer Particular', icon: UserCog, description: 'Chofer privado de vehículo particular' },
-  { id: '1', name: 'Servicio Público', icon: Bus, description: 'Transporte público de pasajeros' },
-  { id: '6', name: 'Servicio de Carga', icon: Truck, description: 'Tractocamiones y carga pesada' },
-  { id: '9', name: 'Permiso para Menores', icon: UserPlus, description: 'Conductores entre 15 y 17 años' },
-  { id: '18', name: 'Emergencias', icon: Ambulance, description: 'Vehículos de emergencia' },
+  { id: '3', letter: 'C', name: 'Automovilista', icon: Car, description: 'Automóviles y camionetas van, uso particular' },
+  { id: '4', letter: 'D', name: 'Motociclista', icon: Bike, description: 'Motocicletas, motonetas, trimotos y cuatrimotos' },
+  { id: '2', letter: 'B', name: 'Chofer Particular', icon: UserCog, description: 'Vehículos de hasta 3.5 toneladas, uso particular' },
+  { id: '1', letter: 'A', name: 'Transporte de Personas', icon: Bus, description: 'Transporte público en sus diferentes modalidades' },
+  { id: '6', letter: 'F', name: 'Mercantil', icon: Truck, description: 'Carga y vehículos mercantiles hasta 12 toneladas' },
+  { id: '9', letter: 'P', name: 'Permiso de Menor', icon: UserPlus, description: 'Menores de edad, vehículos particulares' },
+  { id: '18', letter: 'E', name: 'Emergencia', icon: Ambulance, description: 'Vehículos de emergencia (patrullas, ambulancias)' },
 ]
 
 export function LicenseTypeCards() {
@@ -50,6 +51,9 @@ export function LicenseTypeCards() {
                     <Icon className="w-7 h-7 text-primary-600" />
                   </div>
                   <div>
+                    <span className="inline-block text-xs font-semibold text-primary-600 uppercase tracking-wide">
+                      Tipo {type.letter}
+                    </span>
                     <h3 className="text-lg font-semibold text-gray-900">{type.name}</h3>
                     <p className="text-sm text-gray-500">{type.description}</p>
                   </div>

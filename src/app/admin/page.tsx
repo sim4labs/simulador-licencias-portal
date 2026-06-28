@@ -20,13 +20,13 @@ const STATUS_COLORS: Record<string, string> = {
 
 // Claves = IDs oficiales del catálogo de licencias (ver tramite.ts).
 const LICENSE_COLORS: Record<string, string> = {
-  '1': 'bg-yellow-400',   // Servicio Público
-  '2': 'bg-indigo-400',   // Chofer Particular
-  '3': 'bg-purple-500',   // Automovilista
-  '4': 'bg-blue-400',     // Motociclista
-  '6': 'bg-red-400',      // Servicio de Carga
-  '9': 'bg-pink-400',     // Permiso Menores
-  '18': 'bg-rose-500',    // Emergencias
+  '1': 'bg-yellow-400',   // Tipo A — Transporte de Personas
+  '2': 'bg-indigo-400',   // Tipo B — Chofer Particular
+  '3': 'bg-purple-500',   // Tipo C — Automovilista
+  '4': 'bg-blue-400',     // Tipo D — Motociclista
+  '6': 'bg-red-400',      // Tipo F — Mercantil
+  '9': 'bg-pink-400',     // Tipo P — Permiso de Menor
+  '18': 'bg-rose-500',    // Tipo E — Emergencia
 }
 
 const EMPTY_STATS: DashboardStatsResponse = {

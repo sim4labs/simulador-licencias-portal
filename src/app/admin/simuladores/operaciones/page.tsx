@@ -22,14 +22,14 @@ import { Button } from '@/components/ui/Button'
 
 const LICENSE_TYPE_LABELS: Record<string, string> = {
   particular: 'Automovilista',
-  publico: 'Servicio Público',
+  publico: 'Transporte de Personas',
   motocicleta: 'Motociclista',
-  carga: 'Servicio de Carga',
+  carga: 'Mercantil',
   // Fallbacks por si llega el id numérico del trámite
-  '1': 'Servicio Público',
+  '1': 'Transporte de Personas',
   '3': 'Automovilista',
   '4': 'Motociclista',
-  '6': 'Servicio de Carga',
+  '6': 'Mercantil',
 }
 
 const LICENSE_TYPE_COLORS: Record<string, string> = {

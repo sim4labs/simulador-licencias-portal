@@ -1213,13 +1213,13 @@ export function getQuestionsByLicenseType(licenseType: string, count: number = 2
 
   // Mapeo de ID oficial de licencia (sistema de cobros) → categoría de preguntas.
   const CATEGORY_BY_LICENSE_ID: Record<string, string> = {
-    '1': 'publico',       // Servicio Público
-    '2': 'particular',    // Chofer Particular
-    '3': 'particular',    // Automovilista
-    '4': 'motocicleta',   // Motociclista
-    '6': 'carga',         // Servicio de Carga
-    '9': 'particular',    // Permiso para Menores
-    '18': 'particular',   // Emergencias
+    '1': 'publico',       // Tipo A — Transporte de Personas
+    '2': 'particular',    // Tipo B — Chofer Particular
+    '3': 'particular',    // Tipo C — Automovilista
+    '4': 'motocicleta',   // Tipo D — Motociclista
+    '6': 'carga',         // Tipo F — Mercantil
+    '9': 'particular',    // Tipo P — Permiso de Menor
+    '18': 'particular',   // Tipo E — Emergencia
   }
 
   // Agregar preguntas específicas según el tipo

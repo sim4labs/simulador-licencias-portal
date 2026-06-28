@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/lib/admin-api'
 import { adminKeys, useAdminLicencias } from '@/lib/admin-queries'
-import type { LicenciaResponse } from '@/lib/adapters'
+import { renderLicenciaDescription, type LicenciaResponse } from '@/lib/adapters'
 import { formatMXN } from '@/lib/utils'
 import { Modal } from '@/components/admin/Modal'
 import { Button } from '@/components/ui/Button'
@@ -88,7 +88,10 @@ export default function LicenciasPage() {
                       <LicenseIcon name={lt.icon} size={24} />
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-900">{lt.name}</h2>
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        {lt.letter ? <span className="text-primary">Tipo {lt.letter}</span> : null}
+                        {lt.letter ? ' – ' : ''}{lt.name}
+                      </h2>
                       <div className="mt-1 flex flex-wrap gap-1.5">
                         <Badge variant="primary">{questionCount} preguntas</Badge>
                         {typeof lt.costo === 'number' && lt.costo > 0 && (
@@ -108,7 +111,7 @@ export default function LicenciasPage() {
                   </button>
                 </div>
 
-                <p className="text-sm text-gray-600 mt-3">{lt.description}</p>
+                <p className="text-sm text-gray-600 mt-3">{renderLicenciaDescription(lt)}</p>
 
                 <div className="border-t border-gray-100 mt-4 pt-4">
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Requisitos</h3>
@@ -168,12 +171,18 @@ export default function LicenciasPage() {
             {saveError && (
               <p className="text-sm text-destructive">{saveError}</p>
             )}
-            <Textarea
-              label="Descripcion"
-              value={editDescription}
-              onChange={e => setEditDescription(e.target.value)}
-              rows={3}
-            />
+            <div>
+              <Textarea
+                label="Descripcion"
+                value={editDescription}
+                onChange={e => setEditDescription(e.target.value)}
+                rows={4}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Usa <code className="font-mono">{'{vigencia}'}</code> donde deba aparecer la vigencia; se sustituye
+                automáticamente por el valor del campo Vigencia.
+              </p>
+            </div>
             <Textarea
               label="Requisitos (uno por linea)"
               value={editRequirements}

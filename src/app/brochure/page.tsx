@@ -39,8 +39,8 @@ export default function BrochurePage() {
                 priority
               />
               <Image
-                src="/Segob-logo.svg"
-                alt="SEGOB"
+                src="/SMyT-logo.svg"
+                alt="Secretaría de Movilidad y Transporte"
                 width={120}
                 height={40}
                 className="h-10 w-auto"
@@ -401,8 +401,8 @@ export default function BrochurePage() {
                   className="h-10 w-auto brightness-0 invert"
                 />
                 <Image
-                  src="/Segob-logo.svg"
-                  alt="SEGOB"
+                  src="/SMyT-logo.svg"
+                  alt="Secretaría de Movilidad y Transporte"
                   width={100}
                   height={35}
                   className="h-8 w-auto brightness-0 invert"

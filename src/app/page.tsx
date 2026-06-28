@@ -428,8 +428,8 @@ export default async function Home() {
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-6">
                   <Image
-                    src="/Segob-logo.svg"
-                    alt="Secretaría de Gobernación"
+                    src="/SMyT-logo.svg"
+                    alt="Secretaría de Movilidad y Transporte"
                     width={120}
                     height={40}
                     className="h-10 w-auto brightness-0 invert"
