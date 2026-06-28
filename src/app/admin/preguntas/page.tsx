@@ -89,7 +89,9 @@ export default function PreguntasPage() {
       await adminApi.crearPregunta({
         question: editQuestion.question,
         options: editQuestion.options,
-        correctAnswer: editQuestion.correctAnswer,
+        // QuestionResponse.correctAnswer es opcional (el examen no lo expone),
+        // pero el form admin siempre tiene una opción correcta seleccionada.
+        correctAnswer: editQuestion.correctAnswer ?? 0,
         explanation: editQuestion.explanation,
         category: editQuestion.category,
         difficulty: editQuestion.difficulty,
