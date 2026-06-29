@@ -372,11 +372,11 @@ export default async function Home() {
             <div className="grid md:grid-cols-3 gap-8">
               <div>
                 <Image
-                  src="/Tlaxcala-logo.svg"
+                  src="/Tlaxcala-logo-white.svg"
                   alt="Gobierno del Estado de Tlaxcala"
                   width={200}
                   height={60}
-                  className="h-16 w-auto brightness-0 invert mb-4"
+                  className="h-16 w-auto mb-4"
                 />
                 <p className="text-white/80 text-sm">
                   Portal oficial del Simulador de Licencias de Conducir del Gobierno del Estado de
@@ -428,11 +428,11 @@ export default async function Home() {
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-6">
                   <Image
-                    src="/SMyT-logo.svg"
+                    src="/SMyT-logo-white.svg"
                     alt="Secretaría de Movilidad y Transporte"
                     width={120}
                     height={40}
-                    className="h-10 w-auto brightness-0 invert"
+                    className="h-10 w-auto"
                   />
                 </div>
                 <p className="text-white/60 text-sm text-center md:text-right">

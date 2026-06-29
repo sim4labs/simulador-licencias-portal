@@ -93,7 +93,7 @@ export function AdminAuth({ onAuthenticated }: AdminAuthProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-accent opacity-95" />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
-          <Image src="/Tlaxcala-logo.svg" alt="Gobierno de Tlaxcala" width={220} height={66} className="mb-12 brightness-0 invert" />
+          <Image src="/Tlaxcala-logo-white.svg" alt="Gobierno de Tlaxcala" width={220} height={66} className="mb-12" />
           <h1 className="text-4xl font-bold leading-tight mb-4">
             Portal<br />Administrativo
           </h1>

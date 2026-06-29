@@ -394,18 +394,18 @@ export default function BrochurePage() {
             <div className="h-[20mm] bg-primary-800 flex items-center justify-between px-8">
               <div className="flex items-center gap-6">
                 <Image
-                  src="/Tlaxcala-logo.svg"
+                  src="/Tlaxcala-logo-white.svg"
                   alt="Gobierno del Estado de Tlaxcala"
                   width={140}
                   height={45}
-                  className="h-10 w-auto brightness-0 invert"
+                  className="h-10 w-auto"
                 />
                 <Image
-                  src="/SMyT-logo.svg"
+                  src="/SMyT-logo-white.svg"
                   alt="Secretaría de Movilidad y Transporte"
                   width={100}
                   height={35}
-                  className="h-8 w-auto brightness-0 invert"
+                  className="h-8 w-auto"
                 />
               </div>
               <p className="text-white/80 text-sm">
