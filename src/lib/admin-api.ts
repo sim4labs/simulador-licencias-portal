@@ -43,6 +43,13 @@ export interface ScoringConfig {
   wrongWaySustainedSeconds: number
   wrongWayDotThreshold: number
   wrongWayMinSpeedKmh: number
+  // Puntos de interés (estrellas): mínimo a recolectar durante el examen y
+  // consecuencia si no se alcanza. minRequired 0 = desactivado.
+  pointsOfInterest: {
+    minRequired: number
+    consequence: 'fail' | 'deduct'
+    deductPoints: number
+  }
   updatedAt?: string
 }
 

@@ -37,6 +37,11 @@ const DEFAULTS: ScoringConfig = {
   wrongWaySustainedSeconds: 3,
   wrongWayDotThreshold: -0.3,
   wrongWayMinSpeedKmh: 5,
+  pointsOfInterest: {
+    minRequired: 0,
+    consequence: 'deduct',
+    deductPoints: 10,
+  },
 }
 
 const PENALTY_LABELS: Record<string, { label: string; severity: string; hint?: string }> = {
@@ -92,6 +97,7 @@ export default function ScoringPage() {
         ...item,
         penalties: { ...DEFAULT_PENALTIES, ...(item.penalties ?? {}) },
         gradeThresholds: { ...DEFAULT_THRESHOLDS, ...(item.gradeThresholds ?? {}) },
+        pointsOfInterest: { ...DEFAULTS.pointsOfInterest, ...(item.pointsOfInterest ?? {}) },
       })
       setSustainedDraft(String(item.wrongWaySustainedSeconds ?? DEFAULTS.wrongWaySustainedSeconds))
       setDotDraft(String(item.wrongWayDotThreshold ?? DEFAULTS.wrongWayDotThreshold))
@@ -314,6 +320,79 @@ export default function ScoringPage() {
                   ? ` (${(config.minValidDistanceMeters / 1000).toFixed(2)} km)`
                   : ''}
               </span>
+            </div>
+          </div>
+
+          {/* Puntos de interés (estrellas) */}
+          <div className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Puntos de interés (estrellas)</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              Estrellas en la ruta que el alumno debe recolectar durante el examen. Si la escena
+              tiene menos estrellas que el mínimo, se exige el total de la escena. Poner 0 desactiva la regla.
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <label className="flex-1 text-sm text-gray-700">Mínimo a recolectar</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={50}
+                  value={config.pointsOfInterest.minRequired}
+                  onChange={e => setConfig(prev => ({
+                    ...prev,
+                    pointsOfInterest: { ...prev.pointsOfInterest, minRequired: parseInt(e.target.value) || 0 },
+                  }))}
+                  className="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-400 w-16">estrellas</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex-1 text-sm text-gray-700">Consecuencia al no alcanzarlo</label>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-1.5 text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="poiConsequence"
+                      checked={config.pointsOfInterest.consequence === 'deduct'}
+                      onChange={() => setConfig(prev => ({
+                        ...prev,
+                        pointsOfInterest: { ...prev.pointsOfInterest, consequence: 'deduct' },
+                      }))}
+                      className="accent-primary"
+                    />
+                    Deducir puntos
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="poiConsequence"
+                      checked={config.pointsOfInterest.consequence === 'fail'}
+                      onChange={() => setConfig(prev => ({
+                        ...prev,
+                        pointsOfInterest: { ...prev.pointsOfInterest, consequence: 'fail' },
+                      }))}
+                      className="accent-primary"
+                    />
+                    Reprobar examen
+                  </label>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex-1 text-sm text-gray-700">Puntos a deducir</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  disabled={config.pointsOfInterest.consequence === 'fail'}
+                  value={config.pointsOfInterest.deductPoints}
+                  onChange={e => setConfig(prev => ({
+                    ...prev,
+                    pointsOfInterest: { ...prev.pointsOfInterest, deductPoints: parseInt(e.target.value) || 0 },
+                  }))}
+                  className="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50 disabled:bg-gray-50"
+                />
+                <span className="text-sm text-gray-400 w-16">pts</span>
+              </div>
             </div>
           </div>
 
