@@ -9,7 +9,7 @@ import { ProgressStepper } from '@/components/ProgressStepper'
 import { LICENSE_TYPE_NAMES, type Tramite } from '@/lib/tramite'
 import { citizenApi } from '@/lib/citizen-api'
 import { adaptTramite } from '@/lib/adapters'
-import { CheckCircle, Calendar, Clock, Car, Home, User, Mail, Phone } from 'lucide-react'
+import { CheckCircle, Calendar, Clock, Car, Home, User, Mail, Phone, Download } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
@@ -22,6 +22,8 @@ function ConfirmacionContent() {
   const [confirmingCancel, setConfirmingCancel] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!tramiteId) return
@@ -41,6 +43,28 @@ function ConfirmacionContent() {
     }
     load()
   }, [tramiteId, router])
+
+  useEffect(() => {
+    // Precarga el chunk de jspdf: en Safari/iOS la descarga puede bloquearse si
+    // pasa demasiado tiempo entre el clic y doc.save(); con el módulo ya cargado
+    // el handler solo rasteriza los logos (~100ms) antes de guardar.
+    import('@/lib/comprobante-pdf')
+  }, [])
+
+  const handleDownloadPdf = async () => {
+    if (!tramite || downloading || cancelling) return
+    setDownloading(true)
+    setDownloadError(null)
+    try {
+      // Import dinámico: jspdf solo se carga si el ciudadano descarga el comprobante.
+      const { generarComprobantePdf } = await import('@/lib/comprobante-pdf')
+      await generarComprobantePdf(tramite)
+    } catch {
+      setDownloadError('No se pudo generar el comprobante. Intenta de nuevo.')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const handleCancel = async () => {
     if (!tramite) return
@@ -88,13 +112,20 @@ function ConfirmacionContent() {
             <h2 className="text-lg font-semibold mb-2">Tu número de trámite</h2>
             <p className="text-3xl font-bold text-primary-600 tracking-wide mb-1">{tramite.id}</p>
             <p className="text-sm text-gray-500 mb-4">Código de cita: {tramite.appointment?.code}</p>
-            <div className="text-sm text-gray-600 text-left bg-gray-50 rounded-lg p-4">
+            <div className="text-sm text-gray-600 text-left bg-gray-50 rounded-lg p-4 mb-4">
               <p className="font-medium text-gray-900 mb-2">El día de tu cita, en el simulador:</p>
               <ul className="space-y-1.5 list-disc list-inside">
                 <li>Escanea con tu celular el código QR que aparece en la pantalla del simulador, o</li>
                 <li>Ingresa tu número de trámite directamente en el simulador.</li>
               </ul>
             </div>
+            <Button onClick={handleDownloadPdf} disabled={downloading || cancelling} className="w-full gap-2">
+              <Download className="w-4 h-4" />
+              {downloading ? 'Generando comprobante...' : 'Descargar comprobante (PDF)'}
+            </Button>
+            {downloadError && (
+              <p className="text-sm text-red-600 mt-2">{downloadError}</p>
+            )}
           </div>
         </Card>
 
