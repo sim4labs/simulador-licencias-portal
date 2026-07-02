@@ -34,6 +34,9 @@ const DEFAULTS: ScoringConfig = {
   gradeThresholds: DEFAULT_THRESHOLDS,
   examDurationSeconds: 300,
   minValidDistanceMeters: 200,
+  wrongWaySustainedSeconds: 3,
+  wrongWayDotThreshold: -0.3,
+  wrongWayMinSpeedKmh: 5,
 }
 
 const PENALTY_LABELS: Record<string, { label: string; severity: string; hint?: string }> = {
@@ -69,6 +72,11 @@ export default function ScoringPage() {
   const qc = useQueryClient()
   const scoringQuery = useAdminScoringConfig()
   const [config, setConfig] = useState<ScoringConfig>(DEFAULTS)
+  // Drafts en string para los campos con decimales/negativos: un input
+  // controlado con parseFloat directo pelea con el tecleo intermedio
+  // ("-", "-0", "2.") y no deja escribir "-0.3" a mano.
+  const [sustainedDraft, setSustainedDraft] = useState(String(DEFAULTS.wrongWaySustainedSeconds))
+  const [dotDraft, setDotDraft] = useState(String(DEFAULTS.wrongWayDotThreshold))
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(scoringQuery.error?.message ?? null)
@@ -85,6 +93,8 @@ export default function ScoringPage() {
         penalties: { ...DEFAULT_PENALTIES, ...(item.penalties ?? {}) },
         gradeThresholds: { ...DEFAULT_THRESHOLDS, ...(item.gradeThresholds ?? {}) },
       })
+      setSustainedDraft(String(item.wrongWaySustainedSeconds ?? DEFAULTS.wrongWaySustainedSeconds))
+      setDotDraft(String(item.wrongWayDotThreshold ?? DEFAULTS.wrongWayDotThreshold))
       setLastSync(item.updatedAt ?? null)
     }
   }, [scoringQuery.data])
@@ -304,6 +314,70 @@ export default function ScoringPage() {
                   ? ` (${(config.minValidDistanceMeters / 1000).toFixed(2)} km)`
                   : ''}
               </span>
+            </div>
+          </div>
+
+          {/* Sentido contrario */}
+          <div className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Detección de sentido contrario</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              El alumno debe permanecer en el carril contrario el tiempo indicado antes de que se
+              marque la infracción — evita falsos positivos en vueltas cerradas e intersecciones.
+              Poner 0 segundos vuelve al comportamiento instantáneo.
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <label className="flex-1 text-sm text-gray-700">Segundos sostenidos</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={60}
+                  step={0.5}
+                  value={sustainedDraft}
+                  onChange={e => {
+                    setSustainedDraft(e.target.value)
+                    const parsed = parseFloat(e.target.value)
+                    if (Number.isFinite(parsed)) setConfig(prev => ({ ...prev, wrongWaySustainedSeconds: parsed }))
+                  }}
+                  onBlur={() => setSustainedDraft(String(config.wrongWaySustainedSeconds))}
+                  className="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-400 w-10">seg</span>
+              </div>
+              <div
+                className="flex items-center gap-3"
+                title="Qué tan opuesta debe ser la dirección del vehículo respecto al carril: -1 = totalmente de frente al tráfico, 0 = basta ir perpendicular. Más cerca de 0 = detección más agresiva."
+              >
+                <label className="flex-1 text-sm text-gray-700">Umbral de dirección (dot)</label>
+                <input
+                  type="number"
+                  min={-1}
+                  max={0}
+                  step={0.05}
+                  value={dotDraft}
+                  onChange={e => {
+                    setDotDraft(e.target.value)
+                    const parsed = parseFloat(e.target.value)
+                    if (Number.isFinite(parsed)) setConfig(prev => ({ ...prev, wrongWayDotThreshold: parsed }))
+                  }}
+                  onBlur={() => setDotDraft(String(config.wrongWayDotThreshold))}
+                  className="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-400 w-10" />
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex-1 text-sm text-gray-700">Velocidad mínima para evaluar</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={50}
+                  step={1}
+                  value={config.wrongWayMinSpeedKmh}
+                  onChange={e => setConfig(prev => ({ ...prev, wrongWayMinSpeedKmh: parseFloat(e.target.value) || 0 }))}
+                  className="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-400 w-10">km/h</span>
+              </div>
             </div>
           </div>
         </div>

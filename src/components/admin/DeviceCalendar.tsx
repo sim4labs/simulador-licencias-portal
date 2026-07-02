@@ -12,12 +12,8 @@ import {
   type DeviceAppointment,
   type VehicleType,
 } from '@/lib/iot-api'
-
-const TIME_SLOTS = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-  '15:00', '15:30', '16:00', '16:30',
-]
+import { useScheduleConfig } from '@/lib/admin-queries'
+import { slotsForDate, mergeSlotTimes } from '@/lib/schedule-slots'
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie']
 
@@ -83,6 +79,7 @@ export function DeviceCalendar({ thingName, vehicleType }: DeviceCalendarProps) 
   const [view, setView] = useState<'day' | 'week'>('day')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedAppt, setSelectedAppt] = useState<DeviceAppointment | null>(null)
+  const scheduleConfig = useScheduleConfig()
 
   useEffect(() => {
     let cancelled = false
@@ -127,6 +124,26 @@ export function DeviceCalendar({ thingName, vehicleType }: DeviceCalendarProps) 
     }
     return map
   }, [filteredAppointments, weekDays])
+
+  // Rejilla según horario operativo + duración de slot vigente; se unen las
+  // horas de citas fuera de la rejilla (agendadas con otra duración).
+  const daySlots = useMemo(() => {
+    return mergeSlotTimes(
+      slotsForDate(scheduleConfig.data, dateStr),
+      dayAppts.map(a => a.time),
+    )
+  }, [scheduleConfig.data, dateStr, dayAppts])
+
+  const weekSlots = useMemo(() => {
+    const times: Array<string | undefined> = []
+    let grid: string[] = []
+    for (const d of weekDays) {
+      const ds = formatDateISO(d)
+      grid = mergeSlotTimes(grid, slotsForDate(scheduleConfig.data, ds))
+      for (const a of weekAppts[ds] || []) times.push(a.time)
+    }
+    return mergeSlotTimes(grid, times)
+  }, [scheduleConfig.data, weekDays, weekAppts])
 
   const navigate = (dir: number) => {
     const d = new Date(currentDate)
@@ -204,7 +221,10 @@ export function DeviceCalendar({ thingName, vehicleType }: DeviceCalendarProps) 
       {/* Vista de Día */}
       {view === 'day' && (
         <div className="bg-white rounded-lg shadow divide-y divide-gray-100">
-          {TIME_SLOTS.map(slot => {
+          {daySlots.length === 0 && (
+            <div className="py-8 text-center text-sm text-gray-400">Día sin horario operativo</div>
+          )}
+          {daySlots.map(slot => {
             const slotAppts = dayAppts.filter(a => a.time === slot)
             return (
               <div key={slot} className="flex">
@@ -259,7 +279,7 @@ export function DeviceCalendar({ thingName, vehicleType }: DeviceCalendarProps) 
               </tr>
             </thead>
             <tbody>
-              {TIME_SLOTS.map(slot => (
+              {weekSlots.map(slot => (
                 <tr key={slot} className="border-b border-gray-50">
                   <td className="py-1 px-2 text-xs text-gray-400 border-r border-gray-100">{slot}</td>
                   {weekDays.map((d, i) => {

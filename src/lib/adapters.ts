@@ -246,8 +246,13 @@ export interface ScheduleConfigItem {
   isOpen: boolean
   startTime?: string
   endTime?: string
-  slotDurationMinutes?: number
   note?: string
+  updatedAt?: string
+  updatedBy?: string
+}
+
+export interface ScheduleGlobalSettings {
+  slotDurationMinutes: number
   updatedAt?: string
   updatedBy?: string
 }
@@ -255,14 +260,19 @@ export interface ScheduleConfigItem {
 export interface ScheduleConfigResponse {
   weekly: ScheduleConfigItem[]
   exceptions: ScheduleConfigItem[]
+  // Opcional mientras el backend viejo (sin settings) siga desplegado.
+  settings?: ScheduleGlobalSettings
 }
 
 export interface UpdateScheduleConfigBody {
   isOpen: boolean
   startTime?: string
   endTime?: string
-  slotDurationMinutes?: number
   note?: string
+}
+
+export interface UpdateScheduleGlobalBody {
+  slotDurationMinutes: number
 }
 
 export interface UpdateScheduleConfigResponse extends ScheduleConfigItem {
