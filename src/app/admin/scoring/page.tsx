@@ -72,6 +72,11 @@ export default function ScoringPage() {
   const qc = useQueryClient()
   const scoringQuery = useAdminScoringConfig()
   const [config, setConfig] = useState<ScoringConfig>(DEFAULTS)
+  // Drafts en string para los campos con decimales/negativos: un input
+  // controlado con parseFloat directo pelea con el tecleo intermedio
+  // ("-", "-0", "2.") y no deja escribir "-0.3" a mano.
+  const [sustainedDraft, setSustainedDraft] = useState(String(DEFAULTS.wrongWaySustainedSeconds))
+  const [dotDraft, setDotDraft] = useState(String(DEFAULTS.wrongWayDotThreshold))
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(scoringQuery.error?.message ?? null)
@@ -88,6 +93,8 @@ export default function ScoringPage() {
         penalties: { ...DEFAULT_PENALTIES, ...(item.penalties ?? {}) },
         gradeThresholds: { ...DEFAULT_THRESHOLDS, ...(item.gradeThresholds ?? {}) },
       })
+      setSustainedDraft(String(item.wrongWaySustainedSeconds ?? DEFAULTS.wrongWaySustainedSeconds))
+      setDotDraft(String(item.wrongWayDotThreshold ?? DEFAULTS.wrongWayDotThreshold))
       setLastSync(item.updatedAt ?? null)
     }
   }, [scoringQuery.data])
@@ -326,8 +333,13 @@ export default function ScoringPage() {
                   min={0}
                   max={60}
                   step={0.5}
-                  value={config.wrongWaySustainedSeconds}
-                  onChange={e => setConfig(prev => ({ ...prev, wrongWaySustainedSeconds: parseFloat(e.target.value) || 0 }))}
+                  value={sustainedDraft}
+                  onChange={e => {
+                    setSustainedDraft(e.target.value)
+                    const parsed = parseFloat(e.target.value)
+                    if (Number.isFinite(parsed)) setConfig(prev => ({ ...prev, wrongWaySustainedSeconds: parsed }))
+                  }}
+                  onBlur={() => setSustainedDraft(String(config.wrongWaySustainedSeconds))}
                   className="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
                 <span className="text-sm text-gray-400 w-10">seg</span>
@@ -342,8 +354,13 @@ export default function ScoringPage() {
                   min={-1}
                   max={0}
                   step={0.05}
-                  value={config.wrongWayDotThreshold}
-                  onChange={e => setConfig(prev => ({ ...prev, wrongWayDotThreshold: parseFloat(e.target.value) || 0 }))}
+                  value={dotDraft}
+                  onChange={e => {
+                    setDotDraft(e.target.value)
+                    const parsed = parseFloat(e.target.value)
+                    if (Number.isFinite(parsed)) setConfig(prev => ({ ...prev, wrongWayDotThreshold: parsed }))
+                  }}
+                  onBlur={() => setDotDraft(String(config.wrongWayDotThreshold))}
                   className="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
                 <span className="text-sm text-gray-400 w-10" />
