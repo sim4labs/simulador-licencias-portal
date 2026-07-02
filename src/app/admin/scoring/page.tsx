@@ -34,6 +34,9 @@ const DEFAULTS: ScoringConfig = {
   gradeThresholds: DEFAULT_THRESHOLDS,
   examDurationSeconds: 300,
   minValidDistanceMeters: 200,
+  wrongWaySustainedSeconds: 3,
+  wrongWayDotThreshold: -0.3,
+  wrongWayMinSpeedKmh: 5,
 }
 
 const PENALTY_LABELS: Record<string, { label: string; severity: string; hint?: string }> = {
@@ -304,6 +307,60 @@ export default function ScoringPage() {
                   ? ` (${(config.minValidDistanceMeters / 1000).toFixed(2)} km)`
                   : ''}
               </span>
+            </div>
+          </div>
+
+          {/* Sentido contrario */}
+          <div className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Detección de sentido contrario</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              El alumno debe permanecer en el carril contrario el tiempo indicado antes de que se
+              marque la infracción — evita falsos positivos en vueltas cerradas e intersecciones.
+              Poner 0 segundos vuelve al comportamiento instantáneo.
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <label className="flex-1 text-sm text-gray-700">Segundos sostenidos</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={60}
+                  step={0.5}
+                  value={config.wrongWaySustainedSeconds}
+                  onChange={e => setConfig(prev => ({ ...prev, wrongWaySustainedSeconds: parseFloat(e.target.value) || 0 }))}
+                  className="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-400 w-10">seg</span>
+              </div>
+              <div
+                className="flex items-center gap-3"
+                title="Qué tan opuesta debe ser la dirección del vehículo respecto al carril: -1 = totalmente de frente al tráfico, 0 = basta ir perpendicular. Más cerca de 0 = detección más agresiva."
+              >
+                <label className="flex-1 text-sm text-gray-700">Umbral de dirección (dot)</label>
+                <input
+                  type="number"
+                  min={-1}
+                  max={0}
+                  step={0.05}
+                  value={config.wrongWayDotThreshold}
+                  onChange={e => setConfig(prev => ({ ...prev, wrongWayDotThreshold: parseFloat(e.target.value) || 0 }))}
+                  className="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-400 w-10" />
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex-1 text-sm text-gray-700">Velocidad mínima para evaluar</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={50}
+                  step={1}
+                  value={config.wrongWayMinSpeedKmh}
+                  onChange={e => setConfig(prev => ({ ...prev, wrongWayMinSpeedKmh: parseFloat(e.target.value) || 0 }))}
+                  className="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-400 w-10">km/h</span>
+              </div>
             </div>
           </div>
         </div>

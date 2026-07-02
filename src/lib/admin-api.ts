@@ -35,6 +35,12 @@ export interface ScoringConfig {
   }
   examDurationSeconds: number
   minValidDistanceMeters: number
+  // Sentido contrario: segundos continuos en el carril contrario antes de
+  // marcar la infracción, threshold del dot product (-1..0) y velocidad
+  // mínima (km/h) para evaluar.
+  wrongWaySustainedSeconds: number
+  wrongWayDotThreshold: number
+  wrongWayMinSpeedKmh: number
   updatedAt?: string
 }
 
