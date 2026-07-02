@@ -8,8 +8,10 @@ import {
   useUpdateScheduleWeekly,
   useUpsertScheduleException,
   useDeleteScheduleException,
+  useUpdateScheduleGlobal,
 } from '@/lib/admin-queries'
 import type { ScheduleConfigItem, UpdateScheduleConfigBody } from '@/lib/adapters'
+import { ALLOWED_SLOT_DURATIONS, DEFAULT_SLOT_DURATION_MINUTES } from '@/lib/schedule-slots'
 import { dateInTlaxcala } from '@/lib/utils'
 
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -33,7 +35,7 @@ function itemToDraft(item: ScheduleConfigItem | undefined): DayDraft {
 function isValidTime(t: string): boolean {
   if (!/^\d{2}:\d{2}$/.test(t)) return false
   const [h, m] = t.split(':').map(Number)
-  return h >= 0 && h <= 23 && (m === 0 || m === 30)
+  return h >= 0 && h <= 23 && m % 15 === 0
 }
 
 export default function ConfiguracionCalendarioPage() {
@@ -41,9 +43,11 @@ export default function ConfiguracionCalendarioPage() {
   const updateWeekly = useUpdateScheduleWeekly()
   const upsertException = useUpsertScheduleException()
   const deleteException = useDeleteScheduleException()
+  const updateGlobal = useUpdateScheduleGlobal()
 
   const [drafts, setDrafts] = useState<Record<number, DayDraft>>({})
   const [conflictWarning, setConflictWarning] = useState<string | null>(null)
+  const [durationDraft, setDurationDraft] = useState<number | null>(null)
 
   // Modal nueva excepción
   const [showExceptionModal, setShowExceptionModal] = useState(false)
@@ -74,7 +78,7 @@ export default function ConfiguracionCalendarioPage() {
     if (!draft) return
     if (draft.isOpen) {
       if (!isValidTime(draft.startTime) || !isValidTime(draft.endTime)) {
-        alert('Horarios deben estar en formato HH:MM y ser múltiplos de 30 minutos')
+        alert('Horarios deben estar en formato HH:MM y ser múltiplos de 15 minutos')
         return
       }
       const [sh, sm] = draft.startTime.split(':').map(Number)
@@ -111,7 +115,7 @@ export default function ConfiguracionCalendarioPage() {
     }
     if (exceptionDraft.isOpen) {
       if (!isValidTime(exceptionDraft.startTime) || !isValidTime(exceptionDraft.endTime)) {
-        alert('Horarios deben estar en formato HH:MM y ser múltiplos de 30 minutos')
+        alert('Horarios deben estar en formato HH:MM y ser múltiplos de 15 minutos')
         return
       }
     }
@@ -136,6 +140,16 @@ export default function ConfiguracionCalendarioPage() {
     }
   }
 
+  async function handleSaveDuration() {
+    if (durationDraft === null || durationDraft === savedDuration) return
+    try {
+      await updateGlobal.mutateAsync(durationDraft)
+      setDurationDraft(null)
+    } catch (e: any) {
+      alert(`Error al guardar: ${e?.message || e}`)
+    }
+  }
+
   async function handleDeleteException(date: string) {
     if (!confirm(`¿Eliminar la excepción del ${date}? Volverá a usar el horario semanal por defecto.`)) return
     try {
@@ -154,6 +168,9 @@ export default function ConfiguracionCalendarioPage() {
   }
 
   const exceptions = configQuery.data?.exceptions ?? []
+  const settings = configQuery.data?.settings
+  const savedDuration = settings?.slotDurationMinutes ?? DEFAULT_SLOT_DURATION_MINUTES
+  const currentDuration = durationDraft ?? savedDuration
 
   return (
     <div className="max-w-4xl">
@@ -187,6 +204,43 @@ export default function ConfiguracionCalendarioPage() {
         </div>
       )}
 
+      {/* Duración del slot de cita */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Duración de cada cita</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Aplica a todos los simuladores y a todos los días. Cambiarla sólo afecta reservas nuevas:
+          las citas ya agendadas conservan su horario original, por lo que se recomienda ajustarla
+          cuando haya pocas citas futuras.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={currentDuration}
+            onChange={(e) => setDurationDraft(Number(e.target.value))}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          >
+            {ALLOWED_SLOT_DURATIONS.map((d) => (
+              <option key={d} value={d}>{d} minutos</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={handleSaveDuration}
+            disabled={updateGlobal.isPending || currentDuration === savedDuration}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
+          >
+            {updateGlobal.isPending ? 'Guardando...' : 'Guardar duración'}
+          </button>
+          {currentDuration !== savedDuration && (
+            <span className="text-xs text-amber-600">Cambio sin guardar (actual: {savedDuration} min)</span>
+          )}
+        </div>
+        {settings?.updatedAt && (
+          <div className="mt-3 text-xs text-gray-400">
+            Última edición: {new Date(settings.updatedAt).toLocaleString('es-MX')}{settings.updatedBy && ` · ${settings.updatedBy}`}
+          </div>
+        )}
+      </div>
+
       {/* Horario semanal */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Patrón semanal</h2>
@@ -212,7 +266,7 @@ export default function ConfiguracionCalendarioPage() {
                 <div className="md:col-span-2">
                   <input
                     type="time"
-                    step={1800}
+                    step={900}
                     value={draft.startTime}
                     disabled={!draft.isOpen}
                     onChange={(e) => setDrafts({ ...drafts, [d]: { ...draft, startTime: e.target.value } })}
@@ -222,7 +276,7 @@ export default function ConfiguracionCalendarioPage() {
                 <div className="md:col-span-2">
                   <input
                     type="time"
-                    step={1800}
+                    step={900}
                     value={draft.endTime}
                     disabled={!draft.isOpen}
                     onChange={(e) => setDrafts({ ...drafts, [d]: { ...draft, endTime: e.target.value } })}
@@ -340,7 +394,7 @@ export default function ConfiguracionCalendarioPage() {
                     <label className="block text-xs text-gray-500 mb-1">Inicio</label>
                     <input
                       type="time"
-                      step={1800}
+                      step={900}
                       value={exceptionDraft.startTime}
                       onChange={(e) => setExceptionDraft({ ...exceptionDraft, startTime: e.target.value })}
                       className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
@@ -350,7 +404,7 @@ export default function ConfiguracionCalendarioPage() {
                     <label className="block text-xs text-gray-500 mb-1">Cierre</label>
                     <input
                       type="time"
-                      step={1800}
+                      step={900}
                       value={exceptionDraft.endTime}
                       onChange={(e) => setExceptionDraft({ ...exceptionDraft, endTime: e.target.value })}
                       className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm"

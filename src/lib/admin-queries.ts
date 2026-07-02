@@ -188,6 +188,17 @@ export function useDeleteScheduleException() {
   })
 }
 
+export function useUpdateScheduleGlobal() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (slotDurationMinutes: number) =>
+      adminApi.updateScheduleGlobal({ slotDurationMinutes }).then(unwrap),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: adminKeys.scheduleConfig })
+    },
+  })
+}
+
 export function usePracticeResults(params: {
   pcId?: string
   vehicleType?: string

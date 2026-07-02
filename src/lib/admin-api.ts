@@ -9,8 +9,10 @@ import type {
   TramitePublicResponse,
   MetricsResponse,
   ScheduleConfigResponse,
+  ScheduleGlobalSettings,
   UpdateScheduleConfigBody,
   UpdateScheduleConfigResponse,
+  UpdateScheduleGlobalBody,
 } from './adapters'
 
 export interface ScoringConfig {
@@ -106,6 +108,13 @@ export const adminApi = {
     return apiRequest<{ deleted: boolean; date: string }>(
       `/admin/schedule-config/exception/${date}`,
       { method: 'DELETE', pool: 'admin' },
+    )
+  },
+
+  updateScheduleGlobal(body: UpdateScheduleGlobalBody) {
+    return apiRequest<ScheduleGlobalSettings & { conflictingAppointments: number }>(
+      '/admin/schedule-config/global/settings',
+      { method: 'PUT', body, pool: 'admin' },
     )
   },
 

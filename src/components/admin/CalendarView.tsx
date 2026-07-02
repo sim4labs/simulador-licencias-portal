@@ -7,12 +7,8 @@ import { Badge, statusVariant, statusLabel } from './Badge'
 import { Modal } from './Modal'
 import type { Tramite } from '@/lib/tramite'
 import { cn, dateInLocalTZ } from '@/lib/utils'
-
-const TIME_SLOTS = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-  '15:00', '15:30', '16:00', '16:30',
-]
+import { useScheduleConfig } from '@/lib/admin-queries'
+import { slotsForDate, mergeSlotTimes } from '@/lib/schedule-slots'
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie']
 
@@ -45,6 +41,7 @@ export function CalendarView({ tramites }: CalendarViewProps) {
   const [view, setView] = useState<'day' | 'week'>('day')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedTramite, setSelectedTramite] = useState<Tramite | null>(null)
+  const scheduleConfig = useScheduleConfig()
 
   const dateStr = formatDateISO(currentDate)
 
@@ -70,6 +67,26 @@ export function CalendarView({ tramites }: CalendarViewProps) {
     }
     return map
   }, [tramites, weekDays])
+
+  // Rejilla según horario operativo + duración de slot vigente; se unen las
+  // horas de citas fuera de la rejilla (agendadas con otra duración).
+  const daySlots = useMemo(() => {
+    return mergeSlotTimes(
+      slotsForDate(scheduleConfig.data, dateStr),
+      dayAppointments.map(t => t.appointment?.time),
+    )
+  }, [scheduleConfig.data, dateStr, dayAppointments])
+
+  const weekSlots = useMemo(() => {
+    const times: Array<string | undefined> = []
+    let grid: string[] = []
+    for (const d of weekDays) {
+      const ds = formatDateISO(d)
+      grid = mergeSlotTimes(grid, slotsForDate(scheduleConfig.data, ds))
+      for (const t of weekAppointments[ds] || []) times.push(t.appointment?.time)
+    }
+    return mergeSlotTimes(grid, times)
+  }, [scheduleConfig.data, weekDays, weekAppointments])
 
   const navigate = (dir: number) => {
     const d = new Date(currentDate)
@@ -118,7 +135,10 @@ export function CalendarView({ tramites }: CalendarViewProps) {
       {/* Day View */}
       {view === 'day' && (
         <div className="bg-white rounded-lg shadow divide-y divide-gray-100">
-          {TIME_SLOTS.map(slot => {
+          {daySlots.length === 0 && (
+            <div className="py-8 text-center text-sm text-gray-400">Día sin horario operativo</div>
+          )}
+          {daySlots.map(slot => {
             const appts = dayAppointments.filter(t => t.appointment?.time === slot)
             return (
               <div key={slot} className="flex">
@@ -180,7 +200,7 @@ export function CalendarView({ tramites }: CalendarViewProps) {
               </tr>
             </thead>
             <tbody>
-              {TIME_SLOTS.map(slot => (
+              {weekSlots.map(slot => (
                 <tr key={slot} className="border-b border-gray-50">
                   <td className="py-1 px-2 text-xs text-gray-400 border-r border-gray-100">{slot}</td>
                   {weekDays.map((d, i) => {
