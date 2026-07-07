@@ -51,6 +51,10 @@ export interface ScoringConfig {
     consequence: 'fail' | 'deduct'
     deductPoints: number
   }
+  // Tráfico (v1.12.1): tope global de vehículos AI y multiplicador de los
+  // topes por zona (1.0 = comportamiento original).
+  trafficMaxVehicles: number
+  trafficZoneMultiplier: number
   updatedAt?: string
 }
 
