@@ -24,6 +24,7 @@ export interface ScoringConfig {
     passiveVehicleCollision: number
     signCollision: number
     obstacleCollision: number
+    curbCollision: number
     redLight: number
     wrongWay: number
     dangerousGearChange: number
