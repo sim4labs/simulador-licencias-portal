@@ -51,10 +51,15 @@ export interface ScoringConfig {
     consequence: 'fail' | 'deduct'
     deductPoints: number
   }
-  // Tráfico (v1.12.1): tope global de vehículos AI y multiplicador de los
-  // topes por zona (1.0 = comportamiento original).
+  // Tráfico (v1.12.1): tope global de vehículos AI y multiplicador legacy por
+  // zona (clientes Unity 1.12.1; los 1.12.2+ usan los porcentajes).
   trafficMaxVehicles: number
   trafficZoneMultiplier: number
+  // v1.12.2: porcentaje de tráfico por tipo de zona (0-200, 100 = normal).
+  // Carretera y ciudad separados — un multiplicador global vaciaba la ciudad
+  // al bajar la carretera.
+  trafficCityPercent: number
+  trafficHighwayPercent: number
   updatedAt?: string
 }
 

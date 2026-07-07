@@ -45,6 +45,8 @@ const DEFAULTS: ScoringConfig = {
   },
   trafficMaxVehicles: 100,
   trafficZoneMultiplier: 1,
+  trafficCityPercent: 100,
+  trafficHighwayPercent: 100,
 }
 
 const PENALTY_LABELS: Record<string, { label: string; severity: string; hint?: string }> = {
@@ -331,12 +333,40 @@ export default function ScoringPage() {
           <div className="bg-white/60 backdrop-blur-sm border border-white/80 shadow-lg rounded-xl p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Tráfico</h2>
             <p className="text-xs text-gray-500 mb-4">
-              Controla la cantidad de vehículos de tráfico en las escenas de examen. El tope global
-              limita el total de vehículos simultáneos; el multiplicador escala la densidad de cada
-              zona del mapa (por ejemplo 0.5 reduce la carretera de 40 a 20 vehículos). Los cambios
-              aplican al siguiente examen que inicie cada simulador.
+              Controla la cantidad de vehículos de tráfico en las escenas de examen, en porcentaje
+              del tráfico normal (100% = comportamiento original). Ciudad y carretera se ajustan por
+              separado. Los cambios aplican al siguiente examen que inicie cada simulador (requiere
+              simuladores en v1.12.2 o superior).
             </p>
             <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <input
+                  type="number"
+                  min={0}
+                  max={200}
+                  step={10}
+                  value={config.trafficHighwayPercent}
+                  onChange={e => setConfig(prev => ({ ...prev, trafficHighwayPercent: parseInt(e.target.value) || 0 }))}
+                  className="w-24 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-500">
+                  % de tráfico en carretera (20% ≈ 8 vehículos en la zona de mayor densidad)
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <input
+                  type="number"
+                  min={0}
+                  max={200}
+                  step={10}
+                  value={config.trafficCityPercent}
+                  onChange={e => setConfig(prev => ({ ...prev, trafficCityPercent: parseInt(e.target.value) || 0 }))}
+                  className="w-24 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <span className="text-sm text-gray-500">
+                  % de tráfico en ciudad
+                </span>
+              </div>
               <div className="flex items-center gap-4">
                 <input
                   type="number"
@@ -349,20 +379,6 @@ export default function ScoringPage() {
                 />
                 <span className="text-sm text-gray-500">
                   tope global de vehículos simultáneos (default 100)
-                </span>
-              </div>
-              <div className="flex items-center gap-4">
-                <input
-                  type="number"
-                  min={0}
-                  max={2}
-                  step={0.1}
-                  value={config.trafficZoneMultiplier}
-                  onChange={e => setConfig(prev => ({ ...prev, trafficZoneMultiplier: parseFloat(e.target.value) || 0 }))}
-                  className="w-24 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                />
-                <span className="text-sm text-gray-500">
-                  multiplicador por zona (1.0 = normal, 0.5 = mitad de tráfico)
                 </span>
               </div>
             </div>
