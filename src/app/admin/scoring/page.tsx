@@ -16,6 +16,7 @@ const DEFAULT_PENALTIES: ScoringConfig['penalties'] = {
   passiveVehicleCollision: 0,
   signCollision: 5,
   obstacleCollision: 5,
+  curbCollision: 5,
   redLight: 20,
   wrongWay: 15,
   dangerousGearChange: 20,
@@ -59,6 +60,7 @@ const PENALTY_LABELS: Record<string, { label: string; severity: string; hint?: s
   speeding: { label: 'Exceso de velocidad', severity: 'minor' },
   signCollision: { label: 'Colisión con señalamiento', severity: 'minor' },
   obstacleCollision: { label: 'Colisión con obstáculo', severity: 'minor' },
+  curbCollision: { label: 'Golpe a la banqueta', severity: 'minor' },
   gearChangeWithoutClutch: {
     label: 'Cambio de marcha sin clutch (rechino)',
     severity: 'minor',
