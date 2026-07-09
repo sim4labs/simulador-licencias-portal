@@ -48,6 +48,40 @@ function localHourLabel(hourKey: string): string {
   return d.toLocaleTimeString('es-MX', { hour: '2-digit', hour12: false }) + 'h'
 }
 
+// Con rangos de varios días los buckets por hora se vuelven ilegibles:
+// se agrupa por día (local) y se etiqueta 'DD/MM'.
+function buildRhythm(byHour: Array<{ hour: string; count: number }>) {
+  const localDays = new Set<string>()
+  for (const h of byHour) {
+    const d = new Date(`${h.hour}:00:00Z`)
+    if (!isNaN(d.getTime())) localDays.add(d.toLocaleDateString('es-MX'))
+  }
+  if (localDays.size <= 2) {
+    return {
+      title: 'Ritmo por hora',
+      buckets: byHour.map(h => ({ key: h.hour, label: localHourLabel(h.hour), count: h.count })),
+    }
+  }
+  const perDay = new Map<string, { label: string; count: number }>()
+  for (const h of byHour) {
+    const d = new Date(`${h.hour}:00:00Z`)
+    if (isNaN(d.getTime())) continue
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const acc = perDay.get(key) || {
+      label: d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' }),
+      count: 0,
+    }
+    acc.count += h.count
+    perDay.set(key, acc)
+  }
+  return {
+    title: 'Ritmo por día',
+    buckets: Array.from(perDay.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, v]) => ({ key, label: v.label, count: v.count })),
+  }
+}
+
 interface Props {
   summary: PracticeSummary | undefined
   isLoading: boolean
@@ -69,7 +103,10 @@ export function PracticeSummaryPanel({ summary, isLoading, truncated, simulatorN
   const passPct = Math.round((summary.passed / summary.total) * 100)
   const conductFaults = summary.byFault.filter(f => !NON_CONDUCT_FAULTS.has(f.type))
   const maxFaultCount = Math.max(1, ...conductFaults.map(f => f.count))
-  const maxHourCount = Math.max(1, ...summary.byHour.map(h => h.count))
+  const rhythm = buildRhythm(summary.byHour)
+  const maxBucketCount = Math.max(1, ...rhythm.buckets.map(b => b.count))
+  // Máximo ~10 etiquetas visibles; las barras se dibujan todas.
+  const labelStep = Math.max(1, Math.ceil(rhythm.buckets.length / 10))
 
   return (
     <div className="space-y-4">
@@ -81,7 +118,7 @@ export function PracticeSummaryPanel({ summary, isLoading, truncated, simulatorN
       )}
 
       {/* Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard label="Prácticas" value={String(summary.total)} />
         <StatCard
           label="Score promedio"
@@ -92,13 +129,6 @@ export function PracticeSummaryPanel({ summary, isLoading, truncated, simulatorN
           label={`Aprobadas (≥${summary.passingScore})`}
           value={`${passPct}%`}
           detail={`${summary.passed} de ${summary.total}`}
-        />
-        <StatCard
-          label="Distancia promedio"
-          value={summary.distanceMean >= 1000
-            ? `${(summary.distanceMean / 1000).toFixed(2)} km`
-            : `${summary.distanceMean} m`}
-          detail={`${summary.invalidDistance} bajo el mínimo`}
         />
       </div>
 
@@ -174,16 +204,18 @@ export function PracticeSummaryPanel({ summary, isLoading, truncated, simulatorN
             </table>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Ritmo por hora</h3>
-            <div className="flex items-end gap-1 h-16">
-              {summary.byHour.map(h => (
-                <div key={h.hour} className="flex-1 flex flex-col items-center min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">{rhythm.title}</h3>
+            <div className="flex items-end gap-px h-16">
+              {rhythm.buckets.map((b, i) => (
+                <div key={b.key} className="flex-1 flex flex-col items-center min-w-0">
                   <div
                     className="w-full bg-primary/70 rounded-sm"
-                    style={{ height: `${Math.max(6, Math.round((h.count / maxHourCount) * 100))}%` }}
-                    title={`${localHourLabel(h.hour)}: ${h.count}`}
+                    style={{ height: `${Math.max(6, Math.round((b.count / maxBucketCount) * 100))}%` }}
+                    title={`${b.label}: ${b.count}`}
                   />
-                  <span className="text-[10px] text-gray-500 mt-1 truncate">{localHourLabel(h.hour)}</span>
+                  <span className="text-[10px] text-gray-500 mt-1 truncate w-full text-center">
+                    {i % labelStep === 0 ? b.label : ' '}
+                  </span>
                 </div>
               ))}
             </div>

@@ -197,7 +197,10 @@ export default function PracticasPage() {
             size="sm"
             className="flex-1"
             onClick={() => {
-              const today = new Date().toISOString().slice(0, 10)
+              // Fecha LOCAL — toISOString() daría el día UTC (mañana después
+              // de las 18:00 hora centro).
+              const d = new Date()
+              const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
               onFilterChange(setDateFrom)(today)
               setDateTo(today)
             }}
