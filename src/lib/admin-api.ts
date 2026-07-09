@@ -292,6 +292,26 @@ export const adminApi = {
       { pool: 'admin' },
     )
   },
+
+  // Agregados del rango filtrado (mismos filtros que el listado). El backend
+  // pagina internamente todo el rango — no usa cursor ni limit.
+  getPracticeSummary(params?: {
+    pcId?: string
+    vehicleType?: string
+    dateFrom?: string
+    dateTo?: string
+  }) {
+    const qs = new URLSearchParams()
+    qs.set('summary', '1')
+    if (params?.pcId) qs.set('pcId', params.pcId)
+    if (params?.vehicleType) qs.set('vehicleType', params.vehicleType)
+    if (params?.dateFrom) qs.set('dateFrom', params.dateFrom)
+    if (params?.dateTo) qs.set('dateTo', params.dateTo)
+    return apiRequest<{ summary: PracticeSummary; truncated: boolean }>(
+      `/admin/practice-results?${qs.toString()}`,
+      { pool: 'admin' },
+    )
+  },
 }
 
 export interface PracticeFault {
@@ -300,6 +320,28 @@ export interface PracticeFault {
   secondsFromStart: number
   severity: string
   deduction: number
+}
+
+export interface PracticeSummaryGroup {
+  count: number
+  mean: number
+  passed: number
+}
+
+export interface PracticeSummary {
+  total: number
+  passingScore: number
+  scoreMean: number
+  scoreMedian: number
+  passed: number
+  invalidDistance: number
+  distanceMean: number
+  firstAt: string | null
+  lastAt: string | null
+  bySimulator: Array<PracticeSummaryGroup & { simulatorId: string }>
+  byVehicle: Array<PracticeSummaryGroup & { vehicleType: string }>
+  byFault: Array<{ type: string; count: number; exams: number; points: number }>
+  byHour: Array<{ hour: string; count: number }>
 }
 
 export interface PracticeResult {

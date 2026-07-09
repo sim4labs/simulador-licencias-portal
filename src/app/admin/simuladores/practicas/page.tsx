@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from 'react'
 import { Loader2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
-import { usePracticeResults } from '@/lib/admin-queries'
+import { usePracticeResults, usePracticeSummary } from '@/lib/admin-queries'
 import { useSimulatorPCs } from '@/lib/simulator-queries'
 import type { PracticeResult } from '@/lib/admin-api'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/admin/Badge'
 import { PracticeDetailModal } from '@/components/admin/PracticeDetailModal'
+import { PracticeSummaryPanel } from '@/components/admin/PracticeSummaryPanel'
 
 const VEHICLE_LABELS: Record<string, string> = {
   Sedan: 'Sedán',
@@ -68,8 +69,26 @@ export default function PracticasPage() {
     limit: 50,
   }), [pcId, vehicleType, dateFrom, dateTo, cursor])
 
+  // El resumen usa los mismos filtros que el listado, sin cursor/limit — el
+  // backend agrega todo el rango de una vez.
+  const summaryParams = useMemo(() => ({
+    pcId: queryParams.pcId,
+    vehicleType: queryParams.vehicleType,
+    dateFrom: queryParams.dateFrom,
+    dateTo: queryParams.dateTo,
+  }), [queryParams.pcId, queryParams.vehicleType, queryParams.dateFrom, queryParams.dateTo])
+
   const practicesQuery = usePracticeResults(queryParams)
+  const summaryQuery = usePracticeSummary(summaryParams)
   const pcsQuery = useSimulatorPCs()
+
+  const simulatorNames = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const pc of pcsQuery.data || []) {
+      if (pc.simulatorId) map[pc.simulatorId] = pc.name || pc.simulatorId
+    }
+    return map
+  }, [pcsQuery.data])
 
   const items = practicesQuery.data?.items ?? []
   const nextCursor = practicesQuery.data?.nextCursor ?? null
@@ -172,12 +191,32 @@ export default function PracticasPage() {
             onChange={(e) => onFilterChange(setDateTo)(e.target.value)}
           />
         </div>
-        <div className="flex items-end">
-          <Button variant="outline" size="sm" onClick={resetFilters} className="w-full">
-            Limpiar filtros
+        <div className="flex items-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => {
+              const today = new Date().toISOString().slice(0, 10)
+              onFilterChange(setDateFrom)(today)
+              setDateTo(today)
+            }}
+          >
+            Hoy
+          </Button>
+          <Button variant="outline" size="sm" onClick={resetFilters} className="flex-1">
+            Limpiar
           </Button>
         </div>
       </div>
+
+      {/* Resumen analítico del rango filtrado */}
+      <PracticeSummaryPanel
+        summary={summaryQuery.data?.summary}
+        isLoading={summaryQuery.isLoading}
+        truncated={summaryQuery.data?.truncated ?? false}
+        simulatorNames={simulatorNames}
+      />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">

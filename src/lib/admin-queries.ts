@@ -22,6 +22,8 @@ export const adminKeys = {
   scheduleConfig: ['admin', 'schedule-config'] as const,
   practiceResults: (params: { pcId?: string; vehicleType?: string; dateFrom?: string; dateTo?: string; limit?: number; cursor?: string } = {}) =>
     ['admin', 'practice-results', params] as const,
+  practiceSummary: (params: { pcId?: string; vehicleType?: string; dateFrom?: string; dateTo?: string } = {}) =>
+    ['admin', 'practice-summary', params] as const,
 }
 
 function unwrap<T>(res: ApiResponse<T>): T {
@@ -210,6 +212,20 @@ export function usePracticeResults(params: {
   return useQuery({
     queryKey: adminKeys.practiceResults(params),
     queryFn: () => adminApi.listPracticeResults(params).then(unwrap),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function usePracticeSummary(params: {
+  pcId?: string
+  vehicleType?: string
+  dateFrom?: string
+  dateTo?: string
+} = {}) {
+  return useQuery({
+    queryKey: adminKeys.practiceSummary(params),
+    queryFn: () => adminApi.getPracticeSummary(params).then(unwrap),
     staleTime: 30_000,
     placeholderData: keepPreviousData,
   })
