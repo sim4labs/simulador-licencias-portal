@@ -34,7 +34,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
   'examen-aprobado': { label: 'Examen teórico aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
   'examen-reprobado': { label: 'Examen teórico reprobado', color: 'bg-red-50 text-red-700', icon: XCircle },
   'cita-agendada': { label: 'Cita agendada', color: 'bg-amber-50 text-amber-700', icon: Clock },
-  'simulador-completado': { label: 'Simulador completado', color: 'bg-purple-50 text-purple-700', icon: CheckCircle2 },
+  'simulador-completado': { label: 'Simulador completado', color: 'bg-primary-50 text-primary-700', icon: CheckCircle2 },
   'simulador-reprobado': { label: 'Simulador reprobado', color: 'bg-red-50 text-red-700', icon: XCircle },
   'finalizado': { label: 'Finalizado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
 }

@@ -467,9 +467,9 @@ export default function PortalPage() {
                   <li>Reglas específicas por tipo de vehículo</li>
                 </ul>
               </div>
-              <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
-                <h4 className="text-sm font-semibold text-purple-900 mb-2">Tips de Estudio</h4>
-                <ul className="space-y-1.5 text-xs text-purple-800">
+              <div className="p-4 rounded-xl bg-primary-50 border border-primary-100">
+                <h4 className="text-sm font-semibold text-primary-900 mb-2">Tips de Estudio</h4>
+                <ul className="space-y-1.5 text-xs text-primary-800">
                   <li>El examen tiene 30 preguntas de opción múltiple</li>
                   <li>Tienes 30 minutos para completarlo</li>
                   <li>Necesitas mínimo 80% para aprobar (24/30)</li>

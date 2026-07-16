@@ -148,7 +148,7 @@ export default function UsuariosPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3D1A50]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-800" />
       </div>
     )
   }
@@ -164,7 +164,7 @@ export default function UsuariosPage() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#3D1A50] text-white rounded-lg hover:bg-[#2D1240] text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900 text-sm font-medium"
         >
           <Plus className="h-4 w-4" />
           Nuevo Admin
@@ -196,7 +196,7 @@ export default function UsuariosPage() {
               type="text"
               value={createForm.username}
               onChange={e => setCreateForm(f => ({ ...f, username: e.target.value }))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#3D1A50] focus:border-transparent outline-none"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               placeholder="ej. jperez"
             />
           </div>
@@ -206,7 +206,7 @@ export default function UsuariosPage() {
               type="text"
               value={createForm.name}
               onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#3D1A50] focus:border-transparent outline-none"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               placeholder="ej. Juan Pérez"
             />
           </div>
@@ -216,7 +216,7 @@ export default function UsuariosPage() {
               type="email"
               value={createForm.email}
               onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#3D1A50] focus:border-transparent outline-none"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               placeholder="ej. jperez@gobierno.mx"
             />
           </div>
@@ -230,7 +230,7 @@ export default function UsuariosPage() {
             <button
               onClick={handleCreate}
               disabled={creating || !createForm.username || !createForm.email || !createForm.name}
-              className="px-4 py-2 text-sm text-white bg-[#3D1A50] rounded-lg hover:bg-[#2D1240] disabled:opacity-50"
+              className="px-4 py-2 text-sm text-white bg-primary-800 rounded-lg hover:bg-primary-900 disabled:opacity-50"
             >
               {creating ? 'Creando...' : 'Crear Admin'}
             </button>
@@ -267,7 +267,7 @@ export default function UsuariosPage() {
           <div className="flex justify-end pt-2">
             <button
               onClick={() => { setShowResult(false); setCopied(false) }}
-              className="px-4 py-2 text-sm text-white bg-[#3D1A50] rounded-lg hover:bg-[#2D1240]"
+              className="px-4 py-2 text-sm text-white bg-primary-800 rounded-lg hover:bg-primary-900"
             >
               Entendido
             </button>
@@ -305,7 +305,7 @@ export default function UsuariosPage() {
                 else handleReset(confirmAction.user)
               }}
               disabled={actionLoading}
-              className="px-4 py-2 text-sm text-white bg-[#3D1A50] rounded-lg hover:bg-[#2D1240] disabled:opacity-50"
+              className="px-4 py-2 text-sm text-white bg-primary-800 rounded-lg hover:bg-primary-900 disabled:opacity-50"
             >
               {actionLoading ? 'Procesando...' : 'Confirmar'}
             </button>

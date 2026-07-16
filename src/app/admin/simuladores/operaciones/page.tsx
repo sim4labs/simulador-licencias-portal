@@ -33,7 +33,7 @@ const LICENSE_TYPE_LABELS: Record<string, string> = {
 }
 
 const LICENSE_TYPE_COLORS: Record<string, string> = {
-  particular: 'bg-purple-50 text-purple-700 border-purple-200',
+  particular: 'bg-primary-50 text-primary-700 border-primary-200',
   publico: 'bg-amber-50 text-amber-700 border-amber-200',
   motocicleta: 'bg-blue-50 text-blue-700 border-blue-200',
   carga: 'bg-red-50 text-red-700 border-red-200',
@@ -139,7 +139,7 @@ function SimulatorOpsCard({ simulator: sim }: { simulator: Simulator }) {
   return (
     <div className={`rounded-xl border p-5 transition-all ${
       hasSession
-        ? 'bg-gradient-to-br from-purple-50 to-white border-purple-200 shadow-sm'
+        ? 'bg-gradient-to-br from-primary-50 to-white border-primary-200 shadow-sm'
         : 'bg-white border-gray-200'
     }`}>
       <div className="flex items-start justify-between mb-3">
@@ -210,7 +210,7 @@ function ActiveSessionPanel({
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <User className="h-4 w-4 text-purple-600" />
+        <User className="h-4 w-4 text-primary-600" />
         <span className="text-sm font-medium text-gray-900 truncate">{session.citizenName}</span>
         {isDemo && (
           <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">

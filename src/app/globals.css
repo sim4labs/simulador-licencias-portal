@@ -8,22 +8,22 @@
     --foreground: 212 8% 32%;
     --foreground-dark: 218 11% 27%;
     --foreground-light: 220 9% 46%;
-    --primary: 281 51% 30%;
-    --primary-accent: 281 51% 21%;
-    --primary-light: 268 36% 79%;
+    --primary: 347 69% 41%;
+    --primary-accent: 344 59% 36%;
+    --primary-light: 346 53% 94%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 330 74% 36%;
-    --secondary-light: 332 48% 82%;
+    --secondary: 344 59% 36%;
+    --secondary-light: 346 61% 87%;
     --secondary-foreground: 0 0% 100%;
-    --tertiary: 330 74% 36%;
+    --tertiary: 341 61% 24%;
     --tertiary-foreground: 0 0% 100%;
     --card: 0 0% 100%;
     --card-foreground: 212 8% 32%;
     --popover: 0 0% 100%;
     --popover-foreground: 212 8% 32%;
-    --muted: 270 20% 96%;
+    --muted: 36 38% 97%;
     --muted-foreground: 220 9% 46%;
-    --accent: 270 20% 96%;
+    --accent: 346 69% 97%;
     --accent-foreground: 212 8% 32%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
@@ -31,7 +31,7 @@
     --warning: 45 93% 47%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 281 51% 30%;
+    --ring: 347 69% 41%;
     --radius: 0.5rem;
   }
 }
@@ -56,7 +56,7 @@
 }
 
 .bg-gradient-brand {
-  background: linear-gradient(135deg, #A2185D, #582672);
+  background: linear-gradient(135deg, #AF2140, #62182F);
 }
 
 .focus-ring {

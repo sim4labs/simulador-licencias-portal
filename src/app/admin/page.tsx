@@ -11,7 +11,7 @@ import { Badge, statusVariant, statusLabel } from '@/components/admin/Badge'
 const STATUS_COLORS: Record<string, string> = {
   'iniciado': 'bg-gray-400',
   'tipo-seleccionado': 'bg-blue-400',
-  'examen-aprobado': 'bg-purple-500',
+  'examen-aprobado': 'bg-primary-500',
   'cita-agendada': 'bg-yellow-400',
   'simulador-completado': 'bg-green-500',
   'simulador-reprobado': 'bg-red-500',
@@ -22,7 +22,7 @@ const STATUS_COLORS: Record<string, string> = {
 const LICENSE_COLORS: Record<string, string> = {
   '1': 'bg-yellow-400',   // Tipo A — Transporte de Personas
   '2': 'bg-indigo-400',   // Tipo B — Chofer Particular
-  '3': 'bg-purple-500',   // Tipo C — Automovilista
+  '3': 'bg-primary-500',  // Tipo C — Automovilista
   '4': 'bg-blue-400',     // Tipo D — Motociclista
   '6': 'bg-red-400',      // Tipo F — Mercantil
   '9': 'bg-pink-400',     // Tipo P — Permiso de Menor

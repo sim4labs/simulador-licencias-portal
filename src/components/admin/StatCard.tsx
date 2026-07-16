@@ -7,7 +7,7 @@ type StatVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'e
 
 const variantStyles: Record<StatVariant, { bg: string; text: string }> = {
   primary: { bg: 'bg-primary/10', text: 'text-primary' },
-  secondary: { bg: 'bg-purple-100', text: 'text-purple-700' },
+  secondary: { bg: 'bg-primary-100', text: 'text-primary-700' },
   success: { bg: 'bg-green-100', text: 'text-green-700' },
   warning: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
   info: { bg: 'bg-blue-100', text: 'text-blue-700' },

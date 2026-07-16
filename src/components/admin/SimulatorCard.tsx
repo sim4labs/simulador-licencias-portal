@@ -39,9 +39,9 @@ export const vehicleConfig: Record<string, VehicleConfig> = {
   motorcycle: {
     icon: Bike,
     label: 'Motocicleta',
-    color: 'border-l-violet-500',
-    iconBg: 'bg-violet-100',
-    iconColor: 'text-violet-600',
+    color: 'border-l-primary-500',
+    iconBg: 'bg-primary-100',
+    iconColor: 'text-primary-600',
   },
   emergency_vehicle: {
     icon: Ambulance,

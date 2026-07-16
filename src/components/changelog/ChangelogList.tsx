@@ -22,11 +22,11 @@ export function ChangelogList({ showCommits = true }: ChangelogListProps) {
       <div>
         <div className="flex items-center gap-2 flex-wrap">
           <h1 className="text-2xl font-bold text-gray-900">Historial de versiones</h1>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#3D1A50] text-white text-xs font-semibold px-3 py-1">
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary-800 text-white text-xs font-semibold px-3 py-1">
             <Tag className="h-3 w-3" />
             FE {version === 'unreleased' ? 'sin release' : `v${version}`}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#582672] text-white text-xs font-semibold px-3 py-1">
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary text-white text-xs font-semibold px-3 py-1">
             <Tag className="h-3 w-3" />
             BE {beLabel}
           </span>
@@ -79,7 +79,7 @@ function ChangelogCard({
                 'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold',
                 isUnreleased
                   ? 'bg-amber-100 text-amber-800'
-                  : 'bg-[#EDE7F1] text-[#3D1A50]',
+                  : 'bg-primary-100 text-primary-800',
               )}
             >
               <Tag className="h-3 w-3" />
@@ -102,17 +102,17 @@ function ChangelogCard({
       </header>
 
       {entry.highlights && entry.highlights.length > 0 && (
-        <div className="px-5 py-4 border-b border-gray-100 bg-[#FAF8FB]">
+        <div className="px-5 py-4 border-b border-gray-100 bg-primary-50">
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-4 w-4 text-[#3D1A50]" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#3D1A50]">
+            <Sparkles className="h-4 w-4 text-primary-800" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary-800">
               Lo destacado
             </span>
           </div>
           <ul className="space-y-1.5 text-sm text-gray-700">
             {entry.highlights.map((h, i) => (
               <li key={i} className="flex gap-2">
-                <span className="text-[#3D1A50] mt-1 flex-shrink-0">·</span>
+                <span className="text-primary-800 mt-1 flex-shrink-0">·</span>
                 <span>{h}</span>
               </li>
             ))}
@@ -141,7 +141,7 @@ function ChangelogCard({
               {entry.commits.map((c) => (
                 <li key={c.hash} className="flex gap-3 text-sm font-mono">
                   <span className="text-gray-400 flex-shrink-0 w-16">{c.date}</span>
-                  <span className="text-[#3D1A50] flex-shrink-0 w-16">{c.hash}</span>
+                  <span className="text-primary-800 flex-shrink-0 w-16">{c.hash}</span>
                   <span className="text-gray-700 break-words font-sans">{c.subject}</span>
                 </li>
               ))}

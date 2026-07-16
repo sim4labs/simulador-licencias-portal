@@ -5,11 +5,11 @@ import { formatDate } from './utils'
 const LICENSE_NAMES: Record<string, string> = LICENSE_TYPE_NAMES
 
 // Paleta institucional (tailwind.config.ts)
-const VINO: [number, number, number] = [88, 38, 114] // primary #582672
-const MAGENTA: [number, number, number] = [162, 24, 93] // secondary #A2185D
-const GOLD: [number, number, number] = [205, 183, 134] // gold #CDB786
-const GOLD_LIGHT: [number, number, number] = [245, 240, 228] // gold.light #F5F0E4
-const GOLD_FG: [number, number, number] = [92, 74, 42] // gold.foreground #5C4A2A
+const VINO: [number, number, number] = [175, 33, 64] // primary #AF2140
+const MAGENTA: [number, number, number] = [146, 37, 66] // secondary #922542
+const GOLD: [number, number, number] = [208, 183, 134] // gold #D0B786
+const GOLD_LIGHT: [number, number, number] = [242, 230, 211] // gold.light #F2E6D3
+const GOLD_FG: [number, number, number] = [88, 69, 38] // gold.foreground #584526
 const GRAY: [number, number, number] = [74, 80, 87] // foreground #4A5057
 const GRAY_LIGHT: [number, number, number] = [107, 114, 128]
 
