@@ -7,6 +7,8 @@ import {
   getCurrentUser,
   fetchAuthSession,
   autoSignIn,
+  resetPassword,
+  confirmResetPassword,
 } from 'aws-amplify/auth'
 import { configureAmplifyForPool } from './amplify-config'
 
@@ -42,6 +44,8 @@ function mapError(err: unknown): string {
     return 'Código de verificación incorrecto'
   if (msg.includes('ExpiredCodeException'))
     return 'El código ha expirado. Solicita uno nuevo'
+  if (msg.includes('UserNotFoundException'))
+    return 'No encontramos una cuenta con este correo electrónico'
   if (msg.includes('LimitExceededException'))
     return 'Demasiados intentos. Intenta más tarde'
   if (msg.includes('NetworkError') || msg.includes('network'))
@@ -158,6 +162,47 @@ export async function loginCitizen(
     }
 
     return { ok: false, error: 'No se pudo iniciar sesión' }
+  } catch (err) {
+    return { ok: false, error: mapError(err) }
+  }
+}
+
+export async function requestCitizenPasswordReset(
+  email: string
+): Promise<AuthResult> {
+  ensureCitizenPool()
+  const trimmedEmail = email.trim().toLowerCase()
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    return { ok: false, error: 'Ingresa un correo electrónico válido' }
+  }
+
+  try {
+    await resetPassword({ username: trimmedEmail })
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: mapError(err) }
+  }
+}
+
+export async function confirmCitizenPasswordReset(
+  email: string,
+  code: string,
+  newPassword: string
+): Promise<AuthResult> {
+  ensureCitizenPool()
+
+  if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+    return { ok: false, error: 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número' }
+  }
+
+  try {
+    await confirmResetPassword({
+      username: email.trim().toLowerCase(),
+      confirmationCode: code.trim(),
+      newPassword,
+    })
+    return { ok: true }
   } catch (err) {
     return { ok: false, error: mapError(err) }
   }
