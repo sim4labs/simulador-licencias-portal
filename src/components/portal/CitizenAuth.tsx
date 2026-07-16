@@ -8,13 +8,15 @@ import {
   loginCitizen,
   confirmCitizenSignUp,
   resendCitizenVerificationCode,
+  requestCitizenPasswordReset,
+  confirmCitizenPasswordReset,
 } from '@/lib/citizen-auth'
 
 interface CitizenAuthProps {
   onAuthenticated: () => void
 }
 
-type Tab = 'login' | 'register' | 'confirm'
+type Tab = 'login' | 'register' | 'confirm' | 'forgot' | 'reset'
 
 function PasswordCheck({ valid, text }: { valid: boolean; text: string }) {
   return (
@@ -51,6 +53,13 @@ export function CitizenAuth({ onAuthenticated }: CitizenAuthProps) {
   const [resendLoading, setResendLoading] = useState(false)
   const [resendInfo, setResendInfo] = useState('')
 
+  // Password recovery
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetCode, setResetCode] = useState('')
+  const [resetPassword, setResetPassword] = useState('')
+  const [resetConfirm, setResetConfirm] = useState('')
+  const [showResetPassword, setShowResetPassword] = useState(false)
+
   useEffect(() => {
     if (resendCooldown <= 0) return
     const t = setInterval(() => setResendCooldown((s) => (s <= 1 ? 0 : s - 1)), 1000)
@@ -64,6 +73,13 @@ export function CitizenAuth({ onAuthenticated }: CitizenAuthProps) {
     number: /[0-9]/.test(regPassword),
   }
   const passwordValid = Object.values(passwordChecks).every(Boolean)
+  const resetPasswordChecks = {
+    length: resetPassword.length >= 8,
+    upper: /[A-Z]/.test(resetPassword),
+    lower: /[a-z]/.test(resetPassword),
+    number: /[0-9]/.test(resetPassword),
+  }
+  const resetPasswordValid = Object.values(resetPasswordChecks).every(Boolean)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -126,6 +142,64 @@ export function CitizenAuth({ onAuthenticated }: CitizenAuthProps) {
     setResendLoading(false)
     if (result.ok) {
       setResendInfo('Enviamos un nuevo código a tu correo. Revisa tu bandeja y spam.')
+      setResendCooldown(60)
+    } else {
+      setError(result.error)
+    }
+  }
+
+  const handleRequestPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    const result = await requestCitizenPasswordReset(resetEmail)
+    setLoading(false)
+    if (result.ok) {
+      setResetEmail(resetEmail.trim().toLowerCase())
+      setResendInfo('Enviamos un código a tu correo. Revisa también la carpeta de spam.')
+      setResendCooldown(60)
+      setTab('reset')
+    } else {
+      setError(result.error)
+    }
+  }
+
+  const handleConfirmPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (resetPassword !== resetConfirm) {
+      setError('Las contraseñas no coinciden')
+      return
+    }
+    if (!resetPasswordValid) {
+      setError('La contraseña no cumple los requisitos')
+      return
+    }
+    setLoading(true)
+    const result = await confirmCitizenPasswordReset(resetEmail, resetCode, resetPassword)
+    setLoading(false)
+    if (result.ok) {
+      setLoginEmail(resetEmail)
+      setLoginPassword('')
+      setResetCode('')
+      setResetPassword('')
+      setResetConfirm('')
+      setTab('login')
+      setResendInfo('Tu contraseña fue actualizada. Ya puedes iniciar sesión.')
+    } else {
+      setError(result.error)
+    }
+  }
+
+  const handleResendResetCode = async () => {
+    if (resendCooldown > 0 || resendLoading) return
+    setError('')
+    setResendInfo('')
+    setResendLoading(true)
+    const result = await requestCitizenPasswordReset(resetEmail)
+    setResendLoading(false)
+    if (result.ok) {
+      setResendInfo('Enviamos un nuevo código a tu correo. Revisa también la carpeta de spam.')
       setResendCooldown(60)
     } else {
       setError(result.error)
@@ -267,6 +341,82 @@ export function CitizenAuth({ onAuthenticated }: CitizenAuthProps) {
                 </div>
               </form>
             </>
+          ) : tab === 'forgot' ? (
+            <>
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900">Recupera tu contraseña</h2>
+                <p className="text-gray-500 mt-2">
+                  Ingresa el correo de tu cuenta y te enviaremos un código de verificación.
+                </p>
+              </div>
+              <form onSubmit={handleRequestPasswordReset} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Correo electrónico</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="email"
+                      placeholder="tu@correo.com"
+                      value={resetEmail}
+                      onChange={(e) => { setResetEmail(e.target.value); setError('') }}
+                      autoFocus
+                      className={`w-full h-11 pl-10 pr-4 rounded-xl border bg-white text-base sm:text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600 ${error ? 'border-red-300' : 'border-gray-200'}`}
+                    />
+                  </div>
+                </div>
+                {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">{error}</div>}
+                <button type="submit" disabled={!resetEmail || loading} className="w-full min-h-11 bg-primary-600 text-white rounded-xl font-medium text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
+                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Enviar código <ArrowRight className="w-4 h-4" /></>}
+                </button>
+                <button type="button" onClick={() => switchTab('login')} className="w-full min-h-11 text-sm text-primary-600 font-semibold hover:text-primary-700 hover:underline">
+                  Volver a iniciar sesión
+                </button>
+              </form>
+            </>
+          ) : tab === 'reset' ? (
+            <>
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900">Crea una nueva contraseña</h2>
+                <p className="text-gray-500 mt-2">Escribe el código que enviamos a <strong className="text-gray-700">{resetEmail}</strong>.</p>
+              </div>
+              <form onSubmit={handleConfirmPasswordReset} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Código de verificación</label>
+                  <input type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="123456" maxLength={6} value={resetCode} onChange={(e) => { setResetCode(e.target.value.replace(/\D/g, '')); setError('') }} autoFocus className={`w-full h-11 px-4 rounded-xl border bg-white text-center tracking-[0.3em] font-mono text-lg focus:outline-none focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600 ${error ? 'border-red-300' : 'border-gray-200'}`} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Nueva contraseña</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input type={showResetPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="Mínimo 8 caracteres" value={resetPassword} onChange={(e) => { setResetPassword(e.target.value); setError('') }} className={`w-full h-11 pl-10 pr-11 rounded-xl border bg-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600 ${error ? 'border-red-300' : 'border-gray-200'}`} />
+                    <button type="button" onClick={() => setShowResetPassword(!showResetPassword)} aria-label={showResetPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} className="absolute right-0 top-0 w-11 h-11 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                      {showResetPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {resetPassword.length > 0 && <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-1.5 mt-2">
+                    <PasswordCheck valid={resetPasswordChecks.length} text="8+ caracteres" />
+                    <PasswordCheck valid={resetPasswordChecks.upper} text="Una mayúscula" />
+                    <PasswordCheck valid={resetPasswordChecks.lower} text="Una minúscula" />
+                    <PasswordCheck valid={resetPasswordChecks.number} text="Un número" />
+                  </div>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirmar contraseña</label>
+                  <div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="password" autoComplete="new-password" placeholder="Repite tu contraseña" value={resetConfirm} onChange={(e) => { setResetConfirm(e.target.value); setError('') }} className={`w-full h-11 pl-10 pr-4 rounded-xl border bg-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600 ${error ? 'border-red-300' : 'border-gray-200'}`} /></div>
+                </div>
+                {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">{error}</div>}
+                {resendInfo && !error && <div className="bg-emerald-50 text-emerald-700 text-sm px-4 py-3 rounded-xl border border-emerald-100">{resendInfo}</div>}
+                <button type="submit" disabled={resetCode.length !== 6 || !resetPasswordValid || !resetConfirm || loading} className="w-full min-h-11 bg-primary-600 text-white rounded-xl font-medium text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
+                  {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Actualizar contraseña <ArrowRight className="w-4 h-4" /></>}
+                </button>
+                <div className="text-center text-sm space-y-2">
+                  <button type="button" onClick={handleResendResetCode} disabled={resendCooldown > 0 || resendLoading} className="min-h-11 px-2 text-primary-600 font-semibold hover:underline disabled:text-gray-400 disabled:no-underline">
+                    {resendLoading ? 'Enviando...' : resendCooldown > 0 ? `Reenviar código en ${resendCooldown}s` : 'Reenviar código'}
+                  </button>
+                  <button type="button" onClick={() => switchTab('login')} className="block w-full min-h-11 text-gray-500 hover:text-gray-700 hover:underline">Volver a iniciar sesión</button>
+                </div>
+              </form>
+            </>
           ) : (
             <>
               {/* Tabs */}
@@ -342,9 +492,28 @@ export function CitizenAuth({ onAuthenticated }: CitizenAuthProps) {
                     </div>
                   </div>
 
+                  <div className="flex justify-end -mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetEmail(loginEmail.trim().toLowerCase())
+                        switchTab('forgot')
+                      }}
+                      className="min-h-11 px-1 text-sm text-primary-600 font-semibold hover:text-primary-700 hover:underline transition-colors"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
+
                   {error && (
                     <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-100">
                       {error}
+                    </div>
+                  )}
+
+                  {resendInfo && !error && (
+                    <div className="bg-emerald-50 text-emerald-700 text-sm px-4 py-3 rounded-xl border border-emerald-100">
+                      {resendInfo}
                     </div>
                   )}
 
