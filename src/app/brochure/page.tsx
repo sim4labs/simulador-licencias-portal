@@ -244,8 +244,8 @@ export default function BrochurePage() {
                       Consulta tus resultados en línea con tu número de trámite.
                     </p>
                     <div className="flex gap-2">
-                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">Resultados inmediatos</span>
-                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">En línea</span>
+                      <span className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-medium">Resultados inmediatos</span>
+                      <span className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-medium">En línea</span>
                     </div>
                   </div>
                 </div>
@@ -359,9 +359,9 @@ export default function BrochurePage() {
                       </p>
                     </div>
 
-                    <div className="bg-purple-50 border border-purple-200 rounded-xl p-5">
-                      <h4 className="font-semibold text-purple-800 mb-2 text-lg">Eficiencia</h4>
-                      <p className="text-sm text-purple-700">
+                    <div className="bg-primary-50 border border-primary-200 rounded-xl p-5">
+                      <h4 className="font-semibold text-primary-800 mb-2 text-lg">Eficiencia</h4>
+                      <p className="text-sm text-primary-700">
                         Proceso 100% digital desde el examen teórico hasta los resultados. Reduce tiempos de espera y trámites.
                       </p>
                     </div>

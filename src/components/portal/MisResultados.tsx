@@ -56,7 +56,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
   'examen-aprobado': { label: 'Examen teórico aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
   'examen-reprobado': { label: 'Examen teórico reprobado', color: 'bg-red-50 text-red-700', icon: XCircle },
   'cita-agendada': { label: 'Cita agendada', color: 'bg-amber-50 text-amber-700', icon: Clock },
-  'simulador-completado': { label: 'Simulador completado', color: 'bg-purple-50 text-purple-700', icon: CheckCircle2 },
+  'simulador-completado': { label: 'Simulador completado', color: 'bg-primary-50 text-primary-700', icon: CheckCircle2 },
   'simulador-reprobado': { label: 'Reprobaste el simulador — reagenda', color: 'bg-red-50 text-red-700', icon: XCircle },
   'finalizado': { label: 'Finalizado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
 }
@@ -132,8 +132,8 @@ function SimulatorResultBlock({ tramite }: { tramite: Tramite }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center">
-          <Gamepad2 className="w-4 h-4 text-purple-600" />
+        <div className="w-8 h-8 rounded-lg bg-primary-50 border border-primary-200 flex items-center justify-center">
+          <Gamepad2 className="w-4 h-4 text-primary-600" />
         </div>
         <h4 className="text-sm font-semibold text-gray-900">Examen Práctico</h4>
       </div>

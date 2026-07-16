@@ -144,10 +144,13 @@ git push origin v1.0.1   # CI/CD detecta el tag y deploya
 
 ## Paleta de Colores
 
-Definida en `tailwind.config.ts`:
-- **Primary:** Púrpura (#582672) - Color institucional de Tlaxcala
-- **Accent:** Tonos púrpura complementarios
-- Variantes: 50-900 para primary
+Definida en `tailwind.config.ts` conforme a la identidad institucional 2021–2027:
+- **Primary:** Vino (#AF2140)
+- **Primary dark:** Vino oscuro (#62182F)
+- **Secondary:** Vino medio (#922542)
+- **Gold:** Dorado (#D0B786)
+- **Gold light:** Crema (#F2E6D3)
+- Variantes accesibles 50-900 para `primary` y `secondary`
 
 ## Convenciones de Código
 

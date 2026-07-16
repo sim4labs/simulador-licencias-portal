@@ -12,7 +12,7 @@ import {
 type Period = '1h' | '24h' | '7d' | '30d'
 
 const COLORS = {
-  primary: '#582672',
+  primary: '#AF2140',
   success: '#22c55e',
   danger: '#ef4444',
   info: '#3b82f6',

@@ -105,7 +105,7 @@ function SimulatorCard({ simulator: sim, onDelete }: { simulator: Simulator; onD
         </Link>
         <div className="flex items-center gap-2">
           {sim.vehicleType && (
-            <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-medium">
               {vehicleTypeLabels[sim.vehicleType] || sim.vehicleType}
             </span>
           )}

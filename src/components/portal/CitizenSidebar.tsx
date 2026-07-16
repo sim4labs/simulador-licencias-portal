@@ -80,7 +80,7 @@ export function CitizenSidebar({ mobileOpen, onMobileClose }: CitizenSidebarProp
                     className={cn(
                       'flex items-center gap-3 px-3 py-2 rounded-r-lg border-l-2 text-sm font-medium transition-colors',
                       isActive
-                        ? 'border-[#3D1A50] bg-[#EDE7F1] text-[#3D1A50]'
+                        ? 'border-primary-800 bg-primary-100 text-primary-800'
                         : 'border-transparent text-gray-700 hover:bg-gray-200'
                     )}
                   >
@@ -100,9 +100,9 @@ export function CitizenSidebar({ mobileOpen, onMobileClose }: CitizenSidebarProp
         title={be ? `Backend ${be.tag ?? be.commit} · built ${new Date(be.builtAt).toLocaleString()}` : 'Ver historial de versiones'}
       >
         <span className="font-mono whitespace-nowrap">
-          FE <span className="text-[#3D1A50]">{feLabel}</span>
+          FE <span className="text-primary-800">{feLabel}</span>
           <span className="text-gray-400"> · </span>
-          BE <span className="text-[#3D1A50]">{beLabel}</span>
+          BE <span className="text-primary-800">{beLabel}</span>
         </span>
         <Tag className="h-3 w-3 flex-shrink-0 text-gray-400" />
       </Link>

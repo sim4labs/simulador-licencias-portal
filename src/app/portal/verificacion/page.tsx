@@ -94,7 +94,7 @@ function VerificacionContent() {
 
       {step === 'loading' && (
         <div className="flex flex-col items-center py-12">
-          <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
+          <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
           <p className="text-slate-500 text-sm">Iniciando verificación facial...</p>
         </div>
       )}
@@ -120,7 +120,7 @@ function VerificacionContent() {
 
       {step === 'completing' && (
         <div className="flex flex-col items-center py-12">
-          <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
+          <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
           <p className="text-slate-500">Verificando...</p>
         </div>
       )}
@@ -158,7 +158,7 @@ function VerificacionContent() {
           )}
           <button
             onClick={initLiveness}
-            className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium px-6 py-3 rounded-full transition-colors"
+            className="bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-6 py-3 rounded-full transition-colors"
           >
             Intentar de nuevo
           </button>
@@ -173,7 +173,7 @@ export default function VerificacionPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
         </div>
       }
     >

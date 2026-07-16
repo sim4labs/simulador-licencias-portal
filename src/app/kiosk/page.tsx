@@ -207,7 +207,7 @@ export default function KioskPage() {
 
         {displayState === 'loading' && (
           <div className="space-y-4 py-8">
-            <Loader2 className="w-12 h-12 text-purple-400 animate-spin mx-auto" />
+            <Loader2 className="w-12 h-12 text-primary-400 animate-spin mx-auto" />
             <p className="text-slate-400">Iniciando sesión de verificación...</p>
           </div>
         )}
@@ -242,7 +242,7 @@ export default function KioskPage() {
 
         {displayState === 'verifying' && (
           <div className="space-y-6 py-4">
-            <Loader2 className="w-14 h-14 text-purple-400 animate-spin mx-auto" />
+            <Loader2 className="w-14 h-14 text-primary-400 animate-spin mx-auto" />
             <div>
               <p className="text-2xl font-semibold">{citizenName}</p>
               <p className="text-slate-400 mt-2">Verificando identidad...</p>

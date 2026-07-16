@@ -44,7 +44,7 @@ const PERIOD_LABELS: Record<Period, string> = {
 }
 
 const COLORS = {
-  primary: '#582672',
+  primary: '#AF2140',
   success: '#22c55e',
   info: '#3b82f6',
   warning: '#f59e0b',
