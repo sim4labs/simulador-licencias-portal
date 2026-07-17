@@ -53,7 +53,7 @@ export default function BrochurePage() {
               <div
                 className="absolute inset-0 opacity-10"
                 style={{
-                  backgroundImage: 'url(/Flower-pattern.png)',
+                  backgroundImage: 'url(/Flower-logo.svg)',
                   backgroundSize: '120px auto',
                   backgroundRepeat: 'repeat'
                 }}

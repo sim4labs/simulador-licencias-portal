@@ -13,7 +13,7 @@ export function AdminLayout({ children, onLogout }: AdminLayoutProps) {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="sticky top-0 z-30 h-16 bg-primary/95 flex items-center justify-between px-6"
-        style={{ backgroundImage: 'url(/Flower-pattern.png)', backgroundRepeat: 'repeat', backgroundBlendMode: 'overlay' }}
+        style={{ backgroundImage: 'url(/Flower-logo.svg)', backgroundRepeat: 'repeat', backgroundBlendMode: 'overlay' }}
       >
         <div>
           <h1 className="text-white font-bold text-lg leading-tight">Admin Portal</h1>

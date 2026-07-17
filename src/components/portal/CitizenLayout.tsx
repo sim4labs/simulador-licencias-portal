@@ -29,7 +29,7 @@ export function CitizenLayout({ children, citizenName, onLogout }: CitizenLayout
       <header
         className="sticky top-0 z-30 h-16 bg-primary/95 flex items-center justify-between px-4 sm:px-6"
         style={{
-          backgroundImage: 'url(/Flower-pattern.png)',
+          backgroundImage: 'url(/Flower-logo.svg)',
           backgroundRepeat: 'repeat',
           backgroundBlendMode: 'overlay',
         }}
