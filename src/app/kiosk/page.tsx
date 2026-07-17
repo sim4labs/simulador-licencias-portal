@@ -132,7 +132,7 @@ export default function KioskPage() {
       const url = await QRCode.toDataURL(verifyUrl, {
         width: 320,
         margin: 2,
-        color: { dark: '#1e1b4b', light: '#ffffff' },
+        color: { dark: '#62182F', light: '#FFFFFF' },
       })
       setQrUrl(url)
       setDisplayState('qr')
@@ -194,27 +194,27 @@ export default function KioskPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-8 text-white">
+    <div className="min-h-screen bg-primary-800 flex flex-col items-center justify-center p-8 text-white">
 
       {/* Header */}
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold tracking-tight">Simulador de Manejo</h1>
-        <p className="text-slate-400 mt-2">Centro de Evaluación — Gobierno del Estado de Tlaxcala</p>
+        <p className="text-gold-light mt-2">Centro de Evaluación — Gobierno del Estado de Tlaxcala</p>
       </div>
 
       {/* Main content card */}
-      <div className="bg-[#1e293b] rounded-3xl p-10 max-w-md w-full text-center shadow-2xl">
+      <div className="bg-primary-900 border border-gold/30 rounded-3xl p-10 max-w-md w-full text-center shadow-2xl">
 
         {displayState === 'loading' && (
           <div className="space-y-4 py-8">
             <Loader2 className="w-12 h-12 text-primary-400 animate-spin mx-auto" />
-            <p className="text-slate-400">Iniciando sesión de verificación...</p>
+            <p className="text-gold-light">Iniciando sesión de verificación...</p>
           </div>
         )}
 
         {displayState === 'qr' && (
           <div className="space-y-6">
-            <p className="text-slate-300 text-lg font-medium">
+            <p className="text-white text-lg font-medium">
               Escanea el código con tu teléfono
             </p>
             {qrUrl && (
@@ -223,17 +223,17 @@ export default function KioskPage() {
               </div>
             )}
             <div className="space-y-2">
-              <p className="text-slate-400 text-sm">
+              <p className="text-gold-light text-sm">
                 1. Abre la cámara de tu celular
               </p>
-              <p className="text-slate-400 text-sm">
+              <p className="text-gold-light text-sm">
                 2. Escanea el código QR
               </p>
-              <p className="text-slate-400 text-sm">
+              <p className="text-gold-light text-sm">
                 3. Ingresa tu código de cita y completa la verificación facial
               </p>
             </div>
-            <div className="flex items-center justify-center gap-2 text-xs text-slate-600 mt-4">
+            <div className="flex items-center justify-center gap-2 text-xs text-gold mt-4">
               <div className={`w-2 h-2 rounded-full animate-pulse ${degraded ? 'bg-amber-500' : 'bg-green-500'}`} />
               {degraded ? 'Reconectando…' : 'Esperando verificación...'}
             </div>
@@ -245,7 +245,7 @@ export default function KioskPage() {
             <Loader2 className="w-14 h-14 text-primary-400 animate-spin mx-auto" />
             <div>
               <p className="text-2xl font-semibold">{citizenName}</p>
-              <p className="text-slate-400 mt-2">Verificando identidad...</p>
+              <p className="text-gold-light mt-2">Verificando identidad...</p>
             </div>
           </div>
         )}
@@ -256,14 +256,14 @@ export default function KioskPage() {
             <div>
               <p className="text-3xl font-bold text-green-300">¡Bienvenido/a!</p>
               <p className="text-xl font-semibold text-white mt-2">{citizenName}</p>
-              <p className="text-slate-400 mt-3">
+              <p className="text-gold-light mt-3">
                 Verificación exitosa. Acércate a la ventanilla para continuar con tu trámite.
               </p>
               {confidence > 0 && (
-                <p className="text-xs text-slate-600 mt-2">Coincidencia: {confidence.toFixed(1)}%</p>
+                <p className="text-xs text-gold mt-2">Coincidencia: {confidence.toFixed(1)}%</p>
               )}
             </div>
-            <p className="text-slate-500 text-sm">Reiniciando en 10 segundos...</p>
+            <p className="text-gold text-sm">Reiniciando en 10 segundos...</p>
           </div>
         )}
 
@@ -272,20 +272,20 @@ export default function KioskPage() {
             <AlertCircle className="w-16 h-16 text-red-400 mx-auto" />
             <div>
               <p className="text-xl font-bold text-red-300">Verificación fallida</p>
-              <p className="text-slate-400 mt-2">
+              <p className="text-gold-light mt-2">
                 {failMessages[failReason] || failMessages.error_desconocido}
               </p>
-              <p className="text-slate-400 mt-2 font-medium">
+              <p className="text-gold-light mt-2 font-medium">
                 Por favor pide asistencia al operador.
               </p>
             </div>
-            <p className="text-slate-500 text-sm">Reiniciando en 10 segundos...</p>
+            <p className="text-gold text-sm">Reiniciando en 10 segundos...</p>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <p className="text-slate-700 text-xs mt-8">
+      <p className="text-gold/80 text-xs mt-8">
         Si tienes problemas, solicita ayuda al operador de la sala
       </p>
     </div>
