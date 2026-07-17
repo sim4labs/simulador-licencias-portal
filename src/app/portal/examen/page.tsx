@@ -40,7 +40,7 @@ const LICENSE_ICONS: Record<string, typeof Car> = {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   'iniciado': { label: 'Iniciado', color: 'bg-gray-100 text-gray-700', icon: Clock },
-  'tipo-seleccionado': { label: 'Listo para examen', color: 'bg-blue-50 text-blue-700', icon: BookOpen },
+  'tipo-seleccionado': { label: 'Listo para examen', color: 'bg-primary-50 text-primary-700', icon: BookOpen },
   'examen-aprobado': { label: 'Examen teórico aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
   'examen-reprobado': { label: 'Examen teórico reprobado', color: 'bg-red-50 text-red-700', icon: XCircle },
   'cita-agendada': { label: 'Examen teórico aprobado', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
