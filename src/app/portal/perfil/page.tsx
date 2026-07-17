@@ -95,7 +95,7 @@ export default function PerfilPage() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="mx-auto max-w-4xl space-y-4">
         <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
         <div className="h-80 bg-white rounded-2xl border border-gray-200 animate-pulse" />
       </div>
@@ -103,7 +103,7 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Mi Perfil</h1>
         <p className="text-gray-500 mt-1">Administra tus datos personales</p>
