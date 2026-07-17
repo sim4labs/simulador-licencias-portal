@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { CitizenAuth } from '@/components/portal/CitizenAuth'
 import { CitizenLayout } from '@/components/portal/CitizenLayout'
 import { getCurrentCitizen, logoutCitizen } from '@/lib/citizen-auth'
 
 export function PortalAuthGate({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const [citizenName, setCitizenName] = useState('')
   const [authenticated, setAuthenticated] = useState(false)
   const [checked, setChecked] = useState(false)
@@ -34,6 +36,7 @@ export function PortalAuthGate({ children }: { children: React.ReactNode }) {
 
   const handleAuthenticated = async () => {
     await loadSession()
+    router.replace('/portal')
   }
 
   if (!checked) return null
