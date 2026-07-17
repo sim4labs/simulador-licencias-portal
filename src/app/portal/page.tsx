@@ -67,7 +67,7 @@ const STEP_ROUTES: Record<number, string> = {
 }
 
 const QUICK_ACTIONS = [
-  { label: 'Examen Teórico', desc: 'Practica antes de tu examen', href: '/portal/examen', icon: BookOpen, color: 'bg-blue-50 text-blue-600 border-blue-200' },
+  { label: 'Examen Teórico', desc: 'Practica antes de tu examen', href: '/portal/examen', icon: BookOpen, color: 'bg-primary-50 text-primary-600 border-primary-200' },
   { label: 'Consultar Resultados', desc: 'Revisa el estado de tu prueba', href: '/portal/resultados', icon: ClipboardList, color: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
   { label: 'Administrar Citas', desc: 'Gestiona tus citas en el simulador', href: '/portal/agendar', icon: CalendarDays, color: 'bg-amber-50 text-amber-600 border-amber-200' },
 ]
@@ -309,8 +309,8 @@ export default function PortalPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-5 h-5 text-blue-600" />
+                      <div className="w-10 h-10 rounded-xl bg-primary-50 border border-primary-200 flex items-center justify-center flex-shrink-0">
+                        <Clock className="w-5 h-5 text-primary-600" />
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Hora</p>
@@ -449,16 +449,16 @@ export default function PortalPage() {
         {/* Prepárate para tu Examen */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mt-6">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-blue-600" />
+            <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-primary-600" />
             </div>
             <h3 className="text-sm font-semibold text-gray-900">Prepárate para tu Examen</h3>
           </div>
           <div className="p-6">
             <div className="grid sm:grid-cols-2 gap-4 mb-5">
-              <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
-                <h4 className="text-sm font-semibold text-blue-900 mb-2">Temas del Examen</h4>
-                <ul className="space-y-1.5 text-xs text-blue-800">
+              <div className="p-4 rounded-xl bg-primary-50 border border-primary-100">
+                <h4 className="text-sm font-semibold text-primary-900 mb-2">Temas del Examen</h4>
+                <ul className="space-y-1.5 text-xs text-primary-800">
                   <li>Señales de tránsito (preventivas, restrictivas, informativas)</li>
                   <li>Límites de velocidad por zona</li>
                   <li>Jerarquía de movilidad</li>

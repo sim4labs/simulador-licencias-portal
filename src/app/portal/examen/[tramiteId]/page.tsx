@@ -395,8 +395,8 @@ export default function ExamenTramitePage({ params }: { params: { tramiteId: str
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full ${
                     currentQuestion.difficulty === 'avanzado'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'bg-blue-100 text-blue-700'
+                      ? 'bg-gold-light text-primary-dark'
+                      : 'bg-primary-50 text-primary-700'
                   }`}
                 >
                   {currentQuestion.difficulty === 'avanzado' ? 'Avanzado' : 'Medio'}
