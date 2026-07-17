@@ -89,7 +89,7 @@ export function AdminAuth({ onAuthenticated }: AdminAuthProps) {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div
           className="absolute inset-0 bg-repeat bg-center"
-          style={{ backgroundImage: 'url(/Flower-pattern.png)', backgroundSize: '200px auto' }}
+          style={{ backgroundImage: 'url(/Flower-logo.svg)', backgroundSize: '200px auto' }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-accent opacity-95" />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">

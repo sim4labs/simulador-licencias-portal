@@ -166,7 +166,7 @@ export default function PortalPage() {
       <div className="relative bg-gradient-to-br from-primary-600 to-primary-accent rounded-2xl overflow-hidden">
         <div
           className="absolute inset-0 bg-repeat opacity-10"
-          style={{ backgroundImage: 'url(/Flower-pattern.png)', backgroundSize: '150px auto' }}
+          style={{ backgroundImage: 'url(/Flower-logo.svg)', backgroundSize: '150px auto' }}
         />
         <div className="relative px-8 py-10 text-center sm:text-left sm:flex sm:items-center sm:justify-between">
           <div className="mb-6 sm:mb-0">
