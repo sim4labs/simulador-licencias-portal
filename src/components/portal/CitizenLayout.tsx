@@ -26,18 +26,17 @@ export function CitizenLayout({ children, citizenName, onLogout }: CitizenLayout
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header — matches admin style */}
-      <header
-        className="sticky top-0 z-30 h-16 bg-primary/95 flex items-center justify-between px-4 sm:px-6"
-        style={{
-          backgroundImage: 'url(/Flower-logo.svg)',
-          backgroundRepeat: 'repeat',
-          backgroundBlendMode: 'overlay',
-        }}
-      >
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between overflow-hidden bg-gradient-to-r from-primary-700 to-primary-800 px-4 shadow-sm sm:px-6">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[url('/Flower-logo.svg')] bg-[length:76px_76px] bg-repeat opacity-[0.08]"
+        />
+
+        <div className="relative z-10 flex items-center gap-3">
           <button
             onClick={() => setMobileOpen(true)}
-            className="lg:hidden p-2 -ml-2 rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="Abrir menú"
+            className="-ml-2 flex min-h-11 min-w-11 items-center justify-center rounded-md text-white/90 transition-colors hover:bg-white/15 hover:text-white lg:hidden"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -49,9 +48,9 @@ export function CitizenLayout({ children, citizenName, onLogout }: CitizenLayout
           </Link>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/20">
-            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+        <div className="relative z-10 flex items-center gap-2 sm:gap-3">
+          <div className="flex min-h-11 items-center gap-2.5 rounded-full border border-white/40 bg-primary-900/70 px-2 sm:px-3 shadow-sm">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/25">
               {citizenName ? (
                 <span className="text-xs font-semibold text-white">{getInitials(citizenName)}</span>
               ) : (
@@ -64,7 +63,8 @@ export function CitizenLayout({ children, citizenName, onLogout }: CitizenLayout
           </div>
           <button
             onClick={onLogout}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/30 text-white text-sm hover:bg-white/10 transition-colors"
+            aria-label="Cerrar sesión"
+            className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-md border border-white/50 bg-primary-900/70 px-3 text-sm font-medium text-white shadow-sm transition-colors hover:border-white/70 hover:bg-primary-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-800"
           >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Cerrar sesión</span>
